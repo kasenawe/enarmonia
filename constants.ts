@@ -9,6 +9,15 @@ export const COLORS = {
   background: '#FDFBFF'
 };
 
+// Configuración para Notificaciones por Email (EmailJS)
+// El dueño debe registrarse en emailjs.com (es gratis) y obtener estos IDs
+export const EMAIL_CONFIG = {
+  SERVICE_ID: 'default_service', // Reemplazar con el Service ID de EmailJS
+  TEMPLATE_ID: 'template_enarmonia', // Reemplazar con el Template ID de EmailJS
+  PUBLIC_KEY: 'TU_PUBLIC_KEY', // Reemplazar con la Public Key de EmailJS
+  OWNER_EMAIL: 'enarmonia.estetica.salud@gmail.com' // Email donde llegarán los avisos
+};
+
 export const SERVICES: Service[] = [
   {
     id: 'faciales-corporales',
@@ -34,4 +43,3 @@ export const SERVICES: Service[] = [
 ];
 
 export const LOGO_URL = 'https://raw.githubusercontent.com/StackBlitz-User-Assets/beauty-center-logo/main/logo.png'; 
-// Using a placeholder that resembles the provided logo if the specific image path isn't used

@@ -96,9 +96,15 @@ const Booking: React.FC<BookingProps> = ({ service, occupiedSlots, initialData, 
           </div>
           
           <h2 className="text-3xl font-black text-gray-800 mb-4 leading-tight">¡Turno Agendado!</h2>
+          
+          <div className="flex items-center justify-center gap-2 mb-6 bg-blue-50 py-2 px-4 rounded-full w-fit mx-auto">
+             <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></div>
+             <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">Aviso enviado al centro por Email</span>
+          </div>
+
           <p className="text-gray-500 text-sm mb-10 leading-relaxed px-2">
-            Tu reserva ha sido registrada. <br/>
-            <span className="font-bold text-gray-700">Para finalizar, enviá la confirmación por WhatsApp al centro.</span>
+            Tu reserva ha sido registrada con éxito. <br/>
+            <span className="font-bold text-gray-700">Opcional: puedes reforzar tu aviso por WhatsApp si lo deseas.</span>
           </p>
           
           <div className="space-y-4">
@@ -109,14 +115,14 @@ const Booking: React.FC<BookingProps> = ({ service, occupiedSlots, initialData, 
               className="flex items-center justify-center gap-3 w-full py-5 bg-[#25D366] text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-green-100 active:scale-95 transition-all"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7l.8.1"/><path d="m22 2-7.5 7.5"/><path d="M10 14.7 9 22l11-11-4.7-1"/><path d="M15.5 15.5 19 19"/></svg>
-              ENVIAR WHATSAPP
+              REFORZAR POR WHATSAPP
             </a>
             
             <button 
-              onClick={onCancel} // Vuelve al inicio
+              onClick={onCancel}
               className="w-full py-4 text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:text-gray-600 transition-colors"
             >
-              Cerrar y volver al inicio
+              Volver al inicio
             </button>
           </div>
         </div>
