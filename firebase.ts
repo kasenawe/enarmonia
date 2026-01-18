@@ -1,8 +1,8 @@
 
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, query, where, onSnapshot, addDoc, deleteDoc, doc } from 'firebase/firestore';
 
-// Configuración real de En Armonía
+// Configuración de En Armonía
 const firebaseConfig = {
   apiKey: "AIzaSyAzwH2u0MKkt3RK3UujCZR_HD1p41NPmh8",
   authDomain: "enarmonia-289df.firebaseapp.com",
@@ -13,5 +13,9 @@ const firebaseConfig = {
   measurementId: "G-WL1CGJ9YJH"
 };
 
+// Inicialización modular (v9/v10+)
+// Se usa la sintaxis modular para asegurar compatibilidad con versiones recientes de Firebase
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+const db = getFirestore(app);
+
+export { db, collection, query, where, onSnapshot, addDoc, deleteDoc, doc };

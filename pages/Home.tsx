@@ -5,10 +5,11 @@ import { Service } from '../types';
 
 interface HomeProps {
   onSelectService: (service: Service) => void;
+  onSeeAll: () => void;
   isSyncing: boolean;
 }
 
-const Home: React.FC<HomeProps> = ({ onSelectService, isSyncing }) => {
+const Home: React.FC<HomeProps> = ({ onSelectService, onSeeAll, isSyncing }) => {
   return (
     <div className="p-6">
       {/* Sync Status Overlay Indicator */}
@@ -30,7 +31,7 @@ const Home: React.FC<HomeProps> = ({ onSelectService, isSyncing }) => {
               </div>
            </div>
         </div>
-        <h1 className="text-2xl font-extrabold text-[#4A4A4A] mb-1">Bienvenida</h1>
+        <h1 className="text-2xl font-extrabold text-[#4A4A4A] mb-1 font-serif">Bienvenida</h1>
         <p className="text-gray-400 text-xs italic font-serif">Tu espacio de equilibrio y bienestar</p>
       </header>
 
@@ -49,14 +50,19 @@ const Home: React.FC<HomeProps> = ({ onSelectService, isSyncing }) => {
         </div>
       </div>
 
-      {/* Services List */}
+      {/* Services List Preview */}
       <section className="space-y-6">
         <div className="flex items-center justify-between mb-2 px-1">
           <h2 className="text-lg font-bold text-[#4A4A4A]">Tratamientos</h2>
-          <span className="text-[10px] font-bold text-[#A79FE1] uppercase tracking-widest bg-purple-50 px-3 py-1 rounded-full">Ver todos</span>
+          <button 
+            onClick={onSeeAll}
+            className="text-[10px] font-bold text-[#A79FE1] uppercase tracking-widest bg-purple-50 px-3 py-1 rounded-full"
+          >
+            Ver todos
+          </button>
         </div>
         
-        {SERVICES.map((service, idx) => (
+        {SERVICES.slice(0, 2).map((service, idx) => (
           <div 
             key={service.id}
             className="group bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-gray-100 transition-all active:scale-[0.97] animate-in"
@@ -90,6 +96,15 @@ const Home: React.FC<HomeProps> = ({ onSelectService, isSyncing }) => {
             </div>
           </div>
         ))}
+
+        {SERVICES.length > 2 && (
+          <button 
+            onClick={onSeeAll}
+            className="w-full py-4 bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em] hover:bg-gray-100 transition-colors"
+          >
+            Ver {SERVICES.length - 2} tratamientos más
+          </button>
+        )}
       </section>
 
       {/* Footer */}

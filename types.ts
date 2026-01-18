@@ -27,5 +27,6 @@ export enum AppRoute {
   HOME = 'home',
   SERVICES = 'services',
   BOOKING = 'booking',
-  MY_APPOINTMENTS = 'my-appointments'
+  MY_APPOINTMENTS = 'my-appointments',
+  CONTACT = 'contact'
 }
