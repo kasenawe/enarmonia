@@ -1,22 +1,21 @@
 
 import React, { useState } from 'react';
 import { Service, Appointment } from '../types';
-import { COLORS } from '../constants';
 
 interface BookingProps {
   service: Service;
+  occupiedSlots: { date: string, time: string }[];
   onConfirm: (appointment: Appointment) => void;
   onCancel: () => void;
 }
 
-const Booking: React.FC<BookingProps> = ({ service, onConfirm, onCancel }) => {
+const Booking: React.FC<BookingProps> = ({ service, occupiedSlots, onConfirm, onCancel }) => {
   const [step, setStep] = useState(1);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [userName, setUserName] = useState('');
   const [userPhone, setUserPhone] = useState('');
-
-  // Generate some mock dates for next 7 days
+  
   const dates = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i + 1);
@@ -28,64 +27,69 @@ const Booking: React.FC<BookingProps> = ({ service, onConfirm, onCancel }) => {
     };
   });
 
-  // Mock time slots
   const timeSlots = [
     '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'
   ];
 
+  const isSlotOccupied = (date: string, time: string) => {
+    return occupiedSlots.some(slot => slot.date === date && slot.time === time);
+  };
+
   const handleNextStep = () => {
     if (step < 3) setStep(step + 1);
     else {
-      onConfirm({
-        id: Math.random().toString(36).substr(2, 9),
+      const appointment: Appointment = {
+        id: '', // Firestore generará el ID
         serviceId: service.id,
         serviceName: service.name,
         date: selectedDate,
         time: selectedTime,
         userName,
         userPhone
-      });
+      };
+      
+      // Enviar a WhatsApp
+      const message = `Hola En Armonía! Me gustaría confirmar un turno para:
+- Servicio: ${service.name}
+- Fecha: ${selectedDate}
+- Hora: ${selectedTime}hs
+- Nombre: ${userName}
+- Tel: ${userPhone}`;
+      
+      const whatsappUrl = `https://wa.me/59892550000?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+      
+      onConfirm(appointment);
     }
   };
 
   return (
     <div className="p-6">
       <div className="flex items-center gap-3 mb-8 pt-4">
-        <button onClick={onCancel} className="p-2 hover:bg-gray-100 rounded-full">
+        <button onClick={onCancel} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </button>
         <h2 className="text-xl font-bold text-[#4A4A4A]">Agendar Turno</h2>
       </div>
 
-      {/* Progress Bar */}
       <div className="flex gap-2 mb-8">
         {[1, 2, 3].map(i => (
-          <div key={i} className={`h-1.5 flex-1 rounded-full ${step >= i ? 'bg-[#A79FE1]' : 'bg-gray-100'}`}></div>
+          <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${step >= i ? 'bg-[#A79FE1]' : 'bg-gray-100'}`}></div>
         ))}
       </div>
 
-      <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm mb-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl overflow-hidden">
-            <img src={service.image} className="w-full h-full object-cover" alt={service.name} />
-          </div>
-          <div>
-            <h3 className="font-bold text-sm">{service.name}</h3>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest">{service.duration} minutos</p>
-          </div>
-        </div>
-
+      <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm mb-6 min-h-[400px]">
         {step === 1 && (
-          <div>
-            <h4 className="font-semibold text-sm mb-4">Seleccioná una fecha</h4>
+          <div className="animate-in">
+            <h4 className="font-semibold text-sm mb-4">1. Seleccioná una fecha</h4>
             <div className="grid grid-cols-4 gap-2 mb-8">
               {dates.map((d) => (
                 <button
                   key={d.iso}
-                  onClick={() => setSelectedDate(d.iso)}
+                  onClick={() => { setSelectedDate(d.iso); setSelectedTime(''); }}
                   className={`flex flex-col items-center p-3 rounded-2xl border transition-all ${
                     selectedDate === d.iso 
-                      ? 'border-[#A79FE1] bg-[#A79FE1] text-white shadow-lg shadow-purple-100' 
+                      ? 'border-[#A79FE1] bg-[#A79FE1] text-white shadow-lg' 
                       : 'border-gray-50 bg-gray-50 text-gray-400'
                   }`}
                 >
@@ -97,33 +101,40 @@ const Booking: React.FC<BookingProps> = ({ service, onConfirm, onCancel }) => {
             </div>
 
             {selectedDate && (
-              <>
-                <h4 className="font-semibold text-sm mb-4">Seleccioná un horario</h4>
+              <div className="animate-in">
+                <h4 className="font-semibold text-sm mb-4">2. Horarios disponibles</h4>
                 <div className="grid grid-cols-3 gap-2">
-                  {timeSlots.map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setSelectedTime(t)}
-                      className={`py-3 rounded-xl border text-sm font-semibold transition-all ${
-                        selectedTime === t 
-                          ? 'border-[#A79FE1] bg-[#A79FE1] text-white' 
-                          : 'border-gray-50 bg-gray-50 text-gray-500'
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
+                  {timeSlots.map((t) => {
+                    const occupied = isSlotOccupied(selectedDate, t);
+                    return (
+                      <button
+                        key={t}
+                        disabled={occupied}
+                        onClick={() => setSelectedTime(t)}
+                        className={`py-3 rounded-xl border text-sm font-semibold transition-all relative ${
+                          occupied 
+                            ? 'bg-gray-50 border-gray-100 text-gray-200 cursor-not-allowed' 
+                            : selectedTime === t 
+                              ? 'border-[#A79FE1] bg-[#A79FE1] text-white shadow-md' 
+                              : 'border-gray-50 bg-gray-50 text-gray-500 hover:border-purple-200'
+                        }`}
+                      >
+                        {t}
+                        {occupied && <span className="absolute top-1 right-1 text-[8px] font-bold text-gray-300">OCUPADO</span>}
+                      </button>
+                    );
+                  })}
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}
 
         {step === 2 && (
-          <div className="space-y-4">
-            <h4 className="font-semibold text-sm mb-2">Tus datos de contacto</h4>
+          <div className="space-y-4 animate-in">
+            <h4 className="font-semibold text-sm mb-2">3. Tus datos de contacto</h4>
             <div>
-              <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1 ml-1">Nombre Completo</label>
+              <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Nombre Completo</label>
               <input 
                 type="text" 
                 value={userName}
@@ -133,7 +144,7 @@ const Booking: React.FC<BookingProps> = ({ service, onConfirm, onCancel }) => {
               />
             </div>
             <div>
-              <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1 ml-1">Teléfono / WhatsApp</label>
+              <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Teléfono / WhatsApp</label>
               <input 
                 type="tel" 
                 value={userPhone}
@@ -146,13 +157,12 @@ const Booking: React.FC<BookingProps> = ({ service, onConfirm, onCancel }) => {
         )}
 
         {step === 3 && (
-          <div className="text-center py-4">
+          <div className="text-center py-4 animate-in">
             <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <h4 className="text-xl font-bold text-[#4A4A4A] mb-2">¡Todo listo!</h4>
-            <p className="text-gray-500 text-sm mb-6">Por favor confirma los detalles de tu turno.</p>
-            
+            <p className="text-gray-500 text-sm mb-6">Confirmaremos tu turno globalmente y te redirigiremos a WhatsApp.</p>
             <div className="bg-gray-50 rounded-2xl p-4 text-left space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-400">Fecha:</span>
@@ -161,10 +171,6 @@ const Booking: React.FC<BookingProps> = ({ service, onConfirm, onCancel }) => {
               <div className="flex justify-between">
                 <span className="text-gray-400">Hora:</span>
                 <span className="font-semibold">{selectedTime} hs</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Paciente:</span>
-                <span className="font-semibold">{userName}</span>
               </div>
             </div>
           </div>
@@ -179,16 +185,12 @@ const Booking: React.FC<BookingProps> = ({ service, onConfirm, onCancel }) => {
         onClick={handleNextStep}
         className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-all ${
           ((step === 1 && (!selectedDate || !selectedTime)) || (step === 2 && (!userName || !userPhone)))
-            ? 'bg-gray-200 cursor-not-allowed shadow-none'
-            : 'bg-[#A79FE1] shadow-purple-100 hover:scale-[1.02]'
+            ? 'bg-gray-200 cursor-not-allowed'
+            : 'bg-[#A79FE1] hover:bg-[#8A81C9]'
         }`}
       >
-        {step === 3 ? 'Confirmar Turno' : 'Siguiente'}
+        {step === 3 ? 'Confirmar y Finalizar' : 'Siguiente'}
       </button>
-
-      <p className="text-center text-[10px] text-gray-400 mt-6 px-8">
-        Al confirmar, se enviará una solicitud de reserva al centro. Te contactaremos por WhatsApp para la confirmación final.
-      </p>
     </div>
   );
 };

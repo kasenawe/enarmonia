@@ -18,6 +18,11 @@ export interface Appointment {
   userPhone: string;
 }
 
+export interface OccupiedSlot {
+  date: string;
+  time: string;
+}
+
 export enum AppRoute {
   HOME = 'home',
   SERVICES = 'services',
