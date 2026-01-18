@@ -31,7 +31,7 @@ export const SERVICES: Service[] = [
     name: 'Tratamiento Piernas Cansadas',
     description: 'Drenaje linfático y masajes descongestivos para mejorar la circulación y aliviar la pesadez.',
     duration: 45,
-    image: 'https://images.unsplash.com/photo-1544161515-4af6b1d462c2?auto=format&fit=crop&q=80&w=800'
+    image: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&q=80&w=800'
   },
   {
     id: 'masajes',
@@ -42,4 +42,4 @@ export const SERVICES: Service[] = [
   }
 ];
 
-export const LOGO_URL = 'https://raw.githubusercontent.com/StackBlitz-User-Assets/beauty-center-logo/main/logo.png'; 
+export const LOGO_URL = 'https://raw.githubusercontent.com/StackBlitz-User-Assets/beauty-center-logo/main/logo.png';
