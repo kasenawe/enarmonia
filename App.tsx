@@ -98,7 +98,7 @@ const App: React.FC = () => {
       });
 
       handleIdentify(app.userName, app.userPhone);
-      setCurrentRoute(AppRoute.MY_APPOINTMENTS);
+      // No navegamos aquí para dejar que Booking muestre su pantalla de éxito
     } catch (e: any) {
       console.error("Error al guardar:", e);
       throw e;
@@ -111,7 +111,6 @@ const App: React.FC = () => {
     }
     try {
       await deleteDoc(doc(db, "appointments", id));
-      // La lista se actualizará sola gracias al listener de onSnapshot
     } catch (e) {
       console.error("Error al borrar:", e);
       alert("No se pudo eliminar el turno. Intenta de nuevo.");

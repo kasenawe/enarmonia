@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Service, Appointment } from '../types';
 
 interface BookingProps {
@@ -17,6 +17,7 @@ const Booking: React.FC<BookingProps> = ({ service, occupiedSlots, initialData, 
   const [userName, setUserName] = useState(initialData.name);
   const [userPhone, setUserPhone] = useState(initialData.phone);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   
   const dates = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
@@ -46,6 +47,18 @@ const Booking: React.FC<BookingProps> = ({ service, occupiedSlots, initialData, 
     return dateObj ? dateObj.full : selectedDate;
   };
 
+  const constructWhatsAppUrl = () => {
+    const message = `*Nuevo Turno - En Armonía*\n\n` +
+                    `🔹 *Servicio:* ${service.name}\n` +
+                    `📅 *Fecha:* ${getSelectedDateDisplay()}\n` +
+                    `⏰ *Hora:* ${selectedTime} hs\n\n` +
+                    `👤 *Cliente:* ${userName}\n` +
+                    `📱 *Teléfono:* ${userPhone}\n\n` +
+                    `_Enviado desde la App En Armonía_`;
+    
+    return `https://wa.me/59892550000?text=${encodeURIComponent(message)}`;
+  };
+
   const handleNextStep = async () => {
     if (step < 3) {
       setStep(step + 1);
@@ -62,26 +75,54 @@ const Booking: React.FC<BookingProps> = ({ service, occupiedSlots, initialData, 
           userPhone: userPhone.trim()
         };
         
-        const message = `*Nuevo Turno - En Armonía*\n\n` +
-                        `🔹 *Servicio:* ${service.name}\n` +
-                        `📅 *Fecha:* ${getSelectedDateDisplay()}\n` +
-                        `⏰ *Hora:* ${selectedTime} hs\n\n` +
-                        `👤 *Cliente:* ${userName}\n` +
-                        `📱 *Teléfono:* ${userPhone}\n\n` +
-                        `_Enviado desde la App En Armonía_`;
-        
-        const whatsappUrl = `https://wa.me/59892550000?text=${encodeURIComponent(message)}`;
-        
         await onConfirm(appointment);
-        window.open(whatsappUrl, '_blank');
+        setIsSubmitting(false);
+        setShowSuccess(true);
       } catch (error: any) {
         setIsSubmitting(false);
-        alert(error.code === 'permission-denied' 
-          ? "Error de permisos en la base de datos." 
-          : "Hubo un problema al guardar tu turno.");
+        alert("Hubo un problema al guardar tu turno.");
       }
     }
   };
+
+  if (showSuccess) {
+    return (
+      <div className="p-6 pt-12 text-center animate-in">
+        <div className="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-300 to-emerald-400"></div>
+          
+          <div className="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          
+          <h2 className="text-3xl font-black text-gray-800 mb-4 leading-tight">¡Turno Agendado!</h2>
+          <p className="text-gray-500 text-sm mb-10 leading-relaxed px-2">
+            Tu reserva ha sido registrada. <br/>
+            <span className="font-bold text-gray-700">Para finalizar, enviá la confirmación por WhatsApp al centro.</span>
+          </p>
+          
+          <div className="space-y-4">
+            <a 
+              href={constructWhatsAppUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-3 w-full py-5 bg-[#25D366] text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-green-100 active:scale-95 transition-all"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7l.8.1"/><path d="m22 2-7.5 7.5"/><path d="M10 14.7 9 22l11-11-4.7-1"/><path d="M15.5 15.5 19 19"/></svg>
+              ENVIAR WHATSAPP
+            </a>
+            
+            <button 
+              onClick={onCancel} // Vuelve al inicio
+              className="w-full py-4 text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:text-gray-600 transition-colors"
+            >
+              Cerrar y volver al inicio
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 pb-12">
