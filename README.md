@@ -5,18 +5,23 @@ Esta es una aplicación web moderna diseñada para la gestión de turnos y servi
 ## 🚀 Tecnologías Utilizadas
 
 ### Frontend
+
 - **React 19**: Biblioteca principal para la interfaz de usuario.
 - **TypeScript**: Para un desarrollo robusto y tipado estático.
 - **Vite**: Herramienta de construcción (build tool) ultra rápida.
 - **Tailwind CSS**: Framework de utilidades CSS para un diseño responsivo y moderno.
 - **Lucide React**: Set de iconos elegantes y ligeros.
-- **Google Fonts**: Tipografías *Montserrat* (cuerpo) y *Playfair Display* (títulos).
+- **Google Fonts**: Tipografías _Montserrat_ (cuerpo) y _Playfair Display_ (títulos).
 
 ### Backend & Base de Datos
+
 - **Firebase Firestore**: Base de Datos NoSQL en tiempo real para almacenar citas y servicios.
 - **Firebase SDK (v10+)**: Implementación modular para optimizar el tamaño del bundle.
+- **Vercel Functions**: Backend serverless para integración de pagos.
+- **Mercado Pago**: Procesamiento seguro de pagos online.
 
 ### Inteligencia Artificial
+
 - **Google Gemini API (@google/genai)**: Utilizado para el asistente virtual que recomienda servicios basados en las necesidades del cliente.
 
 ---
@@ -44,22 +49,25 @@ Esta es una aplicación web moderna diseñada para la gestión de turnos y servi
 ## ✨ Características Principales
 
 1.  **Catálogo de Servicios**: Presentación detallada de tratamientos faciales, corporales y masajes.
-2.  **Sistema de Reservas**: Validación en tiempo real de disponibilidad. Los usuarios no pueden agendar en horarios ya ocupados.
-3.  **Identificación de Usuario**: Sistema basado en nombre y teléfono (almacenado en `LocalStorage`) para que los clientes vean sus turnos sin necesidad de contraseñas complejas.
-4.  **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para asesorar a los clientes sobre qué tratamiento les conviene más.
-5.  **Panel Admin**: Acceso restringido (vía link oculto en contacto) para visualizar y cancelar todos los turnos del centro.
-6.  **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
+2.  **Sistema de Reservas con Pago**: Los clientes pueden agendar citas pagando online de forma segura con Mercado Pago.
+3.  **Validación de Disponibilidad**: Sistema en tiempo real que previene doble-booking.
+4.  **Identificación de Usuario**: Sistema basado en nombre y teléfono (almacenado en `LocalStorage`) para que los clientes vean sus turnos sin necesidad de contraseñas complejas.
+5.  **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para asesorar a los clientes sobre qué tratamiento les conviene más.
+6.  **Panel Admin**: Acceso restringido (vía link oculto en contacto) para visualizar y cancelar todos los turnos del centro.
+7.  **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
 
 ---
 
 ## ⚙️ Configuración y Desarrollo
 
 ### Requisitos Previos
+
 - Node.js (v18 o superior)
 - Una cuenta de Firebase con un proyecto creado.
 - Una API Key de Google AI Studio (Gemini).
 
 ### Instalación
+
 1. Clona el repositorio.
 2. Instala las dependencias:
    ```bash
@@ -67,16 +75,30 @@ Esta es una aplicación web moderna diseñada para la gestión de turnos y servi
    ```
 
 ### Variables de Entorno
+
 Crea un archivo `.env.local` en la raíz del proyecto y añade tu clave de Gemini:
+
 ```env
 GEMINI_API_KEY=tu_clave_aqui
 ```
 
+### Configuración de Pagos
+
+Para habilitar los pagos con Mercado Pago:
+
+1. **Backend**: Despliega el backend en Vercel (ver `enarmonia_backend/README.md`)
+2. **Mercado Pago**: Crea cuenta de desarrollador y obtén tu Access Token
+3. **Firebase**: Configura Service Account para el backend
+4. **URLs**: Actualiza las URLs de redirección en Mercado Pago
+
 ### Ejecución en Local
+
 Para iniciar el servidor de desarrollo:
+
 ```bash
 npm run dev
 ```
+
 La aplicación estará disponible en `http://localhost:3000`.
 
 ---
