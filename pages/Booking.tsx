@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Service, Appointment } from '../types';
+import { CONTACT_INFO } from '../constants';
 
 interface BookingProps {
   service: Service;
@@ -56,7 +57,7 @@ const Booking: React.FC<BookingProps> = ({ service, occupiedSlots, initialData, 
                     `📱 *Teléfono:* ${userPhone}\n\n` +
                     `_Enviado desde la App En Armonía_`;
     
-    return `https://wa.me/59892550000?text=${encodeURIComponent(message)}`;
+    return `https://wa.me/${CONTACT_INFO.whatsapp}?text=${encodeURIComponent(message)}`;
   };
 
   const handleNextStep = async () => {
@@ -211,7 +212,7 @@ const Booking: React.FC<BookingProps> = ({ service, occupiedSlots, initialData, 
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                   placeholder="Tu nombre"
-                  className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm focus:bg-white focus:border-gray-900 outline-none transition-all font-medium"
+                  className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm text-gray-800 focus:bg-white focus:border-gray-900 outline-none transition-all font-medium"
                 />
               </div>
               <div>
@@ -221,7 +222,7 @@ const Booking: React.FC<BookingProps> = ({ service, occupiedSlots, initialData, 
                   value={userPhone}
                   onChange={(e) => setUserPhone(e.target.value)}
                   placeholder="Ej: 099 123 456"
-                  className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm focus:bg-white focus:border-gray-900 outline-none transition-all font-medium"
+                  className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm text-gray-800 focus:bg-white focus:border-gray-900 outline-none transition-all font-medium"
                 />
               </div>
             </div>

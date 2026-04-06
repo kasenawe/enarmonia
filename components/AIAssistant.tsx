@@ -29,7 +29,6 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onSelectService, isOpen, onCl
     setIsLoading(true);
 
     try {
-      // Correct initialization using process.env.API_KEY as per guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const servicesContext = SERVICES.map(s => `- ${s.name}: ${s.description}`).join('\n');
       
@@ -47,11 +46,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onSelectService, isOpen, onCl
         },
       });
 
-      // Fix: response.text is a property, not a method
       const modelResponse = response.text || 'Lo siento, no pude procesar tu consulta.';
       setMessages(prev => [...prev, { role: 'model', text: modelResponse }]);
 
-      // Extra: Check if a service was mentioned to offer a shortcut
       const mentionedService = SERVICES.find(s => modelResponse.toLowerCase().includes(s.name.toLowerCase()));
       if (mentionedService) {
         setMessages(prev => [...prev, { 
@@ -71,7 +68,6 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onSelectService, isOpen, onCl
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white w-full max-w-md h-[80vh] sm:h-[600px] rounded-t-[2.5rem] sm:rounded-[2.5rem] flex flex-col shadow-2xl overflow-hidden animate-in">
-        {/* Header */}
         <div className="bg-[#A79FE1] p-6 text-white flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -87,7 +83,6 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onSelectService, isOpen, onCl
           </button>
         </div>
 
-        {/* Chat Body */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/50">
           {messages.length === 0 && (
             <div className="text-center py-10">
@@ -97,7 +92,6 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onSelectService, isOpen, onCl
             </div>
           )}
           {messages.map((m, i) => {
-            // Check for service shortcuts in AI messages
             const mentionedService = m.role === 'model' && SERVICES.find(s => m.text.includes(`¿Te gustaría agendar ${s.name} ahora?`));
 
             return (
@@ -129,7 +123,6 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onSelectService, isOpen, onCl
           )}
         </div>
 
-        {/* Input Area */}
         <div className="p-4 bg-white border-t border-gray-100">
           <div className="flex gap-2">
             <input 
@@ -138,7 +131,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onSelectService, isOpen, onCl
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Ej: Tengo ojeras y cansancio..."
-              className="flex-1 p-4 bg-gray-50 border-none rounded-2xl text-xs focus:ring-2 focus:ring-[#A79FE1]/20 outline-none transition-all font-medium"
+              className="flex-1 p-4 bg-gray-50 border-none rounded-2xl text-xs text-gray-800 focus:ring-2 focus:ring-[#A79FE1]/20 outline-none transition-all font-medium"
             />
             <button 
               onClick={handleSend}

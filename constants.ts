@@ -10,10 +10,10 @@ export const COLORS = {
 };
 
 export const CONTACT_INFO = {
-  address: 'Av. Luis Alberto de Herrera 1234, Montevideo, Uruguay',
-  coords: { lat: -34.9011, lng: -56.1645 },
-  whatsapp: '59892550000',
-  instagram: '@enarmonia.estetica',
+  address: 'Almiron 5496, Montevideo, Uruguay',
+  coords: { lat: -34.8876, lng: -56.1054 },
+  whatsapp: '59895542465',
+  instagram: '@enarmonia_estetica_y_salud',
   email: 'enarmonia.estetica.salud@gmail.com'
 };
 

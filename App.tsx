@@ -1,15 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppRoute, Service, Appointment } from './types';
-import { SERVICES, EMAIL_CONFIG } from './constants';
+import { SERVICES } from './constants';
 import Home from './pages/Home';
 import Services from './pages/Services';
 import Booking from './pages/Booking';
 import MyAppointments from './pages/MyAppointments';
 import Contact from './pages/Contact';
+import Admin from './pages/Admin';
 import Navbar from './components/Navbar';
 import AIAssistant from './components/AIAssistant';
-// Fix: Importamos db y las funciones de firestore desde nuestro archivo local para resolver errores de exportación
 import { 
   db,
   collection, 
@@ -29,11 +29,9 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(true);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   
-  // Identidad del usuario
   const [userPhone, setUserPhone] = useState<string | null>(localStorage.getItem('enarmonia_user_phone'));
   const [userName, setUserName] = useState<string | null>(localStorage.getItem('enarmonia_user_name'));
 
-  // Listeners de Firestore con sintaxis modular
   useEffect(() => {
     if (!userPhone) { setMyAppointments([]); setIsSyncing(false); return; }
     setIsSyncing(true);
@@ -125,7 +123,9 @@ const App: React.FC = () => {
       case AppRoute.MY_APPOINTMENTS: 
         return <MyAppointments appointments={myAppointments} isSyncing={isSyncing} userPhone={userPhone} onIdentify={handleIdentify} onLogout={handleLogout} onDelete={handleDeleteAppointment} />;
       case AppRoute.CONTACT:
-        return <Contact />;
+        return <Contact onAdminAccess={() => setCurrentRoute(AppRoute.ADMIN)} />;
+      case AppRoute.ADMIN:
+        return <Admin appointments={allAppointments} onDelete={handleDeleteAppointment} onBack={() => setCurrentRoute(AppRoute.HOME)} />;
       default: 
         return <Home onSelectService={(s) => { setSelectedService(s); setCurrentRoute(AppRoute.BOOKING); }} onSeeAll={() => setCurrentRoute(AppRoute.SERVICES)} isSyncing={isSyncing} />;
     }
@@ -135,8 +135,7 @@ const App: React.FC = () => {
     <div className="min-h-screen flex flex-col max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden border-x border-gray-100">
       <div className="flex-1 overflow-y-auto pb-24 relative z-10">{renderPage()}</div>
       
-      {/* Botón flotante IA */}
-      {currentRoute !== AppRoute.BOOKING && (
+      {currentRoute !== AppRoute.BOOKING && currentRoute !== AppRoute.ADMIN && (
         <button 
           onClick={() => setIsAIModalOpen(true)}
           className="fixed bottom-24 right-6 w-14 h-14 bg-gray-900 text-white rounded-2xl flex items-center justify-center shadow-2xl z-40 active:scale-90 transition-transform"
@@ -145,7 +144,9 @@ const App: React.FC = () => {
         </button>
       )}
 
-      <Navbar currentRoute={currentRoute} onNavigate={setCurrentRoute} />
+      {currentRoute !== AppRoute.ADMIN && (
+        <Navbar currentRoute={currentRoute} onNavigate={setCurrentRoute} />
+      )}
       
       <AIAssistant 
         isOpen={isAIModalOpen} 

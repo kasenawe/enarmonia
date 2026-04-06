@@ -1,6 +1,7 @@
 
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, query, where, onSnapshot, addDoc, deleteDoc, doc } from 'firebase/firestore';
+// Fix: Use scoped packages (@firebase/app and @firebase/firestore) to resolve TS errors with named exports in modular Firebase
+import { initializeApp } from '@firebase/app';
+import { getFirestore, collection, query, where, onSnapshot, addDoc, deleteDoc, doc } from '@firebase/firestore';
 
 // Configuración de En Armonía
 const firebaseConfig = {
@@ -14,7 +15,7 @@ const firebaseConfig = {
 };
 
 // Inicialización modular (v9/v10+)
-// Se usa la sintaxis modular para asegurar compatibilidad con versiones recientes de Firebase
+// Se usan los paquetes con prefijo @firebase para asegurar que los exports nombrados sean reconocidos correctamente
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 

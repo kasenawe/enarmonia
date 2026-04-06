@@ -2,9 +2,13 @@
 import React from 'react';
 import { CONTACT_INFO } from '../constants';
 
-const Contact: React.FC = () => {
+interface ContactProps {
+  onAdminAccess?: () => void;
+}
+
+const Contact: React.FC<ContactProps> = ({ onAdminAccess }) => {
   return (
-    <div className="p-6 pb-20 animate-in">
+    <div className="p-6 pb-32 animate-in">
       <header className="mb-10 pt-4">
         <h2 className="text-3xl font-bold text-[#4A4A4A] mb-2 font-serif">Encuéntranos</h2>
         <p className="text-gray-400 text-xs font-medium uppercase tracking-[0.2em]">Contacto y Ubicación</p>
@@ -70,6 +74,15 @@ const Contact: React.FC = () => {
         >
           Enviar Mensaje
         </a>
+      </div>
+
+      <div className="mt-12 text-center">
+        <button 
+          onClick={onAdminAccess}
+          className="text-[8px] font-bold text-gray-300 uppercase tracking-[0.4em] opacity-40 hover:opacity-100 transition-opacity py-4"
+        >
+          &bull; Acceso Staff &bull;
+        </button>
       </div>
     </div>
   );

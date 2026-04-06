@@ -43,7 +43,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ appointments, isSyncing
                 value={inputName}
                 onChange={(e) => setInputName(e.target.value)}
                 placeholder="Ej: Maria Lopez"
-                className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm focus:bg-white focus:border-[#A79FE1] outline-none transition-all"
+                className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm text-gray-800 focus:bg-white focus:border-[#A79FE1] outline-none transition-all"
               />
             </div>
             <div>
@@ -53,7 +53,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ appointments, isSyncing
                 value={inputPhone}
                 onChange={(e) => setInputPhone(e.target.value)}
                 placeholder="Ej: 099123456"
-                className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm focus:bg-white focus:border-[#A79FE1] outline-none transition-all"
+                className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm text-gray-800 focus:bg-white focus:border-[#A79FE1] outline-none transition-all"
               />
             </div>
             <button 

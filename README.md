@@ -1,20 +1,93 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# En Armonía - Estética y Salud 🌿
 
-# Run and deploy your AI Studio app
+Esta es una aplicación web moderna diseñada para la gestión de turnos y servicios del centro de estética "En Armonía". La plataforma ofrece una experiencia de usuario fluida, permitiendo a los clientes explorar servicios, agendar citas en tiempo real y recibir recomendaciones personalizadas a través de un asistente con Inteligencia Artificial.
 
-This contains everything you need to run your app locally.
+## 🚀 Tecnologías Utilizadas
 
-View your app in AI Studio: https://ai.studio/apps/drive/1pW_fkZLSlE-nlo4SzTz8liPj52fSQs8t
+### Frontend
+- **React 19**: Biblioteca principal para la interfaz de usuario.
+- **TypeScript**: Para un desarrollo robusto y tipado estático.
+- **Vite**: Herramienta de construcción (build tool) ultra rápida.
+- **Tailwind CSS**: Framework de utilidades CSS para un diseño responsivo y moderno.
+- **Lucide React**: Set de iconos elegantes y ligeros.
+- **Google Fonts**: Tipografías *Montserrat* (cuerpo) y *Playfair Display* (títulos).
 
-## Run Locally
+### Backend & Base de Datos
+- **Firebase Firestore**: Base de Datos NoSQL en tiempo real para almacenar citas y servicios.
+- **Firebase SDK (v10+)**: Implementación modular para optimizar el tamaño del bundle.
 
-**Prerequisites:**  Node.js
+### Inteligencia Artificial
+- **Google Gemini API (@google/genai)**: Utilizado para el asistente virtual que recomienda servicios basados en las necesidades del cliente.
 
+---
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 🛠️ Estructura del Proyecto
+
+```text
+├── components/          # Componentes reutilizables (Navbar, Asistente IA, etc.)
+├── pages/               # Vistas principales de la aplicación
+│   ├── Home.tsx         # Landing page con servicios destacados
+│   ├── Services.tsx     # Catálogo completo de servicios
+│   ├── Booking.tsx      # Formulario de reserva con validación de horarios
+│   ├── MyAppointments.tsx # Gestión de turnos del usuario (vía teléfono)
+│   ├── Contact.tsx      # Información de contacto y acceso admin
+│   └── Admin.tsx        # Panel de administración de turnos
+├── constants.ts         # Datos estáticos (servicios, info de contacto, colores)
+├── types.ts             # Definiciones de interfaces y enums de TypeScript
+├── firebase.ts          # Configuración e inicialización de Firebase
+├── App.tsx              # Lógica principal de enrutamiento y estado global
+└── main.tsx             # Punto de entrada de la aplicación
+```
+
+---
+
+## ✨ Características Principales
+
+1.  **Catálogo de Servicios**: Presentación detallada de tratamientos faciales, corporales y masajes.
+2.  **Sistema de Reservas**: Validación en tiempo real de disponibilidad. Los usuarios no pueden agendar en horarios ya ocupados.
+3.  **Identificación de Usuario**: Sistema basado en nombre y teléfono (almacenado en `LocalStorage`) para que los clientes vean sus turnos sin necesidad de contraseñas complejas.
+4.  **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para asesorar a los clientes sobre qué tratamiento les conviene más.
+5.  **Panel Admin**: Acceso restringido (vía link oculto en contacto) para visualizar y cancelar todos los turnos del centro.
+6.  **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
+
+---
+
+## ⚙️ Configuración y Desarrollo
+
+### Requisitos Previos
+- Node.js (v18 o superior)
+- Una cuenta de Firebase con un proyecto creado.
+- Una API Key de Google AI Studio (Gemini).
+
+### Instalación
+1. Clona el repositorio.
+2. Instala las dependencias:
+   ```bash
+   npm install
+   ```
+
+### Variables de Entorno
+Crea un archivo `.env.local` en la raíz del proyecto y añade tu clave de Gemini:
+```env
+GEMINI_API_KEY=tu_clave_aqui
+```
+
+### Ejecución en Local
+Para iniciar el servidor de desarrollo:
+```bash
+npm run dev
+```
+La aplicación estará disponible en `http://localhost:3000`.
+
+---
+
+## 📝 Notas para Desarrolladores
+
+- **Base de Datos**: La colección principal en Firestore es `appointments`. Cada documento contiene:
+  - `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `createdAt`.
+- **Estilos**: Se utiliza una configuración de Tailwind personalizada en `index.html` y `index.css`. El color primario es `#A79FE1` (Lavanda).
+- **IA**: El asistente está configurado en `components/AIAssistant.tsx`. Puedes ajustar las `systemInstruction` para cambiar su personalidad o conocimientos.
+
+---
+
+Desarrollado con ❤️ para **En Armonía**.
