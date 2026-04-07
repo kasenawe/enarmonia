@@ -37,6 +37,24 @@ const App: React.FC = () => {
     localStorage.getItem("enarmonia_user_name"),
   );
 
+  // ✨ NUEVO: Detectar ruta basada en URL pathname
+  useEffect(() => {
+    const pathname = window.location.pathname;
+    switch (pathname) {
+      case "/success":
+        setCurrentRoute(AppRoute.SUCCESS);
+        break;
+      case "/failure":
+        setCurrentRoute(AppRoute.FAILURE);
+        break;
+      case "/pending":
+        setCurrentRoute(AppRoute.FAILURE); // Mostrar failure por ahora
+        break;
+      default:
+        setCurrentRoute(AppRoute.HOME);
+    }
+  }, []);
+
   useEffect(() => {
     if (!userPhone) {
       setMyAppointments([]);

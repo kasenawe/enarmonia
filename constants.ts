@@ -71,4 +71,5 @@ export const LOGO_URL =
 
 export const ADMIN_PASSWORD = "admin123"; // ✨ NUEVO: contraseña para acceder al panel de administración
 
-export const BACKEND_URL = "https://enarmonia-backend.vercel.app"; // ✨ NUEVO: URL del backend, configurable vía variable de entorno
+export const BACKEND_URL =
+  import.meta.env.VITE_BACKEND_URL || "https://enarmonia-backend.vercel.app"; // URL del backend, configurable vía variable de entorno

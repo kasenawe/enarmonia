@@ -95,6 +95,7 @@ const Booking: React.FC<BookingProps> = ({
       // ✨ NUEVO: Paso 3 ahora es PAGO
       setIsSubmitting(true);
       try {
+        console.log(BACKEND_URL);
         // Llamar al backend para crear preferencia de pago
         const response = await fetch(BACKEND_URL + "/api/create-payment", {
           method: "POST",
