@@ -68,3 +68,7 @@ export const SERVICES: Service[] = [
 
 export const LOGO_URL =
   "https://raw.githubusercontent.com/StackBlitz-User-Assets/beauty-center-logo/main/logo.png";
+
+export const ADMIN_PASSWORD = "admin123"; // ✨ NUEVO: contraseña para acceder al panel de administración
+
+export const BACKEND_URL = "https://enarmonia-backend.vercel.app"; // ✨ NUEVO: URL del backend, configurable vía variable de entorno

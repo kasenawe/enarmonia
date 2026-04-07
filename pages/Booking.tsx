@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Service, Appointment } from "../types";
-import { CONTACT_INFO } from "../constants";
+import { CONTACT_INFO, BACKEND_URL } from "../constants";
 
 interface BookingProps {
   service: Service;
@@ -96,27 +96,24 @@ const Booking: React.FC<BookingProps> = ({
       setIsSubmitting(true);
       try {
         // Llamar al backend para crear preferencia de pago
-        const response = await fetch(
-          "https://enarmonia-backend.vercel.app/api/create-payment",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              service: {
-                id: service.id,
-                name: service.name,
-                description: service.description,
-                price: service.price,
-              },
-              customerData: {
-                name: userName.trim(),
-                phone: userPhone.trim(),
-              },
-              date: selectedDate,
-              time: selectedTime,
-            }),
-          },
-        );
+        const response = await fetch(BACKEND_URL + "/api/create-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            service: {
+              id: service.id,
+              name: service.name,
+              description: service.description,
+              price: service.price,
+            },
+            customerData: {
+              name: userName.trim(),
+              phone: userPhone.trim(),
+            },
+            date: selectedDate,
+            time: selectedTime,
+          }),
+        });
 
         if (!response.ok) {
           throw new Error("Error al crear preferencia de pago");
