@@ -37,22 +37,73 @@ const App: React.FC = () => {
     localStorage.getItem("enarmonia_user_name"),
   );
 
-  // ✨ NUEVO: Detectar ruta basada en URL pathname
-  useEffect(() => {
-    const pathname = window.location.pathname;
-    switch (pathname) {
-      case "/success":
-        setCurrentRoute(AppRoute.SUCCESS);
-        break;
-      case "/failure":
-        setCurrentRoute(AppRoute.FAILURE);
-        break;
-      case "/pending":
-        setCurrentRoute(AppRoute.FAILURE); // Mostrar failure por ahora
-        break;
+  const mapRouteToPath = (route: AppRoute) => {
+    switch (route) {
+      case AppRoute.HOME:
+        return "/";
+      case AppRoute.SERVICES:
+        return "/services";
+      case AppRoute.BOOKING:
+        return "/booking";
+      case AppRoute.MY_APPOINTMENTS:
+        return "/my-appointments";
+      case AppRoute.CONTACT:
+        return "/contact";
+      case AppRoute.ADMIN:
+        return "/admin";
+      case AppRoute.SUCCESS:
+        return "/success";
+      case AppRoute.FAILURE:
+        return "/failure";
       default:
-        setCurrentRoute(AppRoute.HOME);
+        return "/";
     }
+  };
+
+  const mapPathnameToRoute = (pathname: string) => {
+    switch (pathname) {
+      case "/":
+      case "":
+        return AppRoute.HOME;
+      case "/services":
+        return AppRoute.SERVICES;
+      case "/booking":
+        return AppRoute.BOOKING;
+      case "/my-appointments":
+        return AppRoute.MY_APPOINTMENTS;
+      case "/contact":
+        return AppRoute.CONTACT;
+      case "/admin":
+        return AppRoute.ADMIN;
+      case "/success":
+        return AppRoute.SUCCESS;
+      case "/failure":
+      case "/pending":
+        return AppRoute.FAILURE;
+      default:
+        return AppRoute.HOME;
+    }
+  };
+
+  const navigate = (route: AppRoute, replace = false) => {
+    const path = mapRouteToPath(route);
+    setCurrentRoute(route);
+    const method = replace
+      ? window.history.replaceState
+      : window.history.pushState;
+    method.call(window.history, {}, "", path);
+  };
+
+  // ✨ Detectar ruta basada en URL pathname y cambios de historial
+  useEffect(() => {
+    const initializeRoute = () => {
+      const pathname = window.location.pathname;
+      setCurrentRoute(mapPathnameToRoute(pathname));
+    };
+
+    initializeRoute();
+    window.addEventListener("popstate", initializeRoute);
+    return () => window.removeEventListener("popstate", initializeRoute);
   }, []);
 
   useEffect(() => {
@@ -159,9 +210,9 @@ const App: React.FC = () => {
           <Home
             onSelectService={(s) => {
               setSelectedService(s);
-              setCurrentRoute(AppRoute.BOOKING);
+              navigate(AppRoute.BOOKING);
             }}
-            onSeeAll={() => setCurrentRoute(AppRoute.SERVICES)}
+            onSeeAll={() => navigate(AppRoute.SERVICES)}
             isSyncing={isSyncing}
           />
         );
@@ -170,7 +221,7 @@ const App: React.FC = () => {
           <Services
             onSelectService={(s) => {
               setSelectedService(s);
-              setCurrentRoute(AppRoute.BOOKING);
+              navigate(AppRoute.BOOKING);
             }}
           />
         );
@@ -181,7 +232,7 @@ const App: React.FC = () => {
             occupiedSlots={allAppointments}
             initialData={{ name: userName || "", phone: userPhone || "" }}
             onConfirm={handleConfirmAppointment}
-            onCancel={() => setCurrentRoute(AppRoute.HOME)}
+            onCancel={() => navigate(AppRoute.HOME)}
           />
         );
       case AppRoute.MY_APPOINTMENTS:
@@ -196,15 +247,13 @@ const App: React.FC = () => {
           />
         );
       case AppRoute.CONTACT:
-        return (
-          <Contact onAdminAccess={() => setCurrentRoute(AppRoute.ADMIN)} />
-        );
+        return <Contact onAdminAccess={() => navigate(AppRoute.ADMIN)} />;
       case AppRoute.ADMIN:
         return (
           <Admin
             appointments={allAppointments}
             onDelete={handleDeleteAppointment}
-            onBack={() => setCurrentRoute(AppRoute.HOME)}
+            onBack={() => navigate(AppRoute.HOME)}
           />
         );
       case AppRoute.SUCCESS: // ✨ NUEVO: página de pago exitoso
@@ -216,9 +265,9 @@ const App: React.FC = () => {
           <Home
             onSelectService={(s) => {
               setSelectedService(s);
-              setCurrentRoute(AppRoute.BOOKING);
+              navigate(AppRoute.BOOKING);
             }}
-            onSeeAll={() => setCurrentRoute(AppRoute.SERVICES)}
+            onSeeAll={() => navigate(AppRoute.SERVICES)}
             isSyncing={isSyncing}
           />
         );
@@ -255,7 +304,7 @@ const App: React.FC = () => {
       )}
 
       {currentRoute !== AppRoute.ADMIN && (
-        <Navbar currentRoute={currentRoute} onNavigate={setCurrentRoute} />
+        <Navbar currentRoute={currentRoute} onNavigate={navigate} />
       )}
 
       <AIAssistant
@@ -263,7 +312,7 @@ const App: React.FC = () => {
         onClose={() => setIsAIModalOpen(false)}
         onSelectService={(s) => {
           setSelectedService(s);
-          setCurrentRoute(AppRoute.BOOKING);
+          navigate(AppRoute.BOOKING);
           setIsAIModalOpen(false);
         }}
       />
