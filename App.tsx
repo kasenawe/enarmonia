@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { AppRoute, Service, Appointment } from "./types";
-import { SERVICES } from "./constants";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
 import Booking from "./pages/Booking";
@@ -25,6 +24,9 @@ import {
 const App: React.FC = () => {
   const [currentRoute, setCurrentRoute] = useState<AppRoute>(AppRoute.HOME);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [serviceError, setServiceError] = useState<string | null>(null);
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
   const [myAppointments, setMyAppointments] = useState<Appointment[]>([]);
   const [isSyncing, setIsSyncing] = useState(true);
@@ -143,6 +145,35 @@ const App: React.FC = () => {
   }, [userPhone]);
 
   useEffect(() => {
+    const servicesRef = collection(db, "services");
+    const unsubscribe = onSnapshot(
+      servicesRef,
+      (snapshot) => {
+        const loaded: Service[] = [];
+        snapshot.forEach((doc) => {
+          loaded.push({ id: doc.id, ...doc.data() } as Service);
+        });
+        loaded.sort((a, b) => a.name.localeCompare(b.name));
+        setServices(loaded);
+        setServicesLoading(false);
+        setServiceError(null);
+      },
+      (error) => {
+        console.error("Error al cargar servicios:", error);
+        setServiceError(error.message || "Error al cargar servicios");
+        setServicesLoading(false);
+      },
+    );
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedService && services.length > 0) {
+      setSelectedService(services[0]);
+    }
+  }, [services, selectedService]);
+
+  useEffect(() => {
     const appointmentsRef = collection(db, "appointments");
     const unsubscribe = onSnapshot(
       appointmentsRef,
@@ -203,22 +234,26 @@ const App: React.FC = () => {
     }
   };
 
+  const selectedServiceOrDefault = selectedService || services[0] || null;
+
   const renderPage = () => {
     switch (currentRoute) {
       case AppRoute.HOME:
         return (
           <Home
+            services={services}
             onSelectService={(s) => {
               setSelectedService(s);
               navigate(AppRoute.BOOKING);
             }}
             onSeeAll={() => navigate(AppRoute.SERVICES)}
-            isSyncing={isSyncing}
+            isSyncing={servicesLoading || isSyncing}
           />
         );
       case AppRoute.SERVICES:
         return (
           <Services
+            services={services}
             onSelectService={(s) => {
               setSelectedService(s);
               navigate(AppRoute.BOOKING);
@@ -226,14 +261,23 @@ const App: React.FC = () => {
           />
         );
       case AppRoute.BOOKING:
-        return (
+        return selectedServiceOrDefault ? (
           <Booking
-            service={selectedService || SERVICES[0]}
+            service={selectedServiceOrDefault}
             occupiedSlots={allAppointments}
             initialData={{ name: userName || "", phone: userPhone || "" }}
             onConfirm={handleConfirmAppointment}
             onCancel={() => navigate(AppRoute.HOME)}
           />
+        ) : (
+          <div className="p-6 text-center">
+            <h2 className="text-lg font-bold text-gray-800">
+              Cargando servicios...
+            </h2>
+            <p className="text-sm text-gray-500 mt-2">
+              Espera mientras cargamos los servicios disponibles.
+            </p>
+          </div>
         );
       case AppRoute.MY_APPOINTMENTS:
         return (
@@ -252,6 +296,9 @@ const App: React.FC = () => {
         return (
           <Admin
             appointments={allAppointments}
+            services={services}
+            servicesLoading={servicesLoading}
+            serviceError={serviceError}
             onDelete={handleDeleteAppointment}
             onBack={() => navigate(AppRoute.HOME)}
           />
@@ -308,6 +355,7 @@ const App: React.FC = () => {
       )}
 
       <AIAssistant
+        services={services}
         isOpen={isAIModalOpen}
         onClose={() => setIsAIModalOpen(false)}
         onSelectService={(s) => {

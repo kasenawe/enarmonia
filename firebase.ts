@@ -1,7 +1,22 @@
-
-// Fix: Use scoped packages (@firebase/app and @firebase/firestore) to resolve TS errors with named exports in modular Firebase
-import { initializeApp } from '@firebase/app';
-import { getFirestore, collection, query, where, onSnapshot, addDoc, deleteDoc, doc } from '@firebase/firestore';
+// Fix: Use scoped packages (@firebase/app, @firebase/firestore and @firebase/storage) to resolve TS errors with named exports in modular Firebase
+import { initializeApp } from "@firebase/app";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  deleteDoc,
+  doc,
+  setDoc,
+} from "@firebase/firestore";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+} from "@firebase/storage";
 
 // Configuración de En Armonía
 const firebaseConfig = {
@@ -11,12 +26,27 @@ const firebaseConfig = {
   storageBucket: "enarmonia-289df.firebasestorage.app",
   messagingSenderId: "681147149519",
   appId: "1:681147149519:web:6b5f2aac462a61a9ac9bba",
-  measurementId: "G-WL1CGJ9YJH"
+  measurementId: "G-WL1CGJ9YJH",
 };
 
 // Inicialización modular (v9/v10+)
 // Se usan los paquetes con prefijo @firebase para asegurar que los exports nombrados sean reconocidos correctamente
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
-export { db, collection, query, where, onSnapshot, addDoc, deleteDoc, doc };
+export {
+  db,
+  storage,
+  storageRef,
+  uploadBytes,
+  getDownloadURL,
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  deleteDoc,
+  doc,
+  setDoc,
+};

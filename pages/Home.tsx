@@ -1,14 +1,15 @@
 import React from "react";
-import { SERVICES } from "../constants";
 import { Service } from "../types";
 
 interface HomeProps {
+  services: Service[];
   onSelectService: (service: Service) => void;
   onSeeAll: () => void;
   isSyncing: boolean;
 }
 
 const Home: React.FC<HomeProps> = ({
+  services,
   onSelectService,
   onSeeAll,
   isSyncing,
@@ -95,72 +96,78 @@ const Home: React.FC<HomeProps> = ({
           </button>
         </div>
 
-        {SERVICES.slice(0, 2).map((service, idx) => (
-          <div
-            key={service.id}
-            className="group bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-gray-100 transition-all active:scale-[0.97] animate-in"
-            style={{ animationDelay: `${0.2 + idx * 0.1}s` }}
-            onClick={() => onSelectService(service)}
-          >
-            <div className="h-44 overflow-hidden relative">
-              <img
-                src={service.image}
-                alt={service.name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
-              <div className="absolute bottom-4 left-6 right-6 flex justify-between items-end">
-                <div className="text-white">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="10"
-                      height="10"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    <span className="text-[10px] font-bold uppercase tracking-widest">
-                      {service.duration} min
-                    </span>
+        {services.length === 0 ? (
+          <div className="rounded-[2.5rem] p-10 bg-white border border-gray-100 shadow-sm text-center text-gray-400">
+            No hay servicios disponibles para mostrar.
+          </div>
+        ) : (
+          services.slice(0, 2).map((service, idx) => (
+            <div
+              key={service.id}
+              className="group bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-gray-100 transition-all active:scale-[0.97] animate-in"
+              style={{ animationDelay: `${0.2 + idx * 0.1}s` }}
+              onClick={() => onSelectService(service)}
+            >
+              <div className="h-44 overflow-hidden relative">
+                <img
+                  src={service.image}
+                  alt={service.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+                <div className="absolute bottom-4 left-6 right-6 flex justify-between items-end">
+                  <div className="text-white">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="10"
+                        height="10"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      <span className="text-[10px] font-bold uppercase tracking-widest">
+                        {service.duration} min
+                      </span>
+                    </div>
+                    <h3 className="text-base font-bold leading-tight">
+                      {service.name}
+                    </h3>
                   </div>
-                  <h3 className="text-base font-bold leading-tight">
-                    {service.name}
-                  </h3>
                 </div>
               </div>
-            </div>
-            <div className="p-6">
-              <p className="text-gray-400 text-xs leading-relaxed mb-4 line-clamp-2">
-                {service.description}
-              </p>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                  Inversión
-                </span>
-                <span className="text-sm font-bold text-[#A79FE1]">
-                  ${service.price?.toLocaleString("es-UY")}
-                </span>
+              <div className="p-6">
+                <p className="text-gray-400 text-xs leading-relaxed mb-4 line-clamp-2">
+                  {service.description}
+                </p>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                    Inversión
+                  </span>
+                  <span className="text-sm font-bold text-[#A79FE1]">
+                    ${service.price?.toLocaleString("es-UY")}
+                  </span>
+                </div>
+                <button className="w-full py-3.5 bg-gray-900 text-white rounded-2xl font-bold text-xs transition-all shadow-lg hover:bg-gray-800">
+                  AGENDAR AHORA
+                </button>
               </div>
-              <button className="w-full py-3.5 bg-gray-900 text-white rounded-2xl font-bold text-xs transition-all shadow-lg hover:bg-gray-800">
-                AGENDAR AHORA
-              </button>
             </div>
-          </div>
-        ))}
+          ))
+        )}
 
-        {SERVICES.length > 2 && (
+        {services.length > 2 && (
           <button
             onClick={onSeeAll}
             className="w-full py-4 bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em] hover:bg-gray-100 transition-colors"
           >
-            Ver {SERVICES.length - 2} tratamientos más
+            Ver {services.length - 2} tratamientos más
           </button>
         )}
       </section>

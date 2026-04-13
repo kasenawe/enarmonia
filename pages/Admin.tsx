@@ -1,17 +1,53 @@
 import React, { useState } from "react";
-import { Appointment } from "../types";
+import { Appointment, Service } from "../types";
+import {
+  db,
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  storage,
+  storageRef,
+  uploadBytes,
+  getDownloadURL,
+} from "../firebase";
 import { ADMIN_PASSWORD } from "../constants"; // ✨ NUEVO: usar constante en lugar de hardcodear
 
 interface AdminProps {
   appointments: Appointment[];
+  services: Service[];
+  servicesLoading: boolean;
+  serviceError: string | null;
   onDelete: (id: string) => Promise<void>;
   onBack: () => void;
 }
 
-const Admin: React.FC<AdminProps> = ({ appointments, onDelete, onBack }) => {
+const Admin: React.FC<AdminProps> = ({
+  appointments,
+  services,
+  servicesLoading,
+  serviceError,
+  onDelete,
+  onBack,
+}) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState<"appointments" | "services">(
+    "appointments",
+  );
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [serviceForm, setServiceForm] = useState({
+    name: "",
+    description: "",
+    duration: "45",
+    price: "2500",
+    imageUrl: "",
+  });
+  const [serviceFormError, setServiceFormError] = useState("");
+  const [serviceFeedback, setServiceFeedback] = useState<string | null>(null);
+  const [isServiceSaving, setIsServiceSaving] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +64,115 @@ const Admin: React.FC<AdminProps> = ({ appointments, onDelete, onBack }) => {
   const handleLogout = () => {
     setIsAuthenticated(false);
     onBack();
+  };
+
+  const resetServiceForm = () => {
+    setEditingService(null);
+    setSelectedFile(null);
+    setServiceForm({
+      name: "",
+      description: "",
+      duration: "45",
+      price: "2500",
+      imageUrl: "",
+    });
+    setServiceFormError("");
+    setServiceFeedback(null);
+  };
+
+  const uploadServiceImage = async (file: File, serviceId: string) => {
+    const imageRef = storageRef(
+      storage,
+      `services/${serviceId}/${Date.now()}_${file.name}`,
+    );
+    await uploadBytes(imageRef, file);
+    return await getDownloadURL(imageRef);
+  };
+
+  const handleEditService = (service: Service) => {
+    setActiveTab("services");
+    setEditingService(service);
+    setSelectedFile(null);
+    setServiceForm({
+      name: service.name,
+      description: service.description,
+      duration: service.duration.toString(),
+      price: service.price.toString(),
+      imageUrl: service.image,
+    });
+    setServiceFormError("");
+    setServiceFeedback(null);
+  };
+
+  const handleServiceSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const name = serviceForm.name.trim();
+    const description = serviceForm.description.trim();
+    const duration = Number(serviceForm.duration);
+    const price = Number(serviceForm.price);
+
+    if (!name || !description || duration <= 0 || price <= 0) {
+      setServiceFormError(
+        "Completa todos los datos del servicio correctamente.",
+      );
+      return;
+    }
+
+    setIsServiceSaving(true);
+    setServiceFormError("");
+    setServiceFeedback(null);
+
+    try {
+      let serviceId = editingService?.id;
+      if (!serviceId) {
+        const newServiceDoc = doc(collection(db, "services"));
+        serviceId = newServiceDoc.id;
+      }
+
+      let imageUrl = serviceForm.imageUrl;
+      if (selectedFile && serviceId) {
+        imageUrl = await uploadServiceImage(selectedFile, serviceId);
+      }
+
+      const serviceRecord = {
+        id: serviceId,
+        name,
+        description,
+        duration,
+        price,
+        image: imageUrl,
+      };
+
+      await setDoc(doc(db, "services", serviceId), serviceRecord, {
+        merge: true,
+      });
+      setServiceFeedback(
+        editingService
+          ? "Servicio actualizado con éxito."
+          : "Servicio creado correctamente.",
+      );
+      resetServiceForm();
+    } catch (uploadError: any) {
+      console.error(uploadError);
+      setServiceFormError(
+        "Hubo un error al guardar el servicio. Intenta nuevamente.",
+      );
+    } finally {
+      setIsServiceSaving(false);
+    }
+  };
+
+  const handleDeleteService = async (id: string) => {
+    if (!window.confirm("¿Eliminar este servicio de forma permanente?")) return;
+    try {
+      await deleteDoc(doc(db, "services", id));
+      if (editingService?.id === id) resetServiceForm();
+    } catch (deleteError) {
+      console.error(deleteError);
+      setServiceFormError(
+        "No se pudo eliminar el servicio. Intenta nuevamente.",
+      );
+    }
   };
 
   if (!isAuthenticated) {
@@ -305,6 +450,242 @@ const Admin: React.FC<AdminProps> = ({ appointments, onDelete, onBack }) => {
           })
         )}
       </div>
+
+      <section className="mt-12 space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+          <div>
+            <h3 className="text-xl font-bold text-gray-800">
+              Catálogo de servicios
+            </h3>
+            <p className="text-gray-400 text-[11px]">
+              Administra el catálogo de servicios, precios, descripciones e
+              imágenes.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab("appointments")}
+              className={`px-4 py-2 rounded-2xl text-sm font-bold transition ${activeTab === "appointments" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
+            >
+              Turnos
+            </button>
+            <button
+              onClick={() => setActiveTab("services")}
+              className={`px-4 py-2 rounded-2xl text-sm font-bold transition ${activeTab === "services" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
+            >
+              Servicios
+            </button>
+          </div>
+        </div>
+
+        {activeTab === "services" && (
+          <div className="space-y-6">
+            {serviceError && (
+              <div className="rounded-3xl bg-red-50 border border-red-100 p-4 text-red-600 text-sm">
+                {serviceError}
+              </div>
+            )}
+            {serviceFormError && (
+              <div className="rounded-3xl bg-red-50 border border-red-100 p-4 text-red-600 text-sm">
+                {serviceFormError}
+              </div>
+            )}
+            {serviceFeedback && (
+              <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 text-sm">
+                {serviceFeedback}
+              </div>
+            )}
+
+            <div className="grid gap-4">
+              {servicesLoading ? (
+                <div className="rounded-[2.5rem] p-8 bg-white border border-gray-100 shadow-sm text-center text-gray-400">
+                  Cargando servicios...
+                </div>
+              ) : services.length === 0 ? (
+                <div className="rounded-[2.5rem] p-8 bg-white border border-gray-100 shadow-sm text-center text-gray-400">
+                  No hay servicios cargados aún.
+                </div>
+              ) : (
+                services.map((service) => (
+                  <div
+                    key={service.id}
+                    className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 flex flex-col gap-4"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <h4 className="font-bold text-gray-800">
+                          {service.name}
+                        </h4>
+                        <p className="text-gray-400 text-[11px] line-clamp-2">
+                          {service.description}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-400 uppercase tracking-[0.2em] mb-2">
+                          Duración
+                        </p>
+                        <p className="font-black text-gray-900">
+                          {service.duration} min
+                        </p>
+                      </div>
+                    </div>
+                    {service.image && (
+                      <img
+                        src={service.image}
+                        alt={service.name}
+                        className="w-full h-44 object-cover rounded-3xl border border-gray-100"
+                      />
+                    )}
+                    <div className="flex flex-wrap items-center gap-3 justify-between">
+                      <span className="text-sm font-black text-[#A79FE1]">
+                        ${service.price?.toLocaleString("es-UY")}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEditService(service)}
+                          className="px-4 py-2 rounded-2xl bg-gray-900 text-white text-xs font-bold"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDeleteService(service.id)}
+                          className="px-4 py-2 rounded-2xl bg-red-50 text-red-600 text-xs font-bold border border-red-100"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <form
+              onSubmit={handleServiceSubmit}
+              className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-5"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-lg font-bold text-gray-800">
+                    {editingService ? "Editar servicio" : "Nuevo servicio"}
+                  </h4>
+                  <p className="text-gray-400 text-[11px]">
+                    Carga los datos y la imagen del servicio. El catálogo se
+                    guardará en Firestore.
+                  </p>
+                </div>
+                {editingService && (
+                  <button
+                    type="button"
+                    onClick={resetServiceForm}
+                    className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500"
+                  >
+                    Cancelar edición
+                  </button>
+                )}
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Nombre del servicio
+                  <input
+                    value={serviceForm.name}
+                    onChange={(e) =>
+                      setServiceForm({ ...serviceForm, name: e.target.value })
+                    }
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                    placeholder="Ej: Limpieza Facial Profunda"
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Precio (UYU)
+                  <input
+                    type="number"
+                    value={serviceForm.price}
+                    onChange={(e) =>
+                      setServiceForm({ ...serviceForm, price: e.target.value })
+                    }
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                    placeholder="2500"
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Duración (minutos)
+                  <input
+                    type="number"
+                    value={serviceForm.duration}
+                    onChange={(e) =>
+                      setServiceForm({
+                        ...serviceForm,
+                        duration: e.target.value,
+                      })
+                    }
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                    placeholder="45"
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  URL de imagen
+                  <input
+                    value={serviceForm.imageUrl}
+                    onChange={(e) =>
+                      setServiceForm({
+                        ...serviceForm,
+                        imageUrl: e.target.value,
+                      })
+                    }
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                    placeholder="https://..."
+                  />
+                </label>
+              </div>
+
+              <label className="space-y-2 text-sm font-medium text-gray-600">
+                Subir imagen
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  className="w-full text-sm text-gray-600"
+                />
+                <p className="text-[11px] text-gray-400">
+                  Si subes una imagen, esta reemplazará la URL anterior.
+                </p>
+              </label>
+
+              <label className="space-y-2 text-sm font-medium text-gray-600">
+                Descripción
+                <textarea
+                  value={serviceForm.description}
+                  onChange={(e) =>
+                    setServiceForm({
+                      ...serviceForm,
+                      description: e.target.value,
+                    })
+                  }
+                  className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900 min-h-[120px] resize-none"
+                  placeholder="Descripción detallada del servicio"
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={isServiceSaving}
+                className={`w-full py-4 rounded-3xl text-white font-bold transition ${isServiceSaving ? "bg-gray-400 cursor-not-allowed" : "bg-gray-900 hover:bg-black"}`}
+              >
+                {isServiceSaving
+                  ? "Guardando servicio..."
+                  : editingService
+                    ? "Actualizar servicio"
+                    : "Crear servicio"}
+              </button>
+            </form>
+          </div>
+        )}
+      </section>
 
       <footer className="mt-12 text-center opacity-20">
         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
