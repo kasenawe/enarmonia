@@ -1,17 +1,10 @@
 import React, { useState } from "react";
 import { Appointment, Service } from "../types";
-import {
-  db,
-  collection,
-  doc,
-  setDoc,
-  deleteDoc,
-  storage,
-  storageRef,
-  uploadBytes,
-  getDownloadURL,
-} from "../firebase";
+import { db, collection, doc, setDoc, deleteDoc } from "../firebase";
 import { ADMIN_PASSWORD } from "../constants"; // ✨ NUEVO: usar constante en lugar de hardcodear
+
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 interface AdminProps {
   appointments: Appointment[];
@@ -81,12 +74,34 @@ const Admin: React.FC<AdminProps> = ({
   };
 
   const uploadServiceImage = async (file: File, serviceId: string) => {
-    const imageRef = storageRef(
-      storage,
-      `services/${serviceId}/${Date.now()}_${file.name}`,
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+      throw new Error("CLOUDINARY_CONFIG_MISSING");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("folder", `enarmonia/services/${serviceId}`);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      },
     );
-    await uploadBytes(imageRef, file);
-    return await getDownloadURL(imageRef);
+
+    if (!response.ok) {
+      const details = await response.text();
+      throw new Error(`CLOUDINARY_UPLOAD_ERROR: ${details}`);
+    }
+
+    const uploaded = await response.json();
+    if (!uploaded?.secure_url) {
+      throw new Error("CLOUDINARY_NO_SECURE_URL");
+    }
+
+    return uploaded.secure_url as string;
   };
 
   const handleEditService = (service: Service) => {
@@ -154,9 +169,16 @@ const Admin: React.FC<AdminProps> = ({
       resetServiceForm();
     } catch (uploadError: any) {
       console.error(uploadError);
-      setServiceFormError(
-        "Hubo un error al guardar el servicio. Intenta nuevamente.",
-      );
+      const rawMessage = String(uploadError?.message || "").toLowerCase();
+      if (rawMessage.includes("cloudinary_config_missing")) {
+        setServiceFormError(
+          "Falta configurar Cloudinary. Define VITE_CLOUDINARY_CLOUD_NAME y VITE_CLOUDINARY_UPLOAD_PRESET.",
+        );
+      } else {
+        setServiceFormError(
+          "Hubo un error al guardar el servicio. Intenta nuevamente.",
+        );
+      }
     } finally {
       setIsServiceSaving(false);
     }

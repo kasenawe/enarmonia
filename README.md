@@ -80,7 +80,18 @@ Crea un archivo `.env.local` en la raíz del proyecto y añade tu clave de Gemin
 
 ```env
 GEMINI_API_KEY=tu_clave_aqui
+VITE_CLOUDINARY_CLOUD_NAME=tu_cloud_name
+VITE_CLOUDINARY_UPLOAD_PRESET=tu_unsigned_upload_preset
 ```
+
+### Subida de Imágenes (Cloudinary)
+
+El panel admin usa Cloudinary para subir imágenes de servicios sin depender de Firebase Storage.
+
+1. Crea una cuenta en Cloudinary (plan gratuito).
+2. Ve a **Settings > Upload**.
+3. Crea un **Upload Preset** con modo **Unsigned**.
+4. Configura `VITE_CLOUDINARY_CLOUD_NAME` y `VITE_CLOUDINARY_UPLOAD_PRESET` en `.env.local`.
 
 ### Configuración de Pagos
 

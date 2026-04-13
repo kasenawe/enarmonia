@@ -23,7 +23,9 @@ const firebaseConfig = {
   apiKey: "AIzaSyAzwH2u0MKkt3RK3UujCZR_HD1p41NPmh8",
   authDomain: "enarmonia-289df.firebaseapp.com",
   projectId: "enarmonia-289df",
-  storageBucket: "enarmonia-289df.firebasestorage.app",
+  storageBucket:
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
+    "enarmonia-289df.appspot.com",
   messagingSenderId: "681147149519",
   appId: "1:681147149519:web:6b5f2aac462a61a9ac9bba",
   measurementId: "G-WL1CGJ9YJH",
