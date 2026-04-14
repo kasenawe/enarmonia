@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { Service, Appointment } from "../types";
+import { Service, Appointment, Promotion } from "../types";
 import { CONTACT_INFO, BACKEND_URL } from "../constants";
+import { getServicePricing } from "../utils/promotionPricing";
 
 interface BookingProps {
   service: Service;
+  promotions: Promotion[];
+  promotionsLoading: boolean;
   occupiedSlots: { date: string; time: string }[];
   initialData: { name: string; phone: string };
   onConfirm: (appointment: Appointment) => Promise<void>;
@@ -12,6 +15,8 @@ interface BookingProps {
 
 const Booking: React.FC<BookingProps> = ({
   service,
+  promotions,
+  promotionsLoading,
   occupiedSlots,
   initialData,
   onConfirm,
@@ -24,6 +29,7 @@ const Booking: React.FC<BookingProps> = ({
   const [userPhone, setUserPhone] = useState(initialData.phone);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const pricing = getServicePricing(service, promotions);
 
   const dates = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
@@ -95,18 +101,15 @@ const Booking: React.FC<BookingProps> = ({
       // ✨ NUEVO: Paso 3 ahora es PAGO
       setIsSubmitting(true);
       try {
-        console.log(BACKEND_URL);
+        localStorage.setItem("enarmonia_user_phone", userPhone.trim());
+        localStorage.setItem("enarmonia_user_name", userName.trim());
+
         // Llamar al backend para crear preferencia de pago
         const response = await fetch(BACKEND_URL + "/api/create-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            service: {
-              id: service.id,
-              name: service.name,
-              description: service.description,
-              price: service.price,
-            },
+            serviceId: service.id,
             customerData: {
               name: userName.trim(),
               phone: userPhone.trim(),
@@ -359,7 +362,9 @@ const Booking: React.FC<BookingProps> = ({
               </div>
               <h3 className="text-xl font-bold text-gray-800">Pago Seguro</h3>
               <p className="text-gray-400 text-[11px] px-8 mt-1">
-                Completa tu reserva pagando de forma segura.
+                {promotionsLoading
+                  ? "Verificando promociones vigentes antes de cobrar."
+                  : "Completa tu reserva pagando de forma segura."}
               </p>
             </div>
 
@@ -397,16 +402,56 @@ const Booking: React.FC<BookingProps> = ({
                 </span>
               </div>
               <div className="pt-2 border-t border-gray-200/50">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400 font-bold uppercase tracking-widest text-[9px]">
-                    Total a Pagar
-                  </span>
-                  <span className="font-black text-green-600 text-lg">
-                    ${service.price?.toLocaleString()}
-                  </span>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 font-bold uppercase tracking-widest text-[9px]">
+                      Precio base
+                    </span>
+                    <span className="font-bold text-gray-700">
+                      ${pricing.basePrice.toLocaleString("es-UY")}
+                    </span>
+                  </div>
+                  {pricing.appliedPromotion && (
+                    <>
+                      <div className="flex justify-between items-center gap-4 text-xs">
+                        <span className="text-rose-500 font-bold uppercase tracking-widest text-[9px]">
+                          Promoción aplicada
+                        </span>
+                        <span className="text-right font-bold text-rose-600">
+                          {pricing.appliedPromotion.badgeText ||
+                            pricing.appliedPromotion.title}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400 font-bold uppercase tracking-widest text-[9px]">
+                          Descuento
+                        </span>
+                        <span className="font-bold text-rose-600">
+                          -${pricing.discountAmount.toLocaleString("es-UY")}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex justify-between items-center pt-2 border-t border-gray-200/70">
+                    <span className="text-gray-400 font-bold uppercase tracking-widest text-[9px]">
+                      Total a Pagar
+                    </span>
+                    <span className="font-black text-green-600 text-lg">
+                      ${pricing.finalPrice.toLocaleString("es-UY")}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {promotionsLoading && (
+              <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100">
+                <p className="text-amber-700 text-[11px] leading-relaxed font-medium">
+                  Estamos validando promociones activas antes de enviarte a
+                  Mercado Pago.
+                </p>
+              </div>
+            )}
 
             <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
               <div className="flex items-start gap-3">
@@ -446,13 +491,15 @@ const Booking: React.FC<BookingProps> = ({
           isSubmitting ||
           (step === 1 && (!selectedDate || !selectedTime)) ||
           (step === 2 &&
-            (userName.trim().length < 3 || userPhone.trim().length < 7))
+            (userName.trim().length < 3 || userPhone.trim().length < 7)) ||
+          (step === 3 && promotionsLoading)
         }
         onClick={handleNextStep}
         className={`w-full py-4 rounded-2xl font-bold text-white shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
           (step === 1 && (!selectedDate || !selectedTime)) ||
           (step === 2 &&
-            (userName.trim().length < 3 || userPhone.trim().length < 7))
+            (userName.trim().length < 3 || userPhone.trim().length < 7)) ||
+          (step === 3 && promotionsLoading)
             ? "bg-gray-100 text-gray-300 cursor-not-allowed shadow-none"
             : "bg-gray-900 hover:bg-black"
         }`}
@@ -463,7 +510,11 @@ const Booking: React.FC<BookingProps> = ({
             <span>PROCESANDO...</span>
           </>
         ) : step === 3 ? (
-          "PROCEDER AL PAGO"
+          promotionsLoading ? (
+            "VERIFICANDO PROMOCIONES..."
+          ) : (
+            "PROCEDER AL PAGO"
+          )
         ) : (
           "CONTINUAR"
         )}

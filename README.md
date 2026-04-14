@@ -52,9 +52,10 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 2.  **Sistema de Reservas con Pago**: Los clientes pueden agendar citas pagando online de forma segura con Mercado Pago.
 3.  **Validación de Disponibilidad**: Sistema en tiempo real que previene doble-booking.
 4.  **Identificación de Usuario**: Sistema basado en nombre y teléfono (almacenado en `LocalStorage`) para que los clientes vean sus turnos sin necesidad de contraseñas complejas.
-5.  **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
-6.  **Panel Admin**: Acceso restringido (vía link oculto en contacto) para visualizar y cancelar todos los turnos del centro.
-7.  **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
+5.  **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
+6.  **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
+7.  **Panel Admin**: Acceso restringido (vía link oculto en contacto) para visualizar turnos, gestionar servicios y administrar promociones.
+8.  **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
 
 ---
 
@@ -116,8 +117,10 @@ La aplicación estará disponible en `http://localhost:3000`.
 
 ## 📝 Notas para Desarrolladores
 
-- **Base de Datos**: La colección principal en Firestore es `appointments`. Cada documento contiene:
-  - `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `createdAt`.
+- **Base de Datos**: La app usa tres colecciones principales en Firestore:
+  - `appointments`: `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `createdAt`, `price`, `paid`.
+  - `services`: `name`, `description`, `duration`, `price`, `image`.
+  - `promotions`: `title`, `description`, `badgeText`, `discountType`, `discountValue`, `featured`, `isActive`, `appliesToAllServices`, `serviceIds`, `startDate`, `endDate`, `priority`, `image`.
 - **Estilos**: Se utiliza una configuración de Tailwind personalizada en `index.html` y `index.css`. El color primario es `#A79FE1` (Lavanda).
 - **IA**: El asistente está configurado en `components/AIAssistant.tsx`. Puedes ajustar las `systemInstruction` para cambiar su personalidad o conocimientos.
 

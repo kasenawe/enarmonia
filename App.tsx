@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AppRoute, Service, Appointment } from "./types";
+import { AppRoute, Service, Appointment, Promotion } from "./types";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
 import Booking from "./pages/Booking";
@@ -27,6 +27,9 @@ const App: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [servicesLoading, setServicesLoading] = useState(true);
   const [serviceError, setServiceError] = useState<string | null>(null);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [promotionsLoading, setPromotionsLoading] = useState(true);
+  const [promotionError, setPromotionError] = useState<string | null>(null);
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
   const [myAppointments, setMyAppointments] = useState<Appointment[]>([]);
   const [isSyncing, setIsSyncing] = useState(true);
@@ -168,6 +171,33 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const promotionsRef = collection(db, "promotions");
+    const unsubscribe = onSnapshot(
+      promotionsRef,
+      (snapshot) => {
+        const loaded: Promotion[] = [];
+        snapshot.forEach((doc) => {
+          loaded.push({ id: doc.id, ...doc.data() } as Promotion);
+        });
+        loaded.sort((a, b) => {
+          const priorityDiff = (b.priority || 0) - (a.priority || 0);
+          if (priorityDiff !== 0) return priorityDiff;
+          return a.title.localeCompare(b.title);
+        });
+        setPromotions(loaded);
+        setPromotionsLoading(false);
+        setPromotionError(null);
+      },
+      (error) => {
+        console.error("Error al cargar promociones:", error);
+        setPromotionError(error.message || "Error al cargar promociones");
+        setPromotionsLoading(false);
+      },
+    );
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     if (!selectedService && services.length > 0) {
       setSelectedService(services[0]);
     }
@@ -242,6 +272,7 @@ const App: React.FC = () => {
         return (
           <Home
             services={services}
+            promotions={promotions}
             onSelectService={(s) => {
               setSelectedService(s);
               navigate(AppRoute.BOOKING);
@@ -264,6 +295,8 @@ const App: React.FC = () => {
         return selectedServiceOrDefault ? (
           <Booking
             service={selectedServiceOrDefault}
+            promotions={promotions}
+            promotionsLoading={promotionsLoading}
             occupiedSlots={allAppointments}
             initialData={{ name: userName || "", phone: userPhone || "" }}
             onConfirm={handleConfirmAppointment}
@@ -299,6 +332,9 @@ const App: React.FC = () => {
             services={services}
             servicesLoading={servicesLoading}
             serviceError={serviceError}
+            promotions={promotions}
+            promotionsLoading={promotionsLoading}
+            promotionError={promotionError}
             onDelete={handleDeleteAppointment}
             onBack={() => navigate(AppRoute.HOME)}
           />
@@ -310,6 +346,8 @@ const App: React.FC = () => {
       default:
         return (
           <Home
+            services={services}
+            promotions={promotions}
             onSelectService={(s) => {
               setSelectedService(s);
               navigate(AppRoute.BOOKING);

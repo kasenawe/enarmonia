@@ -1,9 +1,10 @@
 import React from "react";
-import { Service } from "../types";
+import { Promotion, Service } from "../types";
 import soledadLogo from "../assets/soledad-logo.svg";
 
 interface HomeProps {
   services: Service[];
+  promotions: Promotion[];
   onSelectService: (service: Service) => void;
   onSeeAll: () => void;
   isSyncing: boolean;
@@ -11,10 +12,66 @@ interface HomeProps {
 
 const Home: React.FC<HomeProps> = ({
   services,
+  promotions,
   onSelectService,
   onSeeAll,
   isSyncing,
 }) => {
+  const today = new Date();
+  const featuredPromotion = promotions
+    .filter((promotion) => {
+      if (!promotion.featured || !promotion.isActive) return false;
+      const startsAt = promotion.startDate
+        ? new Date(`${promotion.startDate}T00:00:00`)
+        : null;
+      const endsAt = promotion.endDate
+        ? new Date(`${promotion.endDate}T23:59:59`)
+        : null;
+
+      if (startsAt && startsAt > today) return false;
+      if (endsAt && endsAt < today) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const priorityDiff = (b.priority || 0) - (a.priority || 0);
+      if (priorityDiff !== 0) return priorityDiff;
+      return a.title.localeCompare(b.title);
+    })[0];
+
+  const promotedServices = featuredPromotion
+    ? services.filter(
+        (service) =>
+          featuredPromotion.appliesToAllServices ||
+          featuredPromotion.serviceIds.includes(service.id),
+      )
+    : [];
+
+  const promotionDiscountLabel = featuredPromotion
+    ? featuredPromotion.discountType === "percentage"
+      ? `${featuredPromotion.discountValue}% OFF`
+      : `$${featuredPromotion.discountValue.toLocaleString("es-UY")} OFF`
+    : "";
+
+  const promotionDateLabel = featuredPromotion
+    ? featuredPromotion.endDate
+      ? `Válida hasta ${new Date(
+          `${featuredPromotion.endDate}T00:00:00`,
+        ).toLocaleDateString("es-UY", {
+          day: "2-digit",
+          month: "short",
+        })}`
+      : "Promoción disponible por tiempo limitado"
+    : "";
+
+  const handlePromotionAction = () => {
+    if (!featuredPromotion) return;
+    if (promotedServices.length === 1) {
+      onSelectService(promotedServices[0]);
+      return;
+    }
+    onSeeAll();
+  };
+
   return (
     <div className="p-6">
       {/* Sync Status Overlay Indicator */}
@@ -45,36 +102,113 @@ const Home: React.FC<HomeProps> = ({
       </header>
 
       {/* Promo Card */}
-      <div
-        className="mb-8 p-5 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-3xl border border-white shadow-sm animate-in"
-        style={{ animationDelay: "0.1s" }}
-      >
-        <div className="flex items-start gap-4">
-          <div className="bg-white p-2.5 rounded-2xl shadow-sm text-[#A79FE1]">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
+      <div className="mb-8 animate-in" style={{ animationDelay: "0.1s" }}>
+        {featuredPromotion ? (
+          <div className="overflow-hidden rounded-[2rem] border border-rose-100 bg-gradient-to-br from-rose-50 via-amber-50 to-white shadow-sm">
+            <div className="flex items-center justify-between gap-3 border-b border-white/70 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-white p-2.5 text-rose-500 shadow-sm">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20.59 13.41 11 3.83a2 2 0 0 0-2.83 0L3.83 8.17a2 2 0 0 0 0 2.83l9.59 9.59a2 2 0 0 0 2.83 0L20.59 16a2 2 0 0 0 0-2.59Z" />
+                    <path d="m7 7 0.01 0" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-rose-500">
+                    Promoción destacada
+                  </p>
+                  <h4 className="font-bold text-base text-gray-800">
+                    {featuredPromotion.title}
+                  </h4>
+                </div>
+              </div>
+              <span className="rounded-full bg-rose-500 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+                {featuredPromotion.badgeText || promotionDiscountLabel}
+              </span>
+            </div>
+
+            {featuredPromotion.image && (
+              <img
+                src={featuredPromotion.image}
+                alt={featuredPromotion.title}
+                className="h-40 w-full object-cover"
+              />
+            )}
+
+            <div className="space-y-4 p-5">
+              <p className="text-sm leading-relaxed text-gray-600">
+                {featuredPromotion.description}
+              </p>
+
+              <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/80 px-4 py-3 text-xs shadow-sm">
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-400">
+                    Beneficio
+                  </p>
+                  <p className="font-black text-rose-600">
+                    {promotionDiscountLabel}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-400">
+                    Vigencia
+                  </p>
+                  <p className="font-bold text-gray-700">
+                    {promotionDateLabel}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handlePromotionAction}
+                className="w-full rounded-2xl bg-gray-900 py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-lg transition-all hover:bg-black"
+              >
+                {promotedServices.length === 1
+                  ? "Reservar promoción"
+                  : "Ver servicios incluidos"}
+              </button>
+            </div>
           </div>
-          <div>
-            <h4 className="font-bold text-sm text-purple-900 mb-1">
-              Atención Profesional
-            </h4>
-            <p className="text-[11px] text-purple-700/70 leading-relaxed font-medium">
-              Sesiones orientadas a mejorar tu movilidad, aliviar tensiones y
-              acompañar tu bienestar integral.
-            </p>
+        ) : (
+          <div className="p-5 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-3xl border border-white shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="bg-white p-2.5 rounded-2xl shadow-sm text-[#A79FE1]">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-purple-900 mb-1">
+                  Atención Profesional
+                </h4>
+                <p className="text-[11px] text-purple-700/70 leading-relaxed font-medium">
+                  Sesiones orientadas a mejorar tu movilidad, aliviar tensiones
+                  y acompañar tu bienestar integral.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Services List Preview */}
