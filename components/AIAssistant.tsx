@@ -46,8 +46,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
         model: "gemini-3-flash-preview",
         contents: userMsg,
         config: {
-          systemInstruction: `Eres la asistente virtual de "En Armonía", un centro de estética profesional. 
-          Tu objetivo es recomendar uno de nuestros servicios basándote en lo que el cliente necesita.
+          systemInstruction: `Eres la asistente virtual de "Soledad Cedres Quiropráctica". 
+          Tu objetivo es recomendar uno de nuestros servicios basándote en las molestias, necesidades u objetivos del cliente.
           Nuestros servicios son:
           ${servicesContext}
           
@@ -110,7 +110,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
               </svg>
             </div>
             <div>
-              <h3 className="font-bold text-sm">Asistente En Armonía</h3>
+              <h3 className="font-bold text-sm">
+                Asistente Soledad Cedres Quiropráctica
+              </h3>
               <p className="text-[10px] opacity-80 uppercase tracking-widest font-bold">
                 Consultoría IA
               </p>
@@ -144,9 +146,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
           {messages.length === 0 && (
             <div className="text-center py-10">
               <p className="text-gray-400 text-xs font-medium px-10 leading-relaxed">
-                ¡Hola! Soy tu asistente virtual. Cuéntame cómo te sientes hoy o
-                qué buscas mejorar en tu piel y te recomendaré el tratamiento
-                ideal.
+                ¡Hola! Soy tu asistente virtual. Cuéntame cómo te sientes hoy,
+                qué molestias tienes o qué te gustaría trabajar y te orientaré
+                con el servicio más adecuado.
               </p>
             </div>
           )}
@@ -200,7 +202,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Ej: Tengo ojeras y cansancio..."
+              placeholder="Ej: Tengo tensión cervical y dolor lumbar..."
               className="flex-1 p-4 bg-gray-50 border-none rounded-2xl text-xs text-gray-800 focus:ring-2 focus:ring-[#A79FE1]/20 outline-none transition-all font-medium"
             />
             <button

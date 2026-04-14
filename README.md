@@ -1,6 +1,6 @@
-# En Armonía - Estética y Salud 🌿
+# Soledad Cedres Quiropráctica
 
-Esta es una aplicación web moderna diseñada para la gestión de turnos y servicios del centro de estética "En Armonía". La plataforma ofrece una experiencia de usuario fluida, permitiendo a los clientes explorar servicios, agendar citas en tiempo real y recibir recomendaciones personalizadas a través de un asistente con Inteligencia Artificial.
+Esta es una aplicación web para la gestión de turnos y servicios de Soledad Cedres Quiropráctica. La plataforma permite explorar prestaciones, agendar citas en tiempo real y recibir orientación inicial mediante un asistente con Inteligencia Artificial.
 
 ## 🚀 Tecnologías Utilizadas
 
@@ -22,7 +22,7 @@ Esta es una aplicación web moderna diseñada para la gestión de turnos y servi
 
 ### Inteligencia Artificial
 
-- **Google Gemini API (@google/genai)**: Utilizado para el asistente virtual que recomienda servicios basados en las necesidades del cliente.
+- **Google Gemini API (@google/genai)**: Utilizado para el asistente virtual que orienta al cliente según sus molestias, necesidades u objetivos.
 
 ---
 
@@ -48,11 +48,11 @@ Esta es una aplicación web moderna diseñada para la gestión de turnos y servi
 
 ## ✨ Características Principales
 
-1.  **Catálogo de Servicios**: Presentación detallada de tratamientos faciales, corporales y masajes.
+1.  **Catálogo de Servicios**: Presentación detallada de las prestaciones disponibles.
 2.  **Sistema de Reservas con Pago**: Los clientes pueden agendar citas pagando online de forma segura con Mercado Pago.
 3.  **Validación de Disponibilidad**: Sistema en tiempo real que previene doble-booking.
 4.  **Identificación de Usuario**: Sistema basado en nombre y teléfono (almacenado en `LocalStorage`) para que los clientes vean sus turnos sin necesidad de contraseñas complejas.
-5.  **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para asesorar a los clientes sobre qué tratamiento les conviene más.
+5.  **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
 6.  **Panel Admin**: Acceso restringido (vía link oculto en contacto) para visualizar y cancelar todos los turnos del centro.
 7.  **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
 
@@ -123,4 +123,4 @@ La aplicación estará disponible en `http://localhost:3000`.
 
 ---
 
-Desarrollado con ❤️ para **En Armonía**.
+Desarrollado para **Soledad Cedres Quiropráctica**.

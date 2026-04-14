@@ -18,7 +18,7 @@ import {
   getDownloadURL,
 } from "@firebase/storage";
 
-// Configuración de En Armonía
+// Configuración de Soledad Cedres Quiropráctica
 const firebaseConfig = {
   apiKey: "AIzaSyAzwH2u0MKkt3RK3UujCZR_HD1p41NPmh8",
   authDomain: "enarmonia-289df.firebaseapp.com",

@@ -11,10 +11,10 @@ const Services: React.FC<ServicesProps> = ({ services, onSelectService }) => {
     <div className="p-6 pb-20 animate-in">
       <header className="mb-10 pt-4">
         <h2 className="text-3xl font-bold text-[#4A4A4A] mb-2 font-serif">
-          Nuestros Tratamientos
+          Nuestros Servicios
         </h2>
         <p className="text-gray-400 text-xs font-medium uppercase tracking-[0.2em]">
-          Cuidado facial y corporal
+          Quiropráctica y bienestar físico
         </p>
       </header>
 
@@ -107,8 +107,8 @@ const Services: React.FC<ServicesProps> = ({ services, onSelectService }) => {
           ¿No sabes qué elegir?
         </h4>
         <p className="text-gray-400 text-[11px] leading-relaxed mb-4">
-          Realizamos un diagnóstico previo para recomendarte el tratamiento
-          ideal según tu tipo de piel.
+          Realizamos una evaluación inicial para recomendarte el servicio más
+          adecuado según tus molestias y objetivos.
         </p>
         <button className="text-[#A79FE1] font-bold text-[10px] uppercase tracking-widest border-b-2 border-[#A79FE1]/20 pb-1">
           Consultar por WhatsApp

@@ -302,7 +302,7 @@ const Admin: React.FC<AdminProps> = ({
               Agenda
             </h2>
             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">
-              En Armonía Estética
+              Soledad Cedres Quiropráctica
             </p>
           </div>
         </div>
@@ -616,7 +616,7 @@ const Admin: React.FC<AdminProps> = ({
                       setServiceForm({ ...serviceForm, name: e.target.value })
                     }
                     className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                    placeholder="Ej: Limpieza Facial Profunda"
+                    placeholder="Ej: Ajuste quiropráctico inicial"
                   />
                 </label>
                 <label className="space-y-2 text-sm font-medium text-gray-600">
@@ -711,7 +711,7 @@ const Admin: React.FC<AdminProps> = ({
 
       <footer className="mt-12 text-center opacity-20">
         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
-          Gestión Interna En Armonía
+          Gestión Interna Soledad Cedres Quiropráctica
         </p>
       </footer>
     </div>

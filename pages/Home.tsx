@@ -1,5 +1,6 @@
 import React from "react";
 import { Service } from "../types";
+import soledadLogo from "../assets/soledad-logo.svg";
 
 interface HomeProps {
   services: Service[];
@@ -28,26 +29,18 @@ const Home: React.FC<HomeProps> = ({
 
       {/* Hero Section */}
       <header className="text-center mb-10 pt-4 animate-in">
-        <div className="w-28 h-28 mx-auto mb-6 relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#A79FE1] to-[#D4CFF1] rounded-[2rem] border-4 border-white shadow-xl flex items-center justify-center p-2 overflow-hidden rotate-3">
-            <div className="relative z-10 text-white text-center -rotate-3">
-              <span className="font-serif italic text-xs block leading-tight">
-                En
-              </span>
-              <span className="font-bold text-base block leading-none tracking-tighter">
-                ARMONÍA
-              </span>
-              <span className="text-[7px] uppercase tracking-[0.2em] mt-1 block font-medium">
-                Estética y Salud
-              </span>
-            </div>
-          </div>
+        <div className="w-44 max-w-full mx-auto mb-6 rounded-[2rem] border border-[#E7DDF4] bg-white shadow-xl p-4">
+          <img
+            src={soledadLogo}
+            alt="Soledad Cedres Quiropráctica"
+            className="w-full h-auto object-contain"
+          />
         </div>
         <h1 className="text-2xl font-extrabold text-[#4A4A4A] mb-1 font-serif">
           Bienvenida
         </h1>
         <p className="text-gray-400 text-xs italic font-serif">
-          Tu espacio de equilibrio y bienestar
+          Atención quiropráctica para tu bienestar diario
         </p>
       </header>
 
@@ -74,11 +67,11 @@ const Home: React.FC<HomeProps> = ({
           </div>
           <div>
             <h4 className="font-bold text-sm text-purple-900 mb-1">
-              Cuidado Profesional
+              Atención Profesional
             </h4>
             <p className="text-[11px] text-purple-700/70 leading-relaxed font-medium">
-              Especialistas en <b>Dermocosmiatría</b> para brindarte los mejores
-              resultados en tu piel.
+              Sesiones orientadas a mejorar tu movilidad, aliviar tensiones y
+              acompañar tu bienestar integral.
             </p>
           </div>
         </div>
@@ -87,7 +80,7 @@ const Home: React.FC<HomeProps> = ({
       {/* Services List Preview */}
       <section className="space-y-6">
         <div className="flex items-center justify-between mb-2 px-1">
-          <h2 className="text-lg font-bold text-[#4A4A4A]">Tratamientos</h2>
+          <h2 className="text-lg font-bold text-[#4A4A4A]">Servicios</h2>
           <button
             onClick={onSeeAll}
             className="text-[10px] font-bold text-[#A79FE1] uppercase tracking-widest bg-purple-50 px-3 py-1 rounded-full"
@@ -167,7 +160,7 @@ const Home: React.FC<HomeProps> = ({
             onClick={onSeeAll}
             className="w-full py-4 bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em] hover:bg-gray-100 transition-colors"
           >
-            Ver {services.length - 2} tratamientos más
+            Ver {services.length - 2} servicios más
           </button>
         )}
       </section>
@@ -175,7 +168,7 @@ const Home: React.FC<HomeProps> = ({
       {/* Footer */}
       <footer className="mt-16 text-center pb-12 opacity-30">
         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
-          En Armonía 2024
+          Soledad Cedres Quiropráctica
         </p>
       </footer>
     </div>

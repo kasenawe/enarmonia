@@ -77,13 +77,13 @@ const Booking: React.FC<BookingProps> = ({
 
   const constructWhatsAppUrl = () => {
     const message =
-      `*Nuevo Turno - En Armonía*\n\n` +
+      `*Nuevo Turno - Soledad Cedres Quiropráctica*\n\n` +
       `🔹 *Servicio:* ${service.name}\n` +
       `📅 *Fecha:* ${getSelectedDateDisplay()}\n` +
       `⏰ *Hora:* ${selectedTime} hs\n\n` +
       `👤 *Cliente:* ${userName}\n` +
       `📱 *Teléfono:* ${userPhone}\n\n` +
-      `_Enviado desde la App En Armonía_`;
+      `_Enviado desde la App Soledad Cedres Quiropráctica_`;
 
     return `https://wa.me/${CONTACT_INFO.whatsapp}?text=${encodeURIComponent(message)}`;
   };
