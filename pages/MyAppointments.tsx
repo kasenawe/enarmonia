@@ -148,6 +148,12 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                       {app.paid ? "Pagado ✓" : "Pendiente Pago"}
                     </span>
                   </div>
+                  {app.appliedPromotion && (
+                    <div className="mt-2 inline-flex rounded-full bg-rose-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-rose-600">
+                      {app.appliedPromotion.badgeText ||
+                        app.appliedPromotion.title}
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="text-base font-black text-gray-900">
@@ -185,9 +191,20 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                   <p className="text-[9px] font-bold text-gray-400 uppercase">
                     Total
                   </p>
-                  <p className="text-sm font-black text-[#A79FE1]">
-                    ${app.price?.toLocaleString("es-UY")}
-                  </p>
+                  {app.discountAmount ? (
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-300 line-through">
+                        ${(app.basePrice || app.price)?.toLocaleString("es-UY")}
+                      </p>
+                      <p className="text-sm font-black text-rose-600">
+                        ${app.price?.toLocaleString("es-UY")}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm font-black text-[#A79FE1]">
+                      ${app.price?.toLocaleString("es-UY")}
+                    </p>
+                  )}
                 </div>
 
                 <button
@@ -219,6 +236,45 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                   )}
                 </button>
               </div>
+
+              {(app.discountAmount || app.basePrice) && (
+                <div className="mt-4 rounded-2xl bg-gray-50 border border-gray-100 p-4">
+                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    <span>Resumen de pago</span>
+                    {app.discountAmount ? (
+                      <span className="text-rose-500">
+                        Ahorro ${app.discountAmount.toLocaleString("es-UY")}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <p className="text-gray-400 text-[9px] font-bold uppercase tracking-widest mb-1">
+                        Base
+                      </p>
+                      <p className="font-bold text-gray-700">
+                        ${(app.basePrice || app.price)?.toLocaleString("es-UY")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-[9px] font-bold uppercase tracking-widest mb-1">
+                        Descuento
+                      </p>
+                      <p className="font-bold text-rose-600">
+                        -${(app.discountAmount || 0).toLocaleString("es-UY")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-[9px] font-bold uppercase tracking-widest mb-1">
+                        Total
+                      </p>
+                      <p className="font-black text-gray-900">
+                        ${app.price?.toLocaleString("es-UY")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
 

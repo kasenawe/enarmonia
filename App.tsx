@@ -285,6 +285,7 @@ const App: React.FC = () => {
         return (
           <Services
             services={services}
+            promotions={promotions}
             onSelectService={(s) => {
               setSelectedService(s);
               navigate(AppRoute.BOOKING);

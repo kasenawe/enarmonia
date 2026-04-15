@@ -7,6 +7,7 @@ import {
 } from "../types";
 import { db, collection, doc, setDoc, deleteDoc } from "../firebase";
 import { ADMIN_PASSWORD } from "../constants"; // ✨ NUEVO: usar constante en lugar de hardcodear
+import { getServicePricing } from "../utils/promotionPricing";
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -681,12 +682,50 @@ const Admin: React.FC<AdminProps> = ({
                       >
                         {app.paid ? "Pagado ✓" : "Sin Pago"}
                       </span>
+                      {app.appliedPromotion && (
+                        <span className="text-[9px] font-bold px-2 py-1 rounded-full bg-rose-100 text-rose-600">
+                          {app.appliedPromotion.badgeText ||
+                            app.appliedPromotion.title}
+                        </span>
+                      )}
                       {app.price && (
                         <span className="text-[9px] font-bold text-gray-500">
                           ${app.price.toLocaleString("es-UY")}
                         </span>
                       )}
                     </div>
+                    {(app.basePrice || app.discountAmount) && (
+                      <div className="mt-3 rounded-2xl bg-gray-50 border border-gray-100 p-3 grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                            Base
+                          </p>
+                          <p className="font-bold text-gray-700">
+                            $
+                            {(app.basePrice || app.price)?.toLocaleString(
+                              "es-UY",
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                            Desc.
+                          </p>
+                          <p className="font-bold text-rose-600">
+                            -$
+                            {(app.discountAmount || 0).toLocaleString("es-UY")}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                            Total
+                          </p>
+                          <p className="font-black text-gray-900">
+                            ${app.price?.toLocaleString("es-UY")}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className="text-xl font-black text-gray-900 leading-none mb-1">
@@ -810,57 +849,82 @@ const Admin: React.FC<AdminProps> = ({
                   No hay servicios cargados aún.
                 </div>
               ) : (
-                services.map((service) => (
-                  <div
-                    key={service.id}
-                    className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 flex flex-col gap-4"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <h4 className="font-bold text-gray-800">
-                          {service.name}
-                        </h4>
-                        <p className="text-gray-400 text-[11px] line-clamp-2">
-                          {service.description}
-                        </p>
+                services.map((service) => {
+                  const pricing = getServicePricing(service, promotions);
+
+                  return (
+                    <div
+                      key={service.id}
+                      className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 flex flex-col gap-4"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="font-bold text-gray-800">
+                              {service.name}
+                            </h4>
+                            {pricing.appliedPromotion && (
+                              <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-rose-600">
+                                {pricing.appliedPromotion.badgeText ||
+                                  pricing.appliedPromotion.title}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-gray-400 text-[11px] line-clamp-2 mt-1">
+                            {service.description}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-400 uppercase tracking-[0.2em] mb-2">
+                            Duración
+                          </p>
+                          <p className="font-black text-gray-900">
+                            {service.duration} min
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-400 uppercase tracking-[0.2em] mb-2">
-                          Duración
-                        </p>
-                        <p className="font-black text-gray-900">
-                          {service.duration} min
-                        </p>
+                      {service.image && (
+                        <img
+                          src={service.image}
+                          alt={service.name}
+                          className="w-full h-44 object-cover rounded-3xl border border-gray-100"
+                        />
+                      )}
+                      <div className="flex flex-wrap items-center gap-3 justify-between">
+                        <div>
+                          {pricing.appliedPromotion ? (
+                            <div>
+                              <p className="text-[11px] font-bold text-gray-300 line-through">
+                                ${pricing.basePrice.toLocaleString("es-UY")}
+                              </p>
+                              <p className="text-sm font-black text-rose-600">
+                                ${pricing.finalPrice.toLocaleString("es-UY")}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-sm font-black text-[#A79FE1]">
+                              ${pricing.basePrice.toLocaleString("es-UY")}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditService(service)}
+                            className="px-4 py-2 rounded-2xl bg-gray-900 text-white text-xs font-bold"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => handleDeleteService(service.id)}
+                            className="px-4 py-2 rounded-2xl bg-red-50 text-red-600 text-xs font-bold border border-red-100"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    {service.image && (
-                      <img
-                        src={service.image}
-                        alt={service.name}
-                        className="w-full h-44 object-cover rounded-3xl border border-gray-100"
-                      />
-                    )}
-                    <div className="flex flex-wrap items-center gap-3 justify-between">
-                      <span className="text-sm font-black text-[#A79FE1]">
-                        ${service.price?.toLocaleString("es-UY")}
-                      </span>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEditService(service)}
-                          className="px-4 py-2 rounded-2xl bg-gray-900 text-white text-xs font-bold"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDeleteService(service.id)}
-                          className="px-4 py-2 rounded-2xl bg-red-50 text-red-600 text-xs font-bold border border-red-100"
-                        >
-                          Eliminar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
