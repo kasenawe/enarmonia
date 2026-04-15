@@ -34,8 +34,8 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
   if (!userPhone) {
     return (
       <div className="p-6 pt-12 animate-in">
-        <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm text-center">
-          <div className="w-20 h-20 bg-purple-50 text-[#A79FE1] rounded-3xl flex items-center justify-center mx-auto mb-6">
+        <div className="rounded-[2.5rem] border border-line-subtle bg-shell p-8 text-center shadow-sm">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-surface text-brand">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="36"
@@ -51,16 +51,16 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
               <circle cx="12" cy="7" r="4" />
             </svg>
           </div>
-          <h2 className="text-2xl font-black text-gray-800 mb-2">
+          <h2 className="mb-2 text-2xl font-black text-ink-strong">
             Mis Reservas
           </h2>
-          <p className="text-gray-400 text-xs mb-8 leading-relaxed">
+          <p className="mb-8 text-xs leading-relaxed text-ink-subtle">
             Ingresá tu teléfono para ver tus turnos y agendar más rápido.
           </p>
 
           <div className="space-y-4 text-left">
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
+              <label className="ml-1 text-[10px] font-bold uppercase text-ink-subtle">
                 Tu Nombre
               </label>
               <input
@@ -68,11 +68,11 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                 value={inputName}
                 onChange={(e) => setInputName(e.target.value)}
                 placeholder="Ej: Maria Lopez"
-                className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm text-gray-800 focus:bg-white focus:border-[#A79FE1] outline-none transition-all"
+                className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm text-ink-strong outline-none transition-all focus:border-brand focus:bg-shell"
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
+              <label className="ml-1 text-[10px] font-bold uppercase text-ink-subtle">
                 Tu Teléfono
               </label>
               <input
@@ -80,13 +80,13 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                 value={inputPhone}
                 onChange={(e) => setInputPhone(e.target.value)}
                 placeholder="Ej: 099123456"
-                className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm text-gray-800 focus:bg-white focus:border-[#A79FE1] outline-none transition-all"
+                className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm text-ink-strong outline-none transition-all focus:border-brand focus:bg-shell"
               />
             </div>
             <button
               disabled={inputPhone.length < 7 || inputName.length < 3}
               onClick={() => onIdentify(inputName, inputPhone)}
-              className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm shadow-xl active:scale-[0.98] transition-all disabled:opacity-20 disabled:shadow-none mt-4"
+              className="mt-4 w-full rounded-2xl bg-action py-4 text-sm font-bold text-white shadow-xl transition-all active:scale-[0.98] disabled:opacity-20 disabled:shadow-none"
             >
               VER MIS TURNOS
             </button>
@@ -100,8 +100,8 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
     <div className="p-6 animate-in">
       <div className="flex justify-between items-end mb-8 pt-4">
         <div>
-          <h2 className="text-2xl font-black text-[#4A4A4A]">Mis Turnos</h2>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+          <h2 className="text-2xl font-black text-app-text">Mis Turnos</h2>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
             Sesión: {userPhone}
           </p>
         </div>
@@ -115,17 +115,17 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
 
       {isSyncing ? (
         <div className="py-24 text-center">
-          <div className="w-8 h-8 border-4 border-gray-100 border-t-purple-400 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[10px] font-bold text-gray-300 uppercase">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-line-subtle border-t-brand"></div>
+          <p className="text-[10px] font-bold uppercase text-ink-faint">
             Sincronizando...
           </p>
         </div>
       ) : appointments.length === 0 ? (
-        <div className="text-center py-24 bg-gray-50/50 rounded-[2.5rem] border-2 border-dashed border-gray-100">
-          <p className="text-gray-400 font-bold text-sm">
+        <div className="rounded-[2.5rem] border-2 border-dashed border-line-subtle bg-shell-subtle/50 py-24 text-center">
+          <p className="text-sm font-bold text-ink-subtle">
             No tienes citas próximas.
           </p>
-          <p className="text-[10px] text-gray-300 px-10 mt-2 uppercase tracking-widest font-bold">
+          <p className="mt-2 px-10 text-[10px] font-bold uppercase tracking-widest text-ink-faint">
             ¡Vuelve al inicio para agendar tu primer tratamiento!
           </p>
         </div>
@@ -134,12 +134,12 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
           {appointments.map((app, idx) => (
             <div
               key={app.id}
-              className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden animate-in"
+              className="relative overflow-hidden rounded-3xl border border-line-subtle bg-shell p-6 shadow-sm animate-in"
               style={{ animationDelay: `${idx * 0.1}s` }}
             >
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h3 className="font-bold text-gray-800 text-sm leading-tight mb-1">
+                  <h3 className="mb-1 text-sm font-bold leading-tight text-ink-strong">
                     {app.serviceName}
                   </h3>
                   <div className="flex items-center gap-1.5">
@@ -156,18 +156,18 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                   )}
                 </div>
                 <div className="text-right">
-                  <p className="text-base font-black text-gray-900">
+                  <p className="text-base font-black text-action">
                     {app.time} HS
                   </p>
-                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
                     {app.date}
                   </p>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-gray-50 flex items-center justify-between gap-4">
+              <div className="flex items-center justify-between gap-4 border-t border-line-subtle pt-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-shell-subtle text-ink-subtle">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
@@ -183,17 +183,17 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                       <circle cx="12" cy="7" r="4" />
                     </svg>
                   </div>
-                  <span className="text-[11px] text-gray-500 font-bold">
+                  <span className="text-[11px] font-bold text-ink-muted">
                     {app.userName}
                   </span>
                 </div>
                 <div className="text-right">
-                  <p className="text-[9px] font-bold text-gray-400 uppercase">
+                  <p className="text-[9px] font-bold uppercase text-ink-subtle">
                     Total
                   </p>
                   {app.discountAmount ? (
                     <div>
-                      <p className="text-[10px] font-bold text-gray-300 line-through">
+                      <p className="text-[10px] font-bold text-ink-faint line-through">
                         ${(app.basePrice || app.price)?.toLocaleString("es-UY")}
                       </p>
                       <p className="text-sm font-black text-rose-600">
@@ -201,7 +201,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                       </p>
                     </div>
                   ) : (
-                    <p className="text-sm font-black text-[#A79FE1]">
+                    <p className="text-sm font-black text-brand">
                       ${app.price?.toLocaleString("es-UY")}
                     </p>
                   )}
@@ -210,11 +210,11 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                 <button
                   disabled={deletingId === app.id}
                   onClick={() => handleDelete(app.id)}
-                  className={`p-2 rounded-xl transition-all ${deletingId === app.id ? "opacity-30" : "text-gray-300 hover:text-red-500 hover:bg-red-50"}`}
+                  className={`p-2 rounded-xl transition-all ${deletingId === app.id ? "opacity-30" : "text-ink-faint hover:text-red-500 hover:bg-red-50"}`}
                   title="Cancelar turno"
                 >
                   {deletingId === app.id ? (
-                    <div className="w-4 h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-ink-faint border-t-red-500 rounded-full animate-spin"></div>
                   ) : (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -238,8 +238,8 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
               </div>
 
               {(app.discountAmount || app.basePrice) && (
-                <div className="mt-4 rounded-2xl bg-gray-50 border border-gray-100 p-4">
-                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                <div className="mt-4 rounded-2xl border border-line-subtle bg-shell-subtle p-4">
+                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
                     <span>Resumen de pago</span>
                     {app.discountAmount ? (
                       <span className="text-rose-500">
@@ -249,15 +249,15 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
                     <div>
-                      <p className="text-gray-400 text-[9px] font-bold uppercase tracking-widest mb-1">
+                      <p className="mb-1 text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
                         Base
                       </p>
-                      <p className="font-bold text-gray-700">
+                      <p className="font-bold text-ink">
                         ${(app.basePrice || app.price)?.toLocaleString("es-UY")}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-400 text-[9px] font-bold uppercase tracking-widest mb-1">
+                      <p className="mb-1 text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
                         Descuento
                       </p>
                       <p className="font-bold text-rose-600">
@@ -265,10 +265,10 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-400 text-[9px] font-bold uppercase tracking-widest mb-1">
+                      <p className="mb-1 text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
                         Total
                       </p>
-                      <p className="font-black text-gray-900">
+                      <p className="font-black text-action">
                         ${app.price?.toLocaleString("es-UY")}
                       </p>
                     </div>
@@ -278,7 +278,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
             </div>
           ))}
 
-          <div className="p-5 bg-gray-900 rounded-[2rem] text-[10px] text-white/50 leading-relaxed flex gap-4 items-start shadow-xl shadow-gray-200">
+          <div className="flex items-start gap-4 rounded-[2rem] bg-action p-5 text-[10px] leading-relaxed text-shell/50 shadow-xl">
             <div className="mt-1 text-white">
               <svg
                 xmlns="http://www.w3.org/2000/svg"

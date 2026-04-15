@@ -89,10 +89,10 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-md h-[80vh] sm:h-[600px] rounded-t-[2.5rem] sm:rounded-[2.5rem] flex flex-col shadow-2xl overflow-hidden animate-in">
-        <div className="bg-[#A79FE1] p-6 text-white flex justify-between items-center">
+      <div className="bg-shell w-full max-w-md h-[80vh] sm:h-[600px] rounded-t-[2.5rem] sm:rounded-[2.5rem] flex flex-col shadow-2xl overflow-hidden animate-in">
+        <div className="bg-brand p-6 text-white flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-shell/20 rounded-full flex items-center justify-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="20"
@@ -120,7 +120,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            className="p-2 hover:bg-shell/10 rounded-full transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -141,11 +141,11 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
 
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/50"
+          className="flex-1 overflow-y-auto bg-shell-subtle/50 p-6 space-y-4"
         >
           {messages.length === 0 && (
             <div className="text-center py-10">
-              <p className="text-gray-400 text-xs font-medium px-10 leading-relaxed">
+              <p className="px-10 text-xs font-medium leading-relaxed text-ink-subtle">
                 ¡Hola! Soy tu asistente virtual. Cuéntame cómo te sientes hoy,
                 qué molestias tienes o qué te gustaría trabajar y te orientaré
                 con el servicio más adecuado.
@@ -167,8 +167,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
                 <div
                   className={`max-w-[80%] p-4 rounded-2xl text-xs font-medium leading-relaxed shadow-sm ${
                     m.role === "user"
-                      ? "bg-[#A79FE1] text-white rounded-tr-none"
-                      : "bg-white text-gray-700 rounded-tl-none border border-gray-100"
+                      ? "bg-brand text-white rounded-tr-none"
+                      : "bg-shell text-ink rounded-tl-none border border-line-subtle"
                   }`}
                 >
                   {m.text}
@@ -176,7 +176,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
                 {mentionedService && (
                   <button
                     onClick={() => onSelectService(mentionedService)}
-                    className="mt-2 bg-gray-900 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-md active:scale-95 transition-all"
+                    className="mt-2 bg-action text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-md active:scale-95 transition-all"
                   >
                     Agendar {mentionedService.name}
                   </button>
@@ -186,16 +186,16 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
           })}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-none flex gap-1">
-                <div className="w-1 h-1 bg-gray-300 rounded-full animate-bounce"></div>
-                <div className="w-1 h-1 bg-gray-300 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                <div className="w-1 h-1 bg-gray-300 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+              <div className="flex gap-1 rounded-2xl rounded-tl-none border border-line-subtle bg-shell p-4">
+                <div className="h-1 w-1 animate-bounce rounded-full bg-ink-faint"></div>
+                <div className="h-1 w-1 animate-bounce rounded-full bg-ink-faint [animation-delay:0.2s]"></div>
+                <div className="h-1 w-1 animate-bounce rounded-full bg-ink-faint [animation-delay:0.4s]"></div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="p-4 bg-white border-t border-gray-100">
+        <div className="border-t border-line-subtle bg-shell p-4">
           <div className="flex gap-2">
             <input
               type="text"
@@ -203,12 +203,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder="Ej: Tengo tensión cervical y dolor lumbar..."
-              className="flex-1 p-4 bg-gray-50 border-none rounded-2xl text-xs text-gray-800 focus:ring-2 focus:ring-[#A79FE1]/20 outline-none transition-all font-medium"
+              className="flex-1 rounded-2xl border-none bg-shell-subtle p-4 text-xs font-medium text-ink-strong outline-none transition-all focus:ring-2 focus:ring-brand/20"
             />
             <button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
-              className="bg-gray-900 text-white p-4 rounded-2xl active:scale-95 transition-all disabled:opacity-20"
+              className="rounded-2xl bg-action p-4 text-white transition-all active:scale-95 disabled:opacity-20"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

@@ -3,7 +3,7 @@ import React from "react";
 const Failure: React.FC = () => {
   return (
     <div className="p-6 pt-12 text-center animate-in">
-      <div className="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-xl relative overflow-hidden">
+      <div className="relative overflow-hidden rounded-[3rem] border border-line-subtle bg-shell p-10 shadow-xl">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-300 to-red-400"></div>
 
         <div className="w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
@@ -24,7 +24,7 @@ const Failure: React.FC = () => {
           </svg>
         </div>
 
-        <h2 className="text-3xl font-black text-gray-800 mb-4 leading-tight">
+        <h2 className="mb-4 text-3xl font-black leading-tight text-ink-strong">
           Pago No Completado
         </h2>
 
@@ -35,10 +35,10 @@ const Failure: React.FC = () => {
           </span>
         </div>
 
-        <p className="text-gray-500 text-sm mb-10 leading-relaxed px-2">
+        <p className="mb-10 px-2 text-sm leading-relaxed text-ink-muted">
           El pago no pudo ser procesado. No te preocupes, no se ha realizado
           ningún cargo. <br />
-          <span className="font-bold text-gray-700">
+          <span className="font-bold text-ink">
             Puedes intentar nuevamente o contactarnos si necesitas ayuda.
           </span>
         </p>
@@ -46,7 +46,7 @@ const Failure: React.FC = () => {
         <div className="space-y-4">
           <a
             href="/"
-            className="flex items-center justify-center gap-3 w-full py-5 bg-gray-900 text-white rounded-[1.5rem] font-black text-sm shadow-xl active:scale-95 transition-all"
+            className="flex w-full items-center justify-center gap-3 rounded-[1.5rem] bg-action py-5 text-sm font-black text-white shadow-xl transition-all active:scale-95"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

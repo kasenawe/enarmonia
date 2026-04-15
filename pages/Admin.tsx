@@ -610,9 +610,7 @@ const Admin: React.FC<AdminProps> = ({
           <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
             Para Hoy
           </span>
-          <span className="text-2xl font-black text-[#A79FE1]">
-            {todayCount}
-          </span>
+          <span className="text-2xl font-black text-brand">{todayCount}</span>
         </div>
         <div className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm">
           <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
@@ -637,19 +635,19 @@ const Admin: React.FC<AdminProps> = ({
             return (
               <div
                 key={app.id}
-                className={`bg-white rounded-3xl p-6 border shadow-sm relative overflow-hidden transition-all ${isToday ? "border-purple-100 ring-2 ring-purple-50" : "border-transparent"}`}
+                className={`bg-white rounded-3xl p-6 border shadow-sm relative overflow-hidden transition-all ${isToday ? "border-outline-strong ring-2 ring-surface" : "border-transparent"}`}
                 style={{ animationDelay: `${idx * 0.05}s` }}
               >
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span
-                        className={`inline-block px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter ${isToday ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-500"}`}
+                        className={`inline-block px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter ${isToday ? "bg-brand-accent text-white" : "bg-gray-100 text-gray-500"}`}
                       >
                         {app.date}
                       </span>
                       {isToday && (
-                        <span className="text-[8px] font-black text-purple-400 uppercase animate-pulse">
+                        <span className="text-[8px] font-black text-brand uppercase animate-pulse">
                           ¡Hoy!
                         </span>
                       )}
@@ -902,7 +900,7 @@ const Admin: React.FC<AdminProps> = ({
                               </p>
                             </div>
                           ) : (
-                            <span className="text-sm font-black text-[#A79FE1]">
+                            <span className="text-sm font-black text-brand">
                               ${pricing.basePrice.toLocaleString("es-UY")}
                             </span>
                           )}

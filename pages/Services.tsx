@@ -16,17 +16,17 @@ const Services: React.FC<ServicesProps> = ({
   return (
     <div className="p-6 pb-20 animate-in">
       <header className="mb-10 pt-4">
-        <h2 className="text-3xl font-bold text-[#4A4A4A] mb-2 font-serif">
+        <h2 className="text-3xl font-bold text-app-text mb-2 font-serif">
           Nuestros Servicios
         </h2>
-        <p className="text-gray-400 text-xs font-medium uppercase tracking-[0.2em]">
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-ink-subtle">
           Quiropráctica y bienestar físico
         </p>
       </header>
 
       <div className="space-y-8">
         {services.length === 0 ? (
-          <div className="rounded-[2rem] p-10 bg-white border border-gray-100 shadow-sm text-center text-gray-400">
+          <div className="rounded-[2rem] border border-line-subtle bg-shell p-10 text-center text-ink-subtle shadow-sm">
             No hay servicios disponibles en este momento.
           </div>
         ) : (
@@ -36,7 +36,7 @@ const Services: React.FC<ServicesProps> = ({
             return (
               <div
                 key={service.id}
-                className="group relative bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm transition-all active:scale-[0.98]"
+                className="group relative overflow-hidden rounded-[2rem] border border-line-subtle bg-shell shadow-sm transition-all active:scale-[0.98]"
                 style={{ animationDelay: `${idx * 0.1}s` }}
                 onClick={() => onSelectService(service)}
               >
@@ -48,8 +48,8 @@ const Services: React.FC<ServicesProps> = ({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
 
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full shadow-lg">
-                    <span className="text-[10px] font-bold text-gray-800 uppercase tracking-tighter flex items-center gap-1">
+                  <div className="absolute top-4 right-4 rounded-full bg-shell/90 px-3 py-1 shadow-lg backdrop-blur-md">
+                    <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-tighter text-ink-strong">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="12"
@@ -79,21 +79,21 @@ const Services: React.FC<ServicesProps> = ({
                 </div>
 
                 <div className="p-6">
-                  <h3 className="text-lg font-bold text-gray-800 mb-2 leading-tight">
+                  <h3 className="mb-2 text-lg font-bold leading-tight text-ink-strong">
                     {service.name}
                   </h3>
-                  <p className="text-gray-400 text-xs leading-relaxed mb-6 font-medium">
+                  <p className="mb-6 text-xs font-medium leading-relaxed text-ink-subtle">
                     {service.description}
                   </p>
 
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-bold text-gray-300 uppercase tracking-widest">
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-ink-faint">
                         Inversión en ti
                       </span>
                       {pricing.appliedPromotion ? (
                         <>
-                          <span className="text-[11px] font-bold text-gray-300 line-through">
+                          <span className="text-[11px] font-bold text-ink-faint line-through">
                             ${pricing.basePrice.toLocaleString("es-UY")}
                           </span>
                           <span className="text-base font-black text-rose-600">
@@ -101,12 +101,12 @@ const Services: React.FC<ServicesProps> = ({
                           </span>
                         </>
                       ) : (
-                        <span className="text-sm font-bold text-[#A79FE1]">
+                        <span className="text-sm font-bold text-brand">
                           ${pricing.basePrice.toLocaleString("es-UY")}
                         </span>
                       )}
                     </div>
-                    <button className="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg shadow-gray-200 active:bg-black transition-colors">
+                    <button className="rounded-xl bg-action px-6 py-3 text-xs font-bold text-white shadow-lg transition-colors active:bg-action-hover">
                       RESERVAR
                     </button>
                   </div>
@@ -117,8 +117,8 @@ const Services: React.FC<ServicesProps> = ({
         )}
       </div>
 
-      <div className="mt-12 p-8 bg-[#A79FE1]/5 rounded-[2.5rem] border border-[#A79FE1]/10 text-center">
-        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm text-[#A79FE1]">
+      <div className="mt-12 rounded-[2.5rem] border border-outline bg-surface-alt p-8 text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-shell text-brand shadow-sm">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -133,14 +133,14 @@ const Services: React.FC<ServicesProps> = ({
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
         </div>
-        <h4 className="text-gray-800 font-bold text-sm mb-2">
+        <h4 className="mb-2 text-sm font-bold text-ink-strong">
           ¿No sabes qué elegir?
         </h4>
-        <p className="text-gray-400 text-[11px] leading-relaxed mb-4">
+        <p className="mb-4 text-[11px] leading-relaxed text-ink-subtle">
           Realizamos una evaluación inicial para recomendarte el servicio más
           adecuado según tus molestias y objetivos.
         </p>
-        <button className="text-[#A79FE1] font-bold text-[10px] uppercase tracking-widest border-b-2 border-[#A79FE1]/20 pb-1">
+        <button className="border-b-2 border-brand/20 pb-1 text-[10px] font-bold uppercase tracking-widest text-brand">
           Consultar por WhatsApp
         </button>
       </div>

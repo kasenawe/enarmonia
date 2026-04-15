@@ -138,7 +138,7 @@ const Booking: React.FC<BookingProps> = ({
   if (showSuccess) {
     return (
       <div className="p-6 pt-12 text-center animate-in">
-        <div className="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-xl relative overflow-hidden">
+        <div className="relative overflow-hidden rounded-[3rem] border border-line-subtle bg-shell p-10 shadow-xl">
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-300 to-emerald-400"></div>
 
           <div className="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
@@ -157,7 +157,7 @@ const Booking: React.FC<BookingProps> = ({
             </svg>
           </div>
 
-          <h2 className="text-3xl font-black text-gray-800 mb-4 leading-tight">
+          <h2 className="mb-4 text-3xl font-black leading-tight text-ink-strong">
             ¡Turno Agendado!
           </h2>
 
@@ -168,9 +168,9 @@ const Booking: React.FC<BookingProps> = ({
             </span>
           </div>
 
-          <p className="text-gray-500 text-sm mb-10 leading-relaxed px-2">
+          <p className="mb-10 px-2 text-sm leading-relaxed text-ink-muted">
             Tu reserva ha sido registrada con éxito. <br />
-            <span className="font-bold text-gray-700">
+            <span className="font-bold text-ink">
               Opcional: puedes reforzar tu aviso por WhatsApp si lo deseas.
             </span>
           </p>
@@ -203,7 +203,7 @@ const Booking: React.FC<BookingProps> = ({
 
             <button
               onClick={onCancel}
-              className="w-full py-4 text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:text-gray-600 transition-colors"
+              className="w-full py-4 text-[10px] font-bold uppercase tracking-widest text-ink-subtle transition-colors hover:text-ink-soft"
             >
               Volver al inicio
             </button>
@@ -219,7 +219,7 @@ const Booking: React.FC<BookingProps> = ({
         <button
           disabled={isSubmitting}
           onClick={step > 1 ? () => setStep(step - 1) : onCancel}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-30"
+          className="rounded-full p-2 transition-colors hover:bg-shell-soft disabled:opacity-30"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -235,7 +235,7 @@ const Booking: React.FC<BookingProps> = ({
             <path d="m15 18-6-6 6-6" />
           </svg>
         </button>
-        <h2 className="text-xl font-bold text-[#4A4A4A]">
+        <h2 className="text-xl font-bold text-app-text">
           {step === 3 ? "Pago Seguro" : "Agendar Turno"}
         </h2>
       </div>
@@ -244,15 +244,15 @@ const Booking: React.FC<BookingProps> = ({
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className={`h-1 flex-1 rounded-full transition-all duration-500 ${step >= i ? "bg-gray-900" : "bg-gray-100"}`}
+            className={`h-1 flex-1 rounded-full transition-all duration-500 ${step >= i ? "bg-action" : "bg-shell-soft"}`}
           ></div>
         ))}
       </div>
 
-      <div className="bg-white rounded-[2rem] p-7 border border-gray-100 shadow-sm mb-8 min-h-[380px] flex flex-col justify-center">
+      <div className="mb-8 flex min-h-[380px] flex-col justify-center rounded-[2rem] border border-line-subtle bg-shell p-7 shadow-sm">
         {step === 1 && (
           <div className="animate-in">
-            <h4 className="font-bold text-xs uppercase tracking-widest text-gray-400 mb-6">
+            <h4 className="mb-6 text-xs font-bold uppercase tracking-widest text-ink-subtle">
               Paso 1: Fecha y Hora
             </h4>
             <div className="flex overflow-x-auto gap-3 pb-6 mb-6 -mx-2 px-2 scroll-smooth">
@@ -265,8 +265,8 @@ const Booking: React.FC<BookingProps> = ({
                   }}
                   className={`flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 rounded-2xl border-2 transition-all ${
                     selectedDate === d.iso
-                      ? "border-gray-900 bg-gray-900 text-white shadow-xl scale-105"
-                      : "border-transparent bg-gray-50 text-gray-400"
+                      ? "border-action bg-action text-white shadow-xl scale-105"
+                      : "border-transparent bg-shell-subtle text-ink-subtle"
                   }`}
                 >
                   <span className="text-[10px] uppercase font-bold mb-1 opacity-60">
@@ -291,10 +291,10 @@ const Booking: React.FC<BookingProps> = ({
                         onClick={() => setSelectedTime(t)}
                         className={`py-3.5 rounded-xl border-2 text-xs font-bold transition-all ${
                           occupied
-                            ? "bg-gray-100 border-transparent text-gray-300 cursor-not-allowed line-through"
+                            ? "bg-shell-soft border-transparent text-ink-faint cursor-not-allowed line-through"
                             : selectedTime === t
-                              ? "border-gray-900 bg-gray-900 text-white shadow-md"
-                              : "border-transparent bg-gray-50 text-gray-500 hover:border-gray-200"
+                              ? "border-action bg-action text-white shadow-md"
+                              : "border-transparent bg-shell-subtle text-ink-muted hover:border-line"
                         }`}
                       >
                         {t}
@@ -309,12 +309,12 @@ const Booking: React.FC<BookingProps> = ({
 
         {step === 2 && (
           <div className="space-y-6 animate-in">
-            <h4 className="font-bold text-xs uppercase tracking-widest text-gray-400 mb-2">
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-widest text-ink-subtle">
               Paso 2: Tu Información
             </h4>
             <div className="space-y-5">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 mb-2 ml-1 uppercase">
+                <label className="ml-1 mb-2 block text-[10px] font-bold uppercase text-ink-subtle">
                   Nombre Completo
                 </label>
                 <input
@@ -322,11 +322,11 @@ const Booking: React.FC<BookingProps> = ({
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                   placeholder="Tu nombre"
-                  className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm text-gray-800 focus:bg-white focus:border-gray-900 outline-none transition-all font-medium"
+                  className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm font-medium text-ink-strong outline-none transition-all focus:border-action focus:bg-shell"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 mb-2 ml-1 uppercase">
+                <label className="ml-1 mb-2 block text-[10px] font-bold uppercase text-ink-subtle">
                   Teléfono / WhatsApp
                 </label>
                 <input
@@ -334,7 +334,7 @@ const Booking: React.FC<BookingProps> = ({
                   value={userPhone}
                   onChange={(e) => setUserPhone(e.target.value)}
                   placeholder="Ej: 099 123 456"
-                  className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm text-gray-800 focus:bg-white focus:border-gray-900 outline-none transition-all font-medium"
+                  className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm font-medium text-ink-strong outline-none transition-all focus:border-action focus:bg-shell"
                 />
               </div>
             </div>
@@ -360,54 +360,52 @@ const Booking: React.FC<BookingProps> = ({
                   <line x1="2" x2="22" y1="10" y2="10" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-800">Pago Seguro</h3>
-              <p className="text-gray-400 text-[11px] px-8 mt-1">
+              <h3 className="text-xl font-bold text-ink-strong">Pago Seguro</h3>
+              <p className="mt-1 px-8 text-[11px] text-ink-subtle">
                 {promotionsLoading
                   ? "Verificando promociones vigentes antes de cobrar."
                   : "Completa tu reserva pagando de forma segura."}
               </p>
             </div>
 
-            <div className="bg-gray-50 rounded-3xl p-6 space-y-4 border border-gray-100">
+            <div className="space-y-4 rounded-3xl border border-line-subtle bg-shell-subtle p-6">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-400 font-bold uppercase tracking-widest text-[9px]">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
                   Servicio
                 </span>
-                <span className="font-bold text-gray-800 text-right">
+                <span className="text-right font-bold text-ink-strong">
                   {service.name}
                 </span>
               </div>
               <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-400 font-bold uppercase tracking-widest text-[9px]">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
                   Fecha
                 </span>
-                <span className="font-bold text-gray-800">
+                <span className="font-bold text-ink-strong">
                   {getSelectedDateDisplay()}
                 </span>
               </div>
               <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-400 font-bold uppercase tracking-widest text-[9px]">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
                   Hora
                 </span>
-                <span className="font-bold text-gray-900">
-                  {selectedTime} HS
-                </span>
+                <span className="font-bold text-action">{selectedTime} HS</span>
               </div>
-              <div className="pt-2 border-t border-gray-200/50 flex flex-col gap-1">
-                <span className="text-gray-400 font-bold uppercase tracking-widest text-[9px]">
+              <div className="flex flex-col gap-1 border-t border-line/50 pt-2">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
                   Cliente
                 </span>
-                <span className="font-bold text-gray-800 text-sm">
+                <span className="text-sm font-bold text-ink-strong">
                   {userName} ({userPhone})
                 </span>
               </div>
-              <div className="pt-2 border-t border-gray-200/50">
+              <div className="border-t border-line/50 pt-2">
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400 font-bold uppercase tracking-widest text-[9px]">
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
                       Precio base
                     </span>
-                    <span className="font-bold text-gray-700">
+                    <span className="font-bold text-ink">
                       ${pricing.basePrice.toLocaleString("es-UY")}
                     </span>
                   </div>
@@ -423,7 +421,7 @@ const Booking: React.FC<BookingProps> = ({
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-400 font-bold uppercase tracking-widest text-[9px]">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
                           Descuento
                         </span>
                         <span className="font-bold text-rose-600">
@@ -432,8 +430,8 @@ const Booking: React.FC<BookingProps> = ({
                       </div>
                     </>
                   )}
-                  <div className="flex justify-between items-center pt-2 border-t border-gray-200/70">
-                    <span className="text-gray-400 font-bold uppercase tracking-widest text-[9px]">
+                  <div className="flex justify-between items-center border-t border-line/70 pt-2">
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
                       Total a Pagar
                     </span>
                     <span className="font-black text-green-600 text-lg">
@@ -500,8 +498,8 @@ const Booking: React.FC<BookingProps> = ({
           (step === 2 &&
             (userName.trim().length < 3 || userPhone.trim().length < 7)) ||
           (step === 3 && promotionsLoading)
-            ? "bg-gray-100 text-gray-300 cursor-not-allowed shadow-none"
-            : "bg-gray-900 hover:bg-black"
+            ? "bg-shell-soft text-ink-faint cursor-not-allowed shadow-none"
+            : "bg-action hover:bg-action-hover"
         }`}
       >
         {isSubmitting ? (

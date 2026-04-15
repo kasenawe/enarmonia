@@ -305,10 +305,10 @@ const App: React.FC = () => {
           />
         ) : (
           <div className="p-6 text-center">
-            <h2 className="text-lg font-bold text-gray-800">
+            <h2 className="text-lg font-bold text-ink-strong">
               Cargando servicios...
             </h2>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="mt-2 text-sm text-ink-muted">
               Espera mientras cargamos los servicios disponibles.
             </p>
           </div>
@@ -361,7 +361,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden border-x border-gray-100">
+    <div className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden border-x border-line-subtle bg-shell shadow-2xl">
       <div className="flex-1 overflow-y-auto pb-24 relative z-10">
         {renderPage()}
       </div>
@@ -369,7 +369,7 @@ const App: React.FC = () => {
       {currentRoute !== AppRoute.BOOKING && currentRoute !== AppRoute.ADMIN && (
         <button
           onClick={() => setIsAIModalOpen(true)}
-          className="fixed bottom-24 right-6 w-14 h-14 bg-gray-900 text-white rounded-2xl flex items-center justify-center shadow-2xl z-40 active:scale-90 transition-transform"
+          className="fixed bottom-24 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-2xl bg-action text-white shadow-2xl transition-transform active:scale-90"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

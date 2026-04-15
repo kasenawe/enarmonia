@@ -77,9 +77,9 @@ const Home: React.FC<HomeProps> = ({
     <div className="p-6">
       {/* Sync Status Overlay Indicator */}
       {isSyncing && (
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
-          <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-full border border-line-subtle bg-shell/80 px-3 py-1.5 shadow-sm backdrop-blur-md">
+          <div className="w-2 h-2 bg-brand rounded-full animate-pulse"></div>
+          <span className="text-[10px] font-bold uppercase tracking-tighter text-ink-subtle">
             Sincronizando...
           </span>
         </div>
@@ -87,17 +87,17 @@ const Home: React.FC<HomeProps> = ({
 
       {/* Hero Section */}
       <header className="text-center mb-10 pt-4 animate-in">
-        <div className="w-44 max-w-full mx-auto mb-6 rounded-[2rem] border border-[#E7DDF4] bg-white shadow-xl p-4">
+        <div className="w-44 max-w-full mx-auto mb-6 rounded-[2rem] border border-outline-strong bg-shell shadow-xl p-4">
           <img
             src={soledadLogo}
             alt="Soledad Cedres Quiropráctica"
             className="w-full h-auto object-contain"
           />
         </div>
-        <h1 className="text-2xl font-extrabold text-[#4A4A4A] mb-1 font-serif">
+        <h1 className="text-2xl font-extrabold text-app-text mb-1 font-serif">
           Bienvenida
         </h1>
-        <p className="text-gray-400 text-xs italic font-serif">
+        <p className="text-xs italic font-serif text-ink-subtle">
           Atención quiropráctica para tu bienestar diario
         </p>
       </header>
@@ -106,9 +106,9 @@ const Home: React.FC<HomeProps> = ({
       <div className="mb-8 animate-in" style={{ animationDelay: "0.1s" }}>
         {featuredPromotion ? (
           <div className="overflow-hidden rounded-[2rem] border border-rose-100 bg-gradient-to-br from-rose-50 via-amber-50 to-white shadow-sm">
-            <div className="flex items-center justify-between gap-3 border-b border-white/70 px-5 py-4">
+            <div className="flex items-center justify-between gap-3 border-b border-shell/70 px-5 py-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-white p-2.5 text-rose-500 shadow-sm">
+                <div className="rounded-2xl bg-shell p-2.5 text-rose-500 shadow-sm">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -128,7 +128,7 @@ const Home: React.FC<HomeProps> = ({
                   <p className="text-[10px] font-black uppercase tracking-[0.22em] text-rose-500">
                     Promoción destacada
                   </p>
-                  <h4 className="font-bold text-base text-gray-800">
+                  <h4 className="text-base font-bold text-ink-strong">
                     {featuredPromotion.title}
                   </h4>
                 </div>
@@ -147,13 +147,13 @@ const Home: React.FC<HomeProps> = ({
             )}
 
             <div className="space-y-4 p-5">
-              <p className="text-sm leading-relaxed text-gray-600">
+              <p className="text-sm leading-relaxed text-ink-soft">
                 {featuredPromotion.description}
               </p>
 
-              <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/80 px-4 py-3 text-xs shadow-sm">
+              <div className="flex items-center justify-between gap-3 rounded-2xl bg-shell/80 px-4 py-3 text-xs shadow-sm">
                 <div>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-400">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-ink-subtle">
                     Beneficio
                   </p>
                   <p className="font-black text-rose-600">
@@ -161,18 +161,16 @@ const Home: React.FC<HomeProps> = ({
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-400">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-ink-subtle">
                     Vigencia
                   </p>
-                  <p className="font-bold text-gray-700">
-                    {promotionDateLabel}
-                  </p>
+                  <p className="font-bold text-ink">{promotionDateLabel}</p>
                 </div>
               </div>
 
               <button
                 onClick={handlePromotionAction}
-                className="w-full rounded-2xl bg-gray-900 py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-lg transition-all hover:bg-black"
+                className="w-full rounded-2xl bg-action py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-lg transition-all hover:bg-action-hover"
               >
                 {promotedServices.length === 1
                   ? "Reservar promoción"
@@ -181,9 +179,9 @@ const Home: React.FC<HomeProps> = ({
             </div>
           </div>
         ) : (
-          <div className="p-5 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-3xl border border-white shadow-sm">
+          <div className="rounded-3xl border border-outline-soft bg-gradient-to-r from-surface-highlight to-surface-deep p-5 shadow-sm">
             <div className="flex items-start gap-4">
-              <div className="bg-white p-2.5 rounded-2xl shadow-sm text-[#A79FE1]">
+              <div className="rounded-2xl bg-shell p-2.5 text-brand shadow-sm">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
@@ -199,10 +197,10 @@ const Home: React.FC<HomeProps> = ({
                 </svg>
               </div>
               <div>
-                <h4 className="font-bold text-sm text-purple-900 mb-1">
+                <h4 className="mb-1 text-sm font-bold text-brand-ink">
                   Atención Profesional
                 </h4>
-                <p className="text-[11px] text-purple-700/70 leading-relaxed font-medium">
+                <p className="text-[11px] font-medium leading-relaxed text-brand-muted/80">
                   Sesiones orientadas a mejorar tu movilidad, aliviar tensiones
                   y acompañar tu bienestar integral.
                 </p>
@@ -215,17 +213,17 @@ const Home: React.FC<HomeProps> = ({
       {/* Services List Preview */}
       <section className="space-y-6">
         <div className="flex items-center justify-between mb-2 px-1">
-          <h2 className="text-lg font-bold text-[#4A4A4A]">Servicios</h2>
+          <h2 className="text-lg font-bold text-app-text">Servicios</h2>
           <button
             onClick={onSeeAll}
-            className="text-[10px] font-bold text-[#A79FE1] uppercase tracking-widest bg-purple-50 px-3 py-1 rounded-full"
+            className="rounded-full bg-surface px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-brand"
           >
             Ver todos
           </button>
         </div>
 
         {services.length === 0 ? (
-          <div className="rounded-[2.5rem] p-10 bg-white border border-gray-100 shadow-sm text-center text-gray-400">
+          <div className="rounded-[2.5rem] border border-line-subtle bg-shell p-10 text-center text-ink-subtle shadow-sm">
             No hay servicios disponibles para mostrar.
           </div>
         ) : (
@@ -235,7 +233,7 @@ const Home: React.FC<HomeProps> = ({
             return (
               <div
                 key={service.id}
-                className="group bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-gray-100 transition-all active:scale-[0.97] animate-in"
+                className="group animate-in overflow-hidden rounded-[2.5rem] border border-line-subtle bg-shell shadow-sm transition-all active:scale-[0.97]"
                 style={{ animationDelay: `${0.2 + idx * 0.1}s` }}
                 onClick={() => onSelectService(service)}
               >
@@ -282,16 +280,16 @@ const Home: React.FC<HomeProps> = ({
                   </div>
                 </div>
                 <div className="p-6">
-                  <p className="text-gray-400 text-xs leading-relaxed mb-4 line-clamp-2">
+                  <p className="mb-4 line-clamp-2 text-xs leading-relaxed text-ink-subtle">
                     {service.description}
                   </p>
                   <div className="flex items-center justify-between mb-4 gap-4">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
                       Inversión
                     </span>
                     {pricing.appliedPromotion ? (
                       <div className="text-right">
-                        <p className="text-[11px] font-bold text-gray-300 line-through">
+                        <p className="text-[11px] font-bold text-ink-faint line-through">
                           ${pricing.basePrice.toLocaleString("es-UY")}
                         </p>
                         <p className="text-sm font-black text-rose-600">
@@ -299,12 +297,12 @@ const Home: React.FC<HomeProps> = ({
                         </p>
                       </div>
                     ) : (
-                      <span className="text-sm font-bold text-[#A79FE1]">
+                      <span className="text-sm font-bold text-brand">
                         ${pricing.basePrice.toLocaleString("es-UY")}
                       </span>
                     )}
                   </div>
-                  <button className="w-full py-3.5 bg-gray-900 text-white rounded-2xl font-bold text-xs transition-all shadow-lg hover:bg-gray-800">
+                  <button className="w-full rounded-2xl bg-action py-3.5 text-xs font-bold text-white shadow-lg transition-all hover:bg-action-hover">
                     AGENDAR AHORA
                   </button>
                 </div>
@@ -316,7 +314,7 @@ const Home: React.FC<HomeProps> = ({
         {services.length > 2 && (
           <button
             onClick={onSeeAll}
-            className="w-full py-4 bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em] hover:bg-gray-100 transition-colors"
+            className="w-full rounded-3xl border-2 border-dashed border-line bg-shell-subtle py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-ink-subtle transition-colors hover:bg-shell-soft"
           >
             Ver {services.length - 2} servicios más
           </button>
@@ -325,7 +323,7 @@ const Home: React.FC<HomeProps> = ({
 
       {/* Footer */}
       <footer className="mt-16 text-center pb-12 opacity-30">
-        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-ink-muted">
           Soledad Cedres Quiropráctica
         </p>
       </footer>

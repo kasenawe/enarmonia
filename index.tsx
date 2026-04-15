@@ -1,12 +1,17 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { COLOR_VARIABLES } from "./constants";
 import "./index.css";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
+
+Object.entries(COLOR_VARIABLES).forEach(([name, value]) => {
+  document.documentElement.style.setProperty(name, value);
+});
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
