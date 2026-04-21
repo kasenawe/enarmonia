@@ -60,13 +60,14 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 2.  **Sistema de Reservas con Pago**: Los clientes pueden agendar citas pagando online de forma segura con Mercado Pago.
 3.  **Validación de Disponibilidad**: Sistema en tiempo real que previene doble-booking.
 4.  **Cuentas de Usuario**: Registro e inicio de sesión con Firebase Auth usando email y contraseña.
-5.  **Cuenta del Cliente**: Vista `Cuenta` con acceso a historial de turnos, cierre de sesión y atajos según rol.
+5.  **Cuenta del Cliente**: Vista `Cuenta` con acceso a historial de turnos, cierre de sesión, edición del teléfono de contacto y atajos según rol.
 6.  **Mis Turnos Protegido**: El historial de citas ahora se consulta por `userId` y solo está disponible para usuarios autenticados.
-7.  **Bloqueo Manual de Horarios**: La administradora puede bloquear y desbloquear horarios manualmente desde el panel, con validación contra turnos ya agendados.
-8.  **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
-9.  **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
-10. **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
-11. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
+7.  **Perfil de Contacto Reutilizable**: El teléfono del usuario se guarda en `users` al registrarse o desde `Cuenta`, se autocompleta en la reserva y sigue siendo editable por turno.
+8.  **Bloqueo Manual de Horarios**: La administradora puede bloquear y desbloquear horarios manualmente desde el panel, con validación contra turnos ya agendados.
+9.  **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
+10. **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
+11. **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
+12. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
 
 ---
 
@@ -120,7 +121,7 @@ Para habilitar los pagos con Mercado Pago:
 
 La app utiliza reglas basadas en rol almacenado en `users/{uid}`.
 
-- `users`: lectura del dueño o admin; creación inicial del propio perfil cliente.
+- `users`: lectura del dueño o admin; creación inicial del propio perfil cliente y edición de datos de contacto propios como `userPhone`.
 - `services`: lectura pública; escritura solo admin.
 - `promotions`: lectura pública; escritura solo admin.
 - `blocked_slots`: lectura pública para deshabilitar horarios en reservas; escritura solo admin.
@@ -147,12 +148,13 @@ La aplicación estará disponible en `http://localhost:3000`.
 ## 📝 Notas para Desarrolladores
 
 - **Base de Datos**: La app usa tres colecciones principales en Firestore:
-  - `users`: `uid`, `email`, `role`, `createdAt`.
+  - `users`: `uid`, `email`, `role`, `userPhone`, `createdAt`.
   - `appointments`: `userId`, `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `createdAt`, `price`, `paid`.
   - `blocked_slots`: `date`, `time`, `createdAt`.
   - `services`: `name`, `description`, `duration`, `price`, `image`.
   - `promotions`: `title`, `description`, `badgeText`, `discountType`, `discountValue`, `featured`, `isActive`, `appliesToAllServices`, `serviceIds`, `startDate`, `endDate`, `priority`, `image`.
-- **Autenticación**: `AuthProvider` centraliza sesión, perfil Firestore y detección de rol admin.
+- **Autenticación**: `AuthProvider` centraliza sesión, perfil Firestore reactivo, teléfono del usuario y detección de rol admin.
+- **Reserva**: `appointments.userPhone` guarda el snapshot exacto usado en ese turno, aunque luego el usuario cambie su teléfono en `users`.
 - **Estilos**: Se utiliza una configuración de Tailwind personalizada en `index.html` y `index.css`. El color primario ya se gestiona desde tokens semánticos definidos en `constants.ts`.
 - **IA**: El asistente está configurado en `components/AIAssistant.tsx`. Puedes ajustar las `systemInstruction` para cambiar su personalidad o conocimientos.
 

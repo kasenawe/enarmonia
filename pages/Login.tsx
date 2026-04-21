@@ -9,10 +9,15 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onBack, onSuccess, onGoToRegister }) => {
-  const { currentUser, login, loading } = useAuth();
+  const { currentUser, login, resetPassword, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetFeedback, setResetFeedback] = useState<string | null>(null);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isResetSubmitting, setIsResetSubmitting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -40,6 +45,23 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess, onGoToRegister }) => {
     }
   };
 
+  const getResetErrorMessage = (error: unknown) => {
+    if (!(error instanceof FirebaseError)) {
+      return "No se pudo enviar el correo de recuperación. Intenta nuevamente.";
+    }
+
+    switch (error.code) {
+      case "auth/invalid-email":
+        return "Ingresa un email válido.";
+      case "auth/missing-email":
+        return "Debes ingresar un email para continuar.";
+      case "auth/too-many-requests":
+        return "Demasiados intentos. Vuelve a intentar más tarde.";
+      default:
+        return "No se pudo enviar el correo de recuperación. Intenta nuevamente.";
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
@@ -63,6 +85,30 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess, onGoToRegister }) => {
       setError(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setResetError(null);
+    setResetFeedback(null);
+
+    const normalizedEmail = resetEmail.trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes("@")) {
+      setResetError("Ingresa un email válido.");
+      return;
+    }
+
+    setIsResetSubmitting(true);
+    try {
+      await resetPassword(normalizedEmail);
+      setResetFeedback(
+        "Si el correo existe en nuestra base, enviamos un enlace para restablecer tu contraseña.",
+      );
+    } catch (error) {
+      setResetError(getResetErrorMessage(error));
+    } finally {
+      setIsResetSubmitting(false);
     }
   };
 
@@ -156,6 +202,60 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess, onGoToRegister }) => {
             {isSubmitting ? "INGRESANDO..." : "INGRESAR"}
           </button>
         </form>
+
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => {
+              setShowResetPassword((prev) => !prev);
+              setResetError(null);
+              setResetFeedback(null);
+              setResetEmail((prev) => prev || email);
+            }}
+            className="text-sm font-bold text-ink-subtle transition-colors hover:text-brand"
+          >
+            {showResetPassword
+              ? "Ocultar recuperación"
+              : "¿Olvidaste tu contraseña?"}
+          </button>
+        </div>
+
+        {showResetPassword && (
+          <form onSubmit={handleResetPassword} className="mt-5 space-y-3">
+            <label className="mb-1 ml-1 block text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
+              Email para recuperación
+            </label>
+            <input
+              type="email"
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+              placeholder="tu@email.com"
+              autoComplete="email"
+              className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm text-ink-strong outline-none transition-all focus:border-brand focus:bg-shell"
+            />
+
+            {resetError && (
+              <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {resetError}
+              </div>
+            )}
+
+            {resetFeedback && (
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                {resetFeedback}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isResetSubmitting || loading}
+              className="w-full rounded-2xl border border-line-subtle bg-shell py-4 text-sm font-bold text-ink-strong transition-all active:scale-[0.98] disabled:opacity-40"
+            >
+              {isResetSubmitting
+                ? "ENVIANDO..."
+                : "ENVIAR CORREO DE RECUPERACIÓN"}
+            </button>
+          </form>
+        )}
 
         <div className="mt-6 text-center">
           <p className="text-sm text-ink-muted">¿Aún no tienes cuenta?</p>

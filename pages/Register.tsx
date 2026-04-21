@@ -15,6 +15,7 @@ const Register: React.FC<RegisterProps> = ({
 }) => {
   const { currentUser, register, loading } = useAuth();
   const [email, setEmail] = useState("");
+  const [userPhone, setUserPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +61,11 @@ const Register: React.FC<RegisterProps> = ({
       return;
     }
 
+    if (userPhone.trim() && userPhone.trim().length < 7) {
+      setError("Ingresa un teléfono válido o déjalo vacío por ahora.");
+      return;
+    }
+
     if (password.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres.");
       return;
@@ -72,7 +78,7 @@ const Register: React.FC<RegisterProps> = ({
 
     setIsSubmitting(true);
     try {
-      await register(normalizedEmail, password);
+      await register(normalizedEmail, password, userPhone);
       onSuccess();
     } catch (error) {
       setError(getErrorMessage(error));
@@ -139,6 +145,20 @@ const Register: React.FC<RegisterProps> = ({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@email.com"
               autoComplete="email"
+              className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm text-ink-strong outline-none transition-all focus:border-brand focus:bg-shell"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 ml-1 block text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
+              Teléfono / WhatsApp
+            </label>
+            <input
+              type="tel"
+              value={userPhone}
+              onChange={(e) => setUserPhone(e.target.value)}
+              placeholder="Opcional: 099 123 456"
+              autoComplete="tel"
               className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm text-ink-strong outline-none transition-all focus:border-brand focus:bg-shell"
             />
           </div>

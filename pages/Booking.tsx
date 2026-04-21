@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Service, Appointment, Promotion, BlockedSlot } from "../types";
 import { CONTACT_INFO, BACKEND_URL } from "../constants";
 import { getServicePricing } from "../utils/promotionPricing";
@@ -36,6 +36,14 @@ const Booking: React.FC<BookingProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const pricing = getServicePricing(service, promotions);
+
+  useEffect(() => {
+    setUserName((currentName) => currentName || initialData.name);
+  }, [initialData.name]);
+
+  useEffect(() => {
+    setUserPhone((currentPhone) => currentPhone || initialData.phone);
+  }, [initialData.phone]);
 
   const dates = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();

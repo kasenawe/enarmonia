@@ -34,9 +34,11 @@ import {
 const App: React.FC = () => {
   const {
     currentUser,
+    appUser,
     isAdmin,
     loading: authLoading,
     profileLoading,
+    saveUserPhone,
     logout: authLogout,
   } = useAuth();
   const [currentRoute, setCurrentRoute] = useState<AppRoute>(AppRoute.HOME);
@@ -379,7 +381,7 @@ const App: React.FC = () => {
             occupiedSlots={blockedSlots}
             blockedSlots={blockedSlots}
             currentUserId={currentUser?.uid || null}
-            initialData={{ name: "", phone: "" }}
+            initialData={{ name: "", phone: appUser?.userPhone || "" }}
             onConfirm={handleConfirmAppointment}
             onRequireLogin={() => navigate(AppRoute.LOGIN)}
             onCancel={() => navigate(AppRoute.HOME)}
@@ -414,11 +416,14 @@ const App: React.FC = () => {
         return (
           <Account
             email={currentUser?.email || null}
+            userPhone={appUser?.userPhone || ""}
             isAdmin={isAdmin}
+            profileLoading={profileLoading}
             onGoToLogin={() => navigate(AppRoute.LOGIN)}
             onGoToRegister={() => navigate(AppRoute.REGISTER)}
             onGoToAppointments={() => navigate(AppRoute.MY_APPOINTMENTS)}
             onGoToAdmin={() => navigate(AppRoute.ADMIN)}
+            onSavePhone={saveUserPhone}
             onLogout={handleLogout}
           />
         );

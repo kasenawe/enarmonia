@@ -11,10 +11,11 @@ import type { AppUser } from "../types";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
-import { auth, db, doc, getDoc, setDoc } from "../firebase";
+import { auth, db, doc, onSnapshot, setDoc } from "../firebase";
 
 interface AuthContextValue {
   currentUser: User | null;
@@ -23,7 +24,13 @@ interface AuthContextValue {
   loading: boolean;
   profileLoading: boolean;
   login: (email: string, password: string) => Promise<UserCredential>;
-  register: (email: string, password: string) => Promise<UserCredential>;
+  register: (
+    email: string,
+    password: string,
+    userPhone?: string,
+  ) => Promise<UserCredential>;
+  resetPassword: (email: string) => Promise<void>;
+  saveUserPhone: (userPhone: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -40,9 +47,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let unsubscribeProfile: (() => void) | undefined;
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
+
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = undefined;
+      }
 
       if (!user) {
         setAppUser(null);
@@ -52,30 +66,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       setProfileLoading(true);
 
-      try {
-        const userSnapshot = await getDoc(doc(db, "users", user.uid));
-
-        if (userSnapshot.exists()) {
-          setAppUser({ uid: user.uid, ...userSnapshot.data() } as AppUser);
-        } else {
+      unsubscribeProfile = onSnapshot(
+        doc(db, "users", user.uid),
+        (userSnapshot) => {
+          if (userSnapshot.exists()) {
+            setAppUser({ uid: user.uid, ...userSnapshot.data() } as AppUser);
+          } else {
+            setAppUser(null);
+          }
+          setProfileLoading(false);
+        },
+        (error) => {
+          console.error("Error loading user profile:", error);
           setAppUser(null);
-        }
-      } catch (error) {
-        console.error("Error loading user profile:", error);
-        setAppUser(null);
-      } finally {
-        setProfileLoading(false);
-      }
+          setProfileLoading(false);
+        },
+      );
     });
 
-    return unsubscribe;
+    return () => {
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+      }
+      unsubscribe();
+    };
   }, []);
 
   const login = (email: string, password: string) => {
     return signInWithEmailAndPassword(auth, email, password);
   };
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string, userPhone = "") => {
     const credentials = await createUserWithEmailAndPassword(
       auth,
       email,
@@ -86,10 +107,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       uid: credentials.user.uid,
       email: credentials.user.email || email,
       role: "client",
+      userPhone: userPhone.trim(),
       createdAt: new Date().toISOString(),
     });
 
     return credentials;
+  };
+
+  const saveUserPhone = async (userPhone: string) => {
+    if (!currentUser?.uid) {
+      throw new Error("AUTH_REQUIRED");
+    }
+
+    await setDoc(
+      doc(db, "users", currentUser.uid),
+      {
+        uid: currentUser.uid,
+        email: currentUser.email || appUser?.email || "",
+        role: appUser?.role || "client",
+        userPhone: userPhone.trim(),
+      },
+      { merge: true },
+    );
+  };
+
+  const resetPassword = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
   };
 
   const logout = () => {
@@ -105,6 +148,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       profileLoading,
       login,
       register,
+      resetPassword,
+      saveUserPhone,
       logout,
     }),
     [appUser, currentUser, loading, profileLoading],
