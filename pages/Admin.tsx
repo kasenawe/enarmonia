@@ -101,6 +101,7 @@ const Admin: React.FC<AdminProps> = ({
   const [usersLoading, setUsersLoading] = useState(false);
   const [userFeedback, setUserFeedback] = useState<string | null>(null);
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
+  const [demotingUserId, setDemotingUserId] = useState<string | null>(null);
 
   const blockTimeOptions = [
     "09:00",
@@ -566,6 +567,57 @@ const Admin: React.FC<AdminProps> = ({
       setUsersError(promoteError?.message || "No se pudo promover el usuario.");
     } finally {
       setPromotingUserId(null);
+    }
+  };
+
+  const handleDemoteUser = async (userId: string) => {
+    if (!currentUser) {
+      setUsersError(
+        "Debes iniciar sesión con una cuenta admin para modificar usuarios.",
+      );
+      return;
+    }
+
+    if (currentUser.uid === userId) {
+      setUsersError("No puedes quitarte a ti misma el rol admin.");
+      return;
+    }
+
+    if (!window.confirm("¿Quitar permisos de administrador a este usuario?")) {
+      return;
+    }
+
+    setUsersError(null);
+    setUserFeedback(null);
+    setDemotingUserId(userId);
+
+    try {
+      const idToken = await currentUser.getIdToken();
+      const response = await fetch(`${BACKEND_URL}/api/demote-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error || "No se pudo quitar el rol admin al usuario.",
+        );
+      }
+
+      setUserFeedback("Permisos de administrador quitados correctamente.");
+    } catch (demoteError: any) {
+      console.error(demoteError);
+      setUsersError(
+        demoteError?.message || "No se pudo quitar el rol admin al usuario.",
+      );
+    } finally {
+      setDemotingUserId(null);
     }
   };
 
@@ -1077,6 +1129,7 @@ const Admin: React.FC<AdminProps> = ({
                 <div className="space-y-3">
                   {users.map((user) => {
                     const isUserAdmin = user.role === "admin";
+                    const isCurrentUser = currentUser?.uid === user.uid;
 
                     return (
                       <div
@@ -1099,17 +1152,33 @@ const Admin: React.FC<AdminProps> = ({
                           </div>
                         </div>
 
-                        <button
-                          onClick={() => handlePromoteUser(user.uid)}
-                          disabled={isUserAdmin || promotingUserId === user.uid}
-                          className={`rounded-2xl border px-4 py-2 text-xs font-bold transition-all ${isUserAdmin ? "cursor-default border-emerald-100 bg-emerald-50 text-emerald-700" : "border-gray-900 bg-gray-900 text-white active:scale-95 disabled:opacity-40"}`}
-                        >
-                          {isUserAdmin
-                            ? "Ya es admin"
-                            : promotingUserId === user.uid
-                              ? "Promoviendo..."
-                              : "Hacer admin"}
-                        </button>
+                        <div className="flex flex-wrap gap-2 justify-end">
+                          {isUserAdmin ? (
+                            <button
+                              onClick={() => handleDemoteUser(user.uid)}
+                              disabled={
+                                isCurrentUser || demotingUserId === user.uid
+                              }
+                              className={`rounded-2xl border px-4 py-2 text-xs font-bold transition-all ${isCurrentUser ? "cursor-not-allowed border-emerald-100 bg-emerald-50 text-emerald-700 opacity-70" : "border-red-100 bg-red-50 text-red-600 active:scale-95 disabled:opacity-40"}`}
+                            >
+                              {isCurrentUser
+                                ? "Tu cuenta admin"
+                                : demotingUserId === user.uid
+                                  ? "Quitando..."
+                                  : "Quitar admin"}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handlePromoteUser(user.uid)}
+                              disabled={promotingUserId === user.uid}
+                              className="rounded-2xl border border-gray-900 bg-gray-900 px-4 py-2 text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-40"
+                            >
+                              {promotingUserId === user.uid
+                                ? "Promoviendo..."
+                                : "Hacer admin"}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
