@@ -9,10 +9,21 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onBack, onSuccess, onGoToRegister }) => {
-  const { currentUser, login, resetPassword, loading } = useAuth();
+  const {
+    currentUser,
+    login,
+    resendVerificationEmail,
+    resetPassword,
+    loading,
+  } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showResendVerification, setShowResendVerification] = useState(false);
+  const [verificationFeedback, setVerificationFeedback] = useState<
+    string | null
+  >(null);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetFeedback, setResetFeedback] = useState<string | null>(null);
   const [showResetPassword, setShowResetPassword] = useState(false);
@@ -21,12 +32,21 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess, onGoToRegister }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && currentUser) {
+    if (!loading && currentUser?.emailVerified) {
       onSuccess();
     }
   }, [currentUser, loading, onSuccess]);
 
   const getErrorMessage = (error: unknown) => {
+    const errorCode =
+      typeof error === "object" && error !== null && "code" in error
+        ? String((error as any).code)
+        : null;
+
+    if (errorCode === "auth/email-not-verified") {
+      return "Tu cuenta aún no está verificada. Revisa tu correo para activar el acceso.";
+    }
+
     if (!(error instanceof FirebaseError)) {
       return "No se pudo iniciar sesión. Intenta nuevamente.";
     }
@@ -40,6 +60,8 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess, onGoToRegister }) => {
         return "Email o contraseña incorrectos.";
       case "auth/too-many-requests":
         return "Demasiados intentos. Vuelve a intentar más tarde.";
+      case "auth/email-not-verified":
+        return "Tu cuenta aún no está verificada. Revisa tu correo para activar el acceso.";
       default:
         return "No se pudo iniciar sesión. Intenta nuevamente.";
     }
@@ -65,6 +87,8 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess, onGoToRegister }) => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setVerificationFeedback(null);
+    setShowResendVerification(false);
 
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !normalizedEmail.includes("@")) {
@@ -81,10 +105,42 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess, onGoToRegister }) => {
     try {
       await login(normalizedEmail, password);
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.code === "auth/email-not-verified") {
+        setShowResendVerification(true);
+      }
       setError(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setVerificationFeedback(null);
+    setError(null);
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes("@")) {
+      setError("Ingresa el email de la cuenta que quieres verificar.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Ingresa también la contraseña para reenviar verificación.");
+      return;
+    }
+
+    setIsResendingVerification(true);
+    try {
+      await resendVerificationEmail(normalizedEmail, password);
+      setVerificationFeedback(
+        "Te reenviamos el correo de verificación. Revisa tu bandeja de entrada y spam.",
+      );
+      setShowResendVerification(false);
+    } catch (resendError) {
+      setError(getErrorMessage(resendError));
+    } finally {
+      setIsResendingVerification(false);
     }
   };
 
@@ -192,6 +248,25 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess, onGoToRegister }) => {
             <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
               {error}
             </div>
+          )}
+
+          {verificationFeedback && (
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              {verificationFeedback}
+            </div>
+          )}
+
+          {showResendVerification && (
+            <button
+              type="button"
+              onClick={handleResendVerification}
+              disabled={isResendingVerification || loading}
+              className="w-full rounded-2xl border border-line-subtle bg-shell py-4 text-sm font-bold text-ink-strong transition-all active:scale-[0.98] disabled:opacity-40"
+            >
+              {isResendingVerification
+                ? "REENVIANDO..."
+                : "REENVIAR VERIFICACIÓN"}
+            </button>
           )}
 
           <button

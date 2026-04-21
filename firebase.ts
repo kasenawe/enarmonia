@@ -37,6 +37,7 @@ const firebaseConfig = {
 // Se usan los paquetes con prefijo @firebase para asegurar que los exports nombrados sean reconocidos correctamente
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+auth.languageCode = "es";
 const db = getFirestore(app);
 const storage = getStorage(app);
 

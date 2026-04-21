@@ -11,6 +11,7 @@ import type { AppUser } from "../types";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
@@ -24,6 +25,7 @@ interface AuthContextValue {
   loading: boolean;
   profileLoading: boolean;
   login: (email: string, password: string) => Promise<UserCredential>;
+  resendVerificationEmail: (email: string, password: string) => Promise<void>;
   register: (
     email: string,
     password: string,
@@ -49,8 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     let unsubscribeProfile: (() => void) | undefined;
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(false);
 
       if (unsubscribeProfile) {
@@ -59,10 +60,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       if (!user) {
+        setCurrentUser(null);
         setAppUser(null);
         setProfileLoading(false);
         return;
       }
+
+      if (!user.emailVerified) {
+        setCurrentUser(null);
+        setAppUser(null);
+        setProfileLoading(false);
+
+        try {
+          await signOut(auth);
+        } catch (error) {
+          console.error("Error signing out unverified user:", error);
+        }
+
+        return;
+      }
+
+      setCurrentUser(user);
 
       setProfileLoading(true);
 
@@ -92,8 +110,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  const login = (email: string, password: string) => {
-    return signInWithEmailAndPassword(auth, email, password);
+  const login = async (email: string, password: string) => {
+    const credentials = await signInWithEmailAndPassword(auth, email, password);
+
+    if (!credentials.user.emailVerified) {
+      await sendEmailVerification(credentials.user);
+      await signOut(auth);
+
+      const verificationError = new Error("EMAIL_NOT_VERIFIED") as Error & {
+        code?: string;
+      };
+      verificationError.code = "auth/email-not-verified";
+      throw verificationError;
+    }
+
+    return credentials;
+  };
+
+  const resendVerificationEmail = async (email: string, password: string) => {
+    const credentials = await signInWithEmailAndPassword(auth, email, password);
+
+    if (!credentials.user.emailVerified) {
+      await sendEmailVerification(credentials.user);
+    }
+
+    await signOut(auth);
   };
 
   const register = async (email: string, password: string, userPhone = "") => {
@@ -111,19 +152,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       createdAt: new Date().toISOString(),
     });
 
+    await sendEmailVerification(credentials.user);
+    await signOut(auth);
+
     return credentials;
   };
 
   const saveUserPhone = async (userPhone: string) => {
-    if (!currentUser?.uid) {
+    const authenticatedUser = auth.currentUser;
+
+    if (!currentUser?.uid || !authenticatedUser?.uid) {
       throw new Error("AUTH_REQUIRED");
     }
 
+    if (currentUser.uid !== authenticatedUser.uid) {
+      throw new Error("AUTH_STATE_MISMATCH");
+    }
+
     await setDoc(
-      doc(db, "users", currentUser.uid),
+      doc(db, "users", authenticatedUser.uid),
       {
-        uid: currentUser.uid,
-        email: currentUser.email || appUser?.email || "",
+        uid: authenticatedUser.uid,
+        email: authenticatedUser.email || appUser?.email || "",
         role: appUser?.role || "client",
         userPhone: userPhone.trim(),
       },
@@ -147,6 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       loading,
       profileLoading,
       login,
+      resendVerificationEmail,
       register,
       resetPassword,
       saveUserPhone,

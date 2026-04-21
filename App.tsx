@@ -408,7 +408,7 @@ const App: React.FC = () => {
         return (
           <Register
             onBack={() => navigate(AppRoute.HOME)}
-            onSuccess={() => navigate(AppRoute.HOME, true)}
+            onSuccess={() => navigate(AppRoute.LOGIN, true)}
             onGoToLogin={() => navigate(AppRoute.LOGIN)}
           />
         );
