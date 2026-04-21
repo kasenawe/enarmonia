@@ -1,19 +1,31 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Appointment,
+  AppUser,
+  BlockedSlot,
   Promotion,
   PromotionDiscountType,
   Service,
 } from "../types";
-import { db, collection, doc, setDoc, deleteDoc } from "../firebase";
-import { ADMIN_PASSWORD } from "../constants"; // ✨ NUEVO: usar constante en lugar de hardcodear
+import {
+  db,
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  addDoc,
+  onSnapshot,
+} from "../firebase";
+import { BACKEND_URL } from "../constants";
 import { getServicePricing } from "../utils/promotionPricing";
+import { useAuth } from "../contexts/AuthContext";
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 interface AdminProps {
   appointments: Appointment[];
+  blockedSlots: BlockedSlot[];
   services: Service[];
   servicesLoading: boolean;
   serviceError: string | null;
@@ -26,6 +38,7 @@ interface AdminProps {
 
 const Admin: React.FC<AdminProps> = ({
   appointments,
+  blockedSlots,
   services,
   servicesLoading,
   serviceError,
@@ -35,12 +48,17 @@ const Admin: React.FC<AdminProps> = ({
   onDelete,
   onBack,
 }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [pin, setPin] = useState("");
-  const [error, setError] = useState("");
+  const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<
-    "appointments" | "services" | "promotions"
+    "appointments" | "blockedSlots" | "services" | "promotions" | "users"
   >("appointments");
+  const [blockDate, setBlockDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
+  const [blockTime, setBlockTime] = useState("09:00");
+  const [blockError, setBlockError] = useState<string | null>(null);
+  const [blockFeedback, setBlockFeedback] = useState<string | null>(null);
+  const [isBlocking, setIsBlocking] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [serviceForm, setServiceForm] = useState({
@@ -78,21 +96,60 @@ const Admin: React.FC<AdminProps> = ({
     null,
   );
   const [isPromotionSaving, setIsPromotionSaving] = useState(false);
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userFeedback, setUserFeedback] = useState<string | null>(null);
+  const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pin === ADMIN_PASSWORD) {
-      // ✨ NUEVO: usar ADMIN_PASSWORD de constants
-      setIsAuthenticated(true);
-      setError("");
-    } else {
-      setError("PIN Incorrecto");
-      setPin("");
+  const blockTimeOptions = [
+    "09:00",
+    "10:00",
+    "11:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+    "18:00",
+  ];
+
+  useEffect(() => {
+    if (!currentUser) {
+      setUsers([]);
+      setUsersError(null);
+      setUsersLoading(false);
+      return;
     }
-  };
+
+    setUsersLoading(true);
+    const unsubscribe = onSnapshot(
+      collection(db, "users"),
+      (snapshot) => {
+        const loadedUsers: AppUser[] = [];
+        snapshot.forEach((entry) => {
+          loadedUsers.push({ uid: entry.id, ...entry.data() } as AppUser);
+        });
+
+        loadedUsers.sort((a, b) =>
+          (a.email || "").localeCompare(b.email || ""),
+        );
+        setUsers(loadedUsers);
+        setUsersError(null);
+        setUsersLoading(false);
+      },
+      (snapshotError) => {
+        console.error(snapshotError);
+        setUsersError(
+          "No se pudo cargar la lista de usuarios. Verifica que tu cuenta tenga rol admin.",
+        );
+        setUsersLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [currentUser]);
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
     onBack();
   };
 
@@ -474,74 +531,113 @@ const Admin: React.FC<AdminProps> = ({
     }
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
-        <div className="w-full max-w-xs bg-white rounded-[2.5rem] p-10 shadow-xl text-center border border-gray-100 relative">
-          <button
-            onClick={onBack}
-            className="absolute top-6 left-6 p-2 text-gray-300 hover:text-gray-600"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m15 18-6-6 6-6" />
-            </svg>
-          </button>
-          <div className="w-16 h-16 bg-gray-900 text-white rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-black text-gray-800 mb-2 font-serif">
-            Staff Login
-          </h2>
-          <p className="text-gray-400 text-[10px] uppercase font-bold tracking-widest mb-8">
-            Solo personal autorizado
-          </p>
+  const handlePromoteUser = async (userId: string) => {
+    if (!currentUser) {
+      setUsersError(
+        "Debes iniciar sesión con una cuenta admin para promover usuarios.",
+      );
+      return;
+    }
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input
-              type="password"
-              maxLength={4}
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              className="w-full text-center text-2xl tracking-[1em] font-black p-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-gray-900 outline-none transition-all text-gray-800"
-              autoFocus
-              placeholder="••••"
-            />
-            {error && (
-              <p className="text-red-500 text-[10px] font-bold uppercase">
-                {error}
-              </p>
-            )}
-            <button className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all">
-              ENTRAR
-            </button>
-          </form>
-        </div>
-      </div>
+    setUsersError(null);
+    setUserFeedback(null);
+    setPromotingUserId(userId);
+
+    try {
+      const idToken = await currentUser.getIdToken();
+      const response = await fetch(`${BACKEND_URL}/api/promote-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || "No se pudo promover el usuario.");
+      }
+
+      setUserFeedback("Usuario promovido a administrador correctamente.");
+    } catch (promoteError: any) {
+      console.error(promoteError);
+      setUsersError(promoteError?.message || "No se pudo promover el usuario.");
+    } finally {
+      setPromotingUserId(null);
+    }
+  };
+
+  const sortedBlockedSlots = [...blockedSlots].sort((a, b) => {
+    const dateComp = a.date.localeCompare(b.date);
+    if (dateComp !== 0) return dateComp;
+    return a.time.localeCompare(b.time);
+  });
+
+  const isBlockedSlot = (date: string, time: string) => {
+    return blockedSlots.some(
+      (slot) => slot.date === date && slot.time === time,
     );
-  }
+  };
+
+  const hasAppointmentAtSlot = (date: string, time: string) => {
+    return appointments.some(
+      (appointment) => appointment.date === date && appointment.time === time,
+    );
+  };
+
+  const handleBlockSlot = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setBlockError(null);
+    setBlockFeedback(null);
+
+    if (!blockDate || !blockTime) {
+      setBlockError("Selecciona una fecha y un horario para bloquear.");
+      return;
+    }
+
+    if (isBlockedSlot(blockDate, blockTime)) {
+      setBlockError("Ese horario ya está bloqueado manualmente.");
+      return;
+    }
+
+    if (hasAppointmentAtSlot(blockDate, blockTime)) {
+      setBlockError(
+        "No se puede bloquear ese horario porque ya existe un turno agendado.",
+      );
+      return;
+    }
+
+    setIsBlocking(true);
+    try {
+      await addDoc(collection(db, "blocked_slots"), {
+        date: blockDate,
+        time: blockTime,
+        createdAt: new Date().toISOString(),
+      });
+      setBlockFeedback("Horario bloqueado correctamente.");
+    } catch (blockError) {
+      console.error(blockError);
+      setBlockError("No se pudo bloquear el horario. Intenta nuevamente.");
+    } finally {
+      setIsBlocking(false);
+    }
+  };
+
+  const handleUnblockSlot = async (id: string) => {
+    if (!window.confirm("¿Eliminar este bloqueo manual?")) return;
+
+    setBlockError(null);
+    setBlockFeedback(null);
+    try {
+      await deleteDoc(doc(db, "blocked_slots", id));
+      setBlockFeedback("Bloqueo eliminado correctamente.");
+    } catch (blockError) {
+      console.error(blockError);
+      setBlockError("No se pudo eliminar el bloqueo.");
+    }
+  };
 
   const today = new Date().toISOString().split("T")[0];
   const sortedAppointments = [...appointments].sort((a, b) => {
@@ -787,7 +883,7 @@ const Admin: React.FC<AdminProps> = ({
       </div>
 
       <section className="mt-12 space-y-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+        <div className="flex flex-col gap-4">
           <div>
             <h3 className="text-xl font-bold text-gray-800">
               Catálogo de servicios
@@ -797,27 +893,231 @@ const Admin: React.FC<AdminProps> = ({
               imágenes.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setActiveTab("appointments")}
-              className={`px-4 py-2 rounded-2xl text-sm font-bold transition ${activeTab === "appointments" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
+              className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${activeTab === "appointments" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
             >
               Turnos
             </button>
             <button
+              onClick={() => setActiveTab("blockedSlots")}
+              className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${activeTab === "blockedSlots" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
+            >
+              Bloqueos
+            </button>
+            <button
               onClick={() => setActiveTab("services")}
-              className={`px-4 py-2 rounded-2xl text-sm font-bold transition ${activeTab === "services" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
+              className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${activeTab === "services" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
             >
               Servicios
             </button>
             <button
               onClick={() => setActiveTab("promotions")}
-              className={`px-4 py-2 rounded-2xl text-sm font-bold transition ${activeTab === "promotions" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
+              className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${activeTab === "promotions" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
             >
               Promociones
             </button>
+            <button
+              onClick={() => setActiveTab("users")}
+              className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${activeTab === "users" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
+            >
+              Usuarios
+            </button>
           </div>
         </div>
+
+        {activeTab === "blockedSlots" && (
+          <div className="space-y-6">
+            {blockError && (
+              <div className="rounded-3xl bg-red-50 border border-red-100 p-4 text-red-600 text-sm">
+                {blockError}
+              </div>
+            )}
+            {blockFeedback && (
+              <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 text-sm">
+                {blockFeedback}
+              </div>
+            )}
+
+            <form
+              onSubmit={handleBlockSlot}
+              className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-5"
+            >
+              <div>
+                <h4 className="text-lg font-bold text-gray-800">
+                  Bloqueo manual de horarios
+                </h4>
+                <p className="text-gray-400 text-[11px]">
+                  El horario dejará de aparecer como disponible en reservas.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Fecha
+                  <input
+                    type="date"
+                    min={new Date().toISOString().split("T")[0]}
+                    value={blockDate}
+                    onChange={(e) => setBlockDate(e.target.value)}
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                  />
+                </label>
+
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Hora
+                  <select
+                    value={blockTime}
+                    onChange={(e) => setBlockTime(e.target.value)}
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                  >
+                    {blockTimeOptions.map((time) => (
+                      <option key={time} value={time}>
+                        {time}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isBlocking}
+                className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all disabled:opacity-40"
+              >
+                {isBlocking ? "BLOQUEANDO..." : "BLOQUEAR HORARIO"}
+              </button>
+            </form>
+
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-lg font-bold text-gray-800">
+                    Horarios bloqueados
+                  </h4>
+                  <p className="text-gray-400 text-[11px]">
+                    Lista simple de bloqueos manuales activos.
+                  </p>
+                </div>
+                <span className="rounded-full bg-gray-100 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                  {sortedBlockedSlots.length} activos
+                </span>
+              </div>
+
+              {sortedBlockedSlots.length === 0 ? (
+                <div className="rounded-[2rem] border-2 border-dashed border-gray-100 bg-gray-50 py-12 text-center text-sm font-bold text-gray-300">
+                  No hay bloqueos cargados.
+                </div>
+              ) : (
+                sortedBlockedSlots.map((slot) => (
+                  <div
+                    key={slot.id}
+                    className="flex items-center justify-between gap-4 rounded-3xl border border-gray-100 bg-gray-50 px-5 py-4"
+                  >
+                    <div>
+                      <p className="text-sm font-bold text-gray-800">
+                        {slot.date}
+                      </p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                        {slot.time} hs
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleUnblockSlot(slot.id)}
+                      className="px-4 py-2 rounded-2xl bg-red-50 text-red-600 text-xs font-bold border border-red-100"
+                    >
+                      Desbloquear
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "users" && (
+          <div className="space-y-6">
+            {usersError && (
+              <div className="rounded-3xl bg-red-50 border border-red-100 p-4 text-red-600 text-sm">
+                {usersError}
+              </div>
+            )}
+            {userFeedback && (
+              <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 text-sm">
+                {userFeedback}
+              </div>
+            )}
+
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-4">
+              <div>
+                <h4 className="text-lg font-bold text-gray-800">
+                  Usuarios administradores
+                </h4>
+                <p className="text-gray-400 text-[11px]">
+                  Promueve usuarios existentes a admin usando el endpoint
+                  protegido del backend.
+                </p>
+              </div>
+
+              {!currentUser ? (
+                <div className="rounded-[2rem] border border-amber-100 bg-amber-50 p-5 text-sm text-amber-700">
+                  Debes iniciar sesión con una cuenta Firebase que ya sea admin
+                  para gestionar otros administradores.
+                </div>
+              ) : usersLoading ? (
+                <div className="rounded-[2rem] border border-gray-100 bg-gray-50 p-8 text-center text-gray-400">
+                  Cargando usuarios...
+                </div>
+              ) : users.length === 0 ? (
+                <div className="rounded-[2rem] border border-gray-100 bg-gray-50 p-8 text-center text-gray-400">
+                  No hay usuarios disponibles.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {users.map((user) => {
+                    const isUserAdmin = user.role === "admin";
+
+                    return (
+                      <div
+                        key={user.uid}
+                        className="flex items-center justify-between gap-4 rounded-3xl border border-gray-100 bg-gray-50 px-5 py-4"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-gray-800">
+                            {user.email || user.uid}
+                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest ${isUserAdmin ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"}`}
+                            >
+                              {user.role}
+                            </span>
+                            <span className="truncate text-[10px] font-medium text-gray-400">
+                              {user.uid}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handlePromoteUser(user.uid)}
+                          disabled={isUserAdmin || promotingUserId === user.uid}
+                          className={`rounded-2xl border px-4 py-2 text-xs font-bold transition-all ${isUserAdmin ? "cursor-default border-emerald-100 bg-emerald-50 text-emerald-700" : "border-gray-900 bg-gray-900 text-white active:scale-95 disabled:opacity-40"}`}
+                        >
+                          {isUserAdmin
+                            ? "Ya es admin"
+                            : promotingUserId === user.uid
+                              ? "Promoviendo..."
+                              : "Hacer admin"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {activeTab === "services" && (
           <div className="space-y-6">

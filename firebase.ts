@@ -1,5 +1,6 @@
 // Fix: Use scoped packages (@firebase/app, @firebase/firestore and @firebase/storage) to resolve TS errors with named exports in modular Firebase
 import { initializeApp } from "@firebase/app";
+import { getAuth } from "firebase/auth";
 import {
   getFirestore,
   collection,
@@ -9,6 +10,7 @@ import {
   addDoc,
   deleteDoc,
   doc,
+  getDoc,
   setDoc,
 } from "@firebase/firestore";
 import {
@@ -34,10 +36,12 @@ const firebaseConfig = {
 // Inicialización modular (v9/v10+)
 // Se usan los paquetes con prefijo @firebase para asegurar que los exports nombrados sean reconocidos correctamente
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
 export {
+  auth,
   db,
   storage,
   storageRef,
@@ -50,5 +54,6 @@ export {
   addDoc,
   deleteDoc,
   doc,
+  getDoc,
   setDoc,
 };

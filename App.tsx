@@ -1,15 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { AppRoute, Service, Appointment, Promotion } from "./types";
+import {
+  AppRoute,
+  Service,
+  Appointment,
+  Promotion,
+  BlockedSlot,
+} from "./types";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
 import Booking from "./pages/Booking";
+import Login from "./pages/Login";
+import Account from "./pages/Account";
 import MyAppointments from "./pages/MyAppointments";
+import Register from "./pages/Register";
 import Contact from "./pages/Contact";
 import Admin from "./pages/Admin";
 import Success from "./pages/Success"; // ✨ NUEVO
 import Failure from "./pages/Failure"; // ✨ NUEVO
 import Navbar from "./components/Navbar";
 import AIAssistant from "./components/AIAssistant";
+import { useAuth } from "./contexts/AuthContext";
 import {
   db,
   collection,
@@ -22,6 +32,13 @@ import {
 } from "./firebase";
 
 const App: React.FC = () => {
+  const {
+    currentUser,
+    isAdmin,
+    loading: authLoading,
+    profileLoading,
+    logout: authLogout,
+  } = useAuth();
   const [currentRoute, setCurrentRoute] = useState<AppRoute>(AppRoute.HOME);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [services, setServices] = useState<Service[]>([]);
@@ -31,16 +48,10 @@ const App: React.FC = () => {
   const [promotionsLoading, setPromotionsLoading] = useState(true);
   const [promotionError, setPromotionError] = useState<string | null>(null);
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
+  const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [myAppointments, setMyAppointments] = useState<Appointment[]>([]);
   const [isSyncing, setIsSyncing] = useState(true);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
-
-  const [userPhone, setUserPhone] = useState<string | null>(
-    localStorage.getItem("enarmonia_user_phone"),
-  );
-  const [userName, setUserName] = useState<string | null>(
-    localStorage.getItem("enarmonia_user_name"),
-  );
 
   const mapRouteToPath = (route: AppRoute) => {
     switch (route) {
@@ -50,6 +61,12 @@ const App: React.FC = () => {
         return "/services";
       case AppRoute.BOOKING:
         return "/booking";
+      case AppRoute.LOGIN:
+        return "/login";
+      case AppRoute.REGISTER:
+        return "/register";
+      case AppRoute.ACCOUNT:
+        return "/account";
       case AppRoute.MY_APPOINTMENTS:
         return "/my-appointments";
       case AppRoute.CONTACT:
@@ -74,6 +91,12 @@ const App: React.FC = () => {
         return AppRoute.SERVICES;
       case "/booking":
         return AppRoute.BOOKING;
+      case "/login":
+        return AppRoute.LOGIN;
+      case "/register":
+        return AppRoute.REGISTER;
+      case "/account":
+        return AppRoute.ACCOUNT;
       case "/my-appointments":
         return AppRoute.MY_APPOINTMENTS;
       case "/contact":
@@ -112,18 +135,21 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!userPhone) {
+    if (authLoading) {
+      setIsSyncing(true);
+      return;
+    }
+
+    if (!currentUser?.uid) {
       setMyAppointments([]);
       setIsSyncing(false);
       return;
     }
+
     setIsSyncing(true);
 
     const appointmentsRef = collection(db, "appointments");
-    const q = query(
-      appointmentsRef,
-      where("userPhone", "==", userPhone.trim()),
-    );
+    const q = query(appointmentsRef, where("userId", "==", currentUser.uid));
 
     const unsubscribe = onSnapshot(
       q,
@@ -145,7 +171,7 @@ const App: React.FC = () => {
     );
 
     return () => unsubscribe();
-  }, [userPhone]);
+  }, [authLoading, currentUser]);
 
   useEffect(() => {
     const servicesRef = collection(db, "services");
@@ -204,6 +230,21 @@ const App: React.FC = () => {
   }, [services, selectedService]);
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    if (
+      currentRoute !== AppRoute.ADMIN ||
+      !currentUser?.uid ||
+      authLoading ||
+      profileLoading ||
+      !isAdmin
+    ) {
+      setAllAppointments([]);
+      return;
+    }
+
     const appointmentsRef = collection(db, "appointments");
     const unsubscribe = onSnapshot(
       appointmentsRef,
@@ -219,26 +260,50 @@ const App: React.FC = () => {
       },
     );
     return () => unsubscribe();
+  }, [authLoading, currentRoute, currentUser, isAdmin, profileLoading]);
+
+  useEffect(() => {
+    const blockedSlotsRef = collection(db, "blocked_slots");
+    const unsubscribe = onSnapshot(
+      blockedSlotsRef,
+      (snapshot) => {
+        const blocked: BlockedSlot[] = [];
+        snapshot.forEach((entry) => {
+          blocked.push({ id: entry.id, ...entry.data() } as BlockedSlot);
+        });
+        blocked.sort((a, b) => {
+          const dateDiff = a.date.localeCompare(b.date);
+          if (dateDiff !== 0) return dateDiff;
+          return a.time.localeCompare(b.time);
+        });
+        setBlockedSlots(blocked);
+      },
+      (error) => {
+        console.error("Error al cargar bloqueos manuales:", error);
+      },
+    );
+    return () => unsubscribe();
   }, []);
 
-  const handleIdentify = (name: string, phone: string) => {
-    localStorage.setItem("enarmonia_user_phone", phone.trim());
-    localStorage.setItem("enarmonia_user_name", name.trim());
-    setUserPhone(phone.trim());
-    setUserName(name.trim());
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("enarmonia_user_phone");
-    localStorage.removeItem("enarmonia_user_name");
-    setUserPhone(null);
-    setUserName(null);
+  const handleLogout = async () => {
+    if (currentUser) {
+      try {
+        await authLogout();
+      } catch (error) {
+        console.error("Error al cerrar sesión autenticada:", error);
+      }
+    }
   };
 
   const handleConfirmAppointment = async (app: Appointment) => {
     try {
       const appointmentsRef = collection(db, "appointments");
+      if (!currentUser?.uid) {
+        throw new Error("AUTH_REQUIRED_FOR_APPOINTMENT");
+      }
+
       await addDoc(appointmentsRef, {
+        userId: currentUser.uid,
         serviceId: app.serviceId,
         serviceName: app.serviceName,
         date: app.date,
@@ -247,7 +312,6 @@ const App: React.FC = () => {
         userPhone: app.userPhone,
         createdAt: new Date().toISOString(),
       });
-      handleIdentify(app.userName, app.userPhone);
     } catch (e: any) {
       console.error("Error al guardar:", e);
       throw e;
@@ -267,6 +331,20 @@ const App: React.FC = () => {
   const selectedServiceOrDefault = selectedService || services[0] || null;
 
   const renderPage = () => {
+    if (
+      authLoading &&
+      (currentRoute === AppRoute.LOGIN || currentRoute === AppRoute.REGISTER)
+    ) {
+      return (
+        <div className="p-6 pt-24 text-center animate-in">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-line-subtle border-t-brand"></div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-ink-faint">
+            Cargando acceso...
+          </p>
+        </div>
+      );
+    }
+
     switch (currentRoute) {
       case AppRoute.HOME:
         return (
@@ -298,9 +376,12 @@ const App: React.FC = () => {
             service={selectedServiceOrDefault}
             promotions={promotions}
             promotionsLoading={promotionsLoading}
-            occupiedSlots={allAppointments}
-            initialData={{ name: userName || "", phone: userPhone || "" }}
+            occupiedSlots={blockedSlots}
+            blockedSlots={blockedSlots}
+            currentUserId={currentUser?.uid || null}
+            initialData={{ name: "", phone: "" }}
             onConfirm={handleConfirmAppointment}
+            onRequireLogin={() => navigate(AppRoute.LOGIN)}
             onCancel={() => navigate(AppRoute.HOME)}
           />
         ) : (
@@ -313,13 +394,41 @@ const App: React.FC = () => {
             </p>
           </div>
         );
+      case AppRoute.LOGIN:
+        return (
+          <Login
+            onBack={() => navigate(AppRoute.HOME)}
+            onSuccess={() => navigate(AppRoute.HOME, true)}
+            onGoToRegister={() => navigate(AppRoute.REGISTER)}
+          />
+        );
+      case AppRoute.REGISTER:
+        return (
+          <Register
+            onBack={() => navigate(AppRoute.HOME)}
+            onSuccess={() => navigate(AppRoute.HOME, true)}
+            onGoToLogin={() => navigate(AppRoute.LOGIN)}
+          />
+        );
+      case AppRoute.ACCOUNT:
+        return (
+          <Account
+            email={currentUser?.email || null}
+            isAdmin={isAdmin}
+            onGoToLogin={() => navigate(AppRoute.LOGIN)}
+            onGoToRegister={() => navigate(AppRoute.REGISTER)}
+            onGoToAppointments={() => navigate(AppRoute.MY_APPOINTMENTS)}
+            onGoToAdmin={() => navigate(AppRoute.ADMIN)}
+            onLogout={handleLogout}
+          />
+        );
       case AppRoute.MY_APPOINTMENTS:
         return (
           <MyAppointments
             appointments={myAppointments}
             isSyncing={isSyncing}
-            userPhone={userPhone}
-            onIdentify={handleIdentify}
+            authEmail={currentUser?.email || null}
+            onGoToLogin={() => navigate(AppRoute.LOGIN)}
             onLogout={handleLogout}
             onDelete={handleDeleteAppointment}
           />
@@ -327,9 +436,65 @@ const App: React.FC = () => {
       case AppRoute.CONTACT:
         return <Contact onAdminAccess={() => navigate(AppRoute.ADMIN)} />;
       case AppRoute.ADMIN:
+        if (authLoading || profileLoading) {
+          return (
+            <div className="p-6 pt-24 text-center animate-in">
+              <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-line-subtle border-t-brand"></div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-ink-faint">
+                Verificando acceso...
+              </p>
+            </div>
+          );
+        }
+
+        if (!currentUser) {
+          return (
+            <div className="flex min-h-screen items-center justify-center p-6 bg-gray-50">
+              <div className="w-full max-w-xs rounded-[2.5rem] border border-gray-100 bg-white p-10 text-center shadow-xl">
+                <h2 className="mb-2 text-xl font-black text-gray-800 font-serif">
+                  Acceso restringido
+                </h2>
+                <p className="mb-8 text-xs text-gray-500">
+                  Inicia sesión con una cuenta administradora para ingresar al
+                  panel.
+                </p>
+                <button
+                  onClick={() => navigate(AppRoute.LOGIN, true)}
+                  className="w-full rounded-2xl bg-gray-900 px-4 py-4 text-sm font-bold text-white shadow-xl transition-all active:scale-95"
+                >
+                  Ingresar
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        if (!isAdmin) {
+          return (
+            <div className="flex min-h-screen items-center justify-center p-6 bg-gray-50">
+              <div className="w-full max-w-xs rounded-[2.5rem] border border-gray-100 bg-white p-10 text-center shadow-xl">
+                <h2 className="mb-2 text-xl font-black text-gray-800 font-serif">
+                  Sin permisos
+                </h2>
+                <p className="mb-8 text-xs text-gray-500">
+                  Este panel de gestión solo está disponible para la
+                  administradora.
+                </p>
+                <button
+                  onClick={() => navigate(AppRoute.HOME, true)}
+                  className="w-full rounded-2xl bg-gray-900 px-4 py-4 text-sm font-bold text-white shadow-xl transition-all active:scale-95"
+                >
+                  Volver al inicio
+                </button>
+              </div>
+            </div>
+          );
+        }
+
         return (
           <Admin
             appointments={allAppointments}
+            blockedSlots={blockedSlots}
             services={services}
             servicesLoading={servicesLoading}
             serviceError={serviceError}
@@ -389,9 +554,11 @@ const App: React.FC = () => {
         </button>
       )}
 
-      {currentRoute !== AppRoute.ADMIN && (
-        <Navbar currentRoute={currentRoute} onNavigate={navigate} />
-      )}
+      {currentRoute !== AppRoute.ADMIN &&
+        currentRoute !== AppRoute.LOGIN &&
+        currentRoute !== AppRoute.REGISTER && (
+          <Navbar currentRoute={currentRoute} onNavigate={navigate} />
+        )}
 
       <AIAssistant
         services={services}

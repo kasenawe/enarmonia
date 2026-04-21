@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { COLOR_VARIABLES } from "./constants";
+import { AuthProvider } from "./contexts/AuthContext";
 import "./index.css";
 
 const rootElement = document.getElementById("root");
@@ -16,6 +17,8 @@ Object.entries(COLOR_VARIABLES).forEach(([name, value]) => {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </React.StrictMode>,
 );

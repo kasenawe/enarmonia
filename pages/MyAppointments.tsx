@@ -4,8 +4,8 @@ import { Appointment } from "../types";
 interface MyAppointmentsProps {
   appointments: Appointment[];
   isSyncing: boolean;
-  userPhone: string | null;
-  onIdentify: (name: string, phone: string) => void;
+  authEmail: string | null;
+  onGoToLogin: () => void;
   onLogout: () => void;
   onDelete: (id: string) => Promise<void>;
 }
@@ -13,14 +13,14 @@ interface MyAppointmentsProps {
 const MyAppointments: React.FC<MyAppointmentsProps> = ({
   appointments,
   isSyncing,
-  userPhone,
-  onIdentify,
+  authEmail,
+  onGoToLogin,
   onLogout,
   onDelete,
 }) => {
-  const [inputName, setInputName] = useState("");
-  const [inputPhone, setInputPhone] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const hasAccountSession = Boolean(authEmail);
+  const sessionLabel = authEmail || "Usuario autenticado";
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -31,7 +31,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
     }
   };
 
-  if (!userPhone) {
+  if (!hasAccountSession) {
     return (
       <div className="p-6 pt-12 animate-in">
         <div className="rounded-[2.5rem] border border-line-subtle bg-shell p-8 text-center shadow-sm">
@@ -54,42 +54,29 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
           <h2 className="mb-2 text-2xl font-black text-ink-strong">
             Mis Reservas
           </h2>
-          <p className="mb-8 text-xs leading-relaxed text-ink-subtle">
-            Ingresá tu teléfono para ver tus turnos y agendar más rápido.
+          <p className="mb-8 text-sm leading-relaxed text-ink-subtle">
+            Please login to see your appointments
           </p>
 
-          <div className="space-y-4 text-left">
-            <div>
-              <label className="ml-1 text-[10px] font-bold uppercase text-ink-subtle">
-                Tu Nombre
-              </label>
-              <input
-                type="text"
-                value={inputName}
-                onChange={(e) => setInputName(e.target.value)}
-                placeholder="Ej: Maria Lopez"
-                className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm text-ink-strong outline-none transition-all focus:border-brand focus:bg-shell"
-              />
+          <div className="mb-8 rounded-[2rem] border border-outline bg-surface p-5 text-left">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-brand-muted">
+              Acceso de cuenta
+            </p>
+            <h3 className="mt-2 text-lg font-black text-ink-strong">
+              Inicia sesión para continuar
+            </h3>
+            <p className="mt-2 text-xs leading-relaxed text-ink-muted">
+              Tus turnos se muestran solo para usuarios autenticados.
+            </p>
+
+            <div className="mt-4">
+              <button
+                onClick={onGoToLogin}
+                className="w-full rounded-2xl bg-action py-4 text-sm font-bold text-white shadow-xl transition-all active:scale-[0.98]"
+              >
+                INGRESAR
+              </button>
             </div>
-            <div>
-              <label className="ml-1 text-[10px] font-bold uppercase text-ink-subtle">
-                Tu Teléfono
-              </label>
-              <input
-                type="tel"
-                value={inputPhone}
-                onChange={(e) => setInputPhone(e.target.value)}
-                placeholder="Ej: 099123456"
-                className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm text-ink-strong outline-none transition-all focus:border-brand focus:bg-shell"
-              />
-            </div>
-            <button
-              disabled={inputPhone.length < 7 || inputName.length < 3}
-              onClick={() => onIdentify(inputName, inputPhone)}
-              className="mt-4 w-full rounded-2xl bg-action py-4 text-sm font-bold text-white shadow-xl transition-all active:scale-[0.98] disabled:opacity-20 disabled:shadow-none"
-            >
-              VER MIS TURNOS
-            </button>
           </div>
         </div>
       </div>
@@ -102,7 +89,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
         <div>
           <h2 className="text-2xl font-black text-app-text">Mis Turnos</h2>
           <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
-            Sesión: {userPhone}
+            Cuenta: {sessionLabel}
           </p>
         </div>
         <button

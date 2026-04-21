@@ -1,5 +1,6 @@
 import React from "react";
 import { AppRoute } from "../types";
+import { useAuth } from "../contexts/AuthContext";
 
 const Icons = {
   Home: () => (
@@ -71,6 +72,22 @@ const Icons = {
       <circle cx="12" cy="10" r="3" />
     </svg>
   ),
+  User: () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  ),
 };
 
 interface NavbarProps {
@@ -79,6 +96,8 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
+  const { currentUser } = useAuth();
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 mx-auto flex max-w-md items-center justify-around rounded-t-3xl border-t border-line-subtle bg-shell/95 px-2 py-4 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] backdrop-blur-md">
       <button
@@ -118,6 +137,18 @@ const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
         <Icons.Map />
         <span className="text-[8px] font-bold uppercase tracking-widest">
           Contacto
+        </span>
+      </button>
+
+      <button
+        onClick={() =>
+          onNavigate(currentUser ? AppRoute.ACCOUNT : AppRoute.LOGIN)
+        }
+        className={`flex flex-col items-center gap-1.5 transition-all ${currentRoute === AppRoute.LOGIN || currentRoute === AppRoute.REGISTER || currentRoute === AppRoute.ACCOUNT ? "text-brand" : "text-ink-faint"}`}
+      >
+        <Icons.User />
+        <span className="text-[8px] font-bold uppercase tracking-widest">
+          {currentUser ? "Cuenta" : "Ingresar"}
         </span>
       </button>
     </nav>

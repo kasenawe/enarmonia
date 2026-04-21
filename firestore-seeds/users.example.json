@@ -1,0 +1,12 @@
+[
+  {
+    "uid": "abc123",
+    "email": "admin@mail.com",
+    "role": "admin"
+  },
+  {
+    "uid": "client123",
+    "email": "client@mail.com",
+    "role": "client"
+  }
+]

@@ -16,7 +16,8 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 ### Backend & Base de Datos
 
 - **Firebase Firestore**: Base de Datos NoSQL en tiempo real para almacenar citas y servicios.
-- **Firebase SDK (v10+)**: Implementación modular para optimizar el tamaño del bundle.
+- **Firebase Auth**: Autenticación con email y contraseña para clientes y administradora.
+- **Firebase SDK (v10+)**: Implementación modular para Firestore, Auth y Storage.
 - **Vercel Functions**: Backend serverless para integración de pagos.
 - **Mercado Pago**: Procesamiento seguro de pagos online.
 
@@ -30,18 +31,25 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 
 ```text
 ├── components/          # Componentes reutilizables (Navbar, Asistente IA, etc.)
+├── contexts/            # Contextos globales, incluyendo autenticación
 ├── pages/               # Vistas principales de la aplicación
 │   ├── Home.tsx         # Landing page con servicios destacados
 │   ├── Services.tsx     # Catálogo completo de servicios
-│   ├── Booking.tsx      # Formulario de reserva con validación de horarios
-│   ├── MyAppointments.tsx # Gestión de turnos del usuario (vía teléfono)
+│   ├── Booking.tsx      # Reserva con validación de horarios y login requerido
+│   ├── Login.tsx        # Inicio de sesión con Firebase Auth
+│   ├── Register.tsx     # Registro de usuarios con email y contraseña
+│   ├── Account.tsx      # Resumen de cuenta y accesos rápidos
+│   ├── MyAppointments.tsx # Historial de turnos del usuario autenticado
 │   ├── Contact.tsx      # Información de contacto y acceso admin
-│   └── Admin.tsx        # Panel de administración de turnos
+│   └── Admin.tsx        # Panel de gestión para administradora
+├── firestore-seeds/     # Ejemplos de documentos para colección users
+├── firestore.rules      # Reglas de seguridad de Firestore
 ├── constants.ts         # Datos estáticos (servicios, info de contacto, colores)
 ├── types.ts             # Definiciones de interfaces y enums de TypeScript
-├── firebase.ts          # Configuración e inicialización de Firebase
+├── firebase.ts          # Configuración e inicialización de Firebase/Auth/Firestore
 ├── App.tsx              # Lógica principal de enrutamiento y estado global
-└── main.tsx             # Punto de entrada de la aplicación
+├── index.tsx            # Punto de entrada de la aplicación
+└── firebase.json        # Configuración para desplegar reglas de Firestore
 ```
 
 ---
@@ -51,11 +59,14 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 1.  **Catálogo de Servicios**: Presentación detallada de las prestaciones disponibles.
 2.  **Sistema de Reservas con Pago**: Los clientes pueden agendar citas pagando online de forma segura con Mercado Pago.
 3.  **Validación de Disponibilidad**: Sistema en tiempo real que previene doble-booking.
-4.  **Identificación de Usuario**: Sistema basado en nombre y teléfono (almacenado en `LocalStorage`) para que los clientes vean sus turnos sin necesidad de contraseñas complejas.
-5.  **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
-6.  **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
-7.  **Panel Admin**: Acceso restringido (vía link oculto en contacto) para visualizar turnos, gestionar servicios y administrar promociones.
-8.  **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
+4.  **Cuentas de Usuario**: Registro e inicio de sesión con Firebase Auth usando email y contraseña.
+5.  **Cuenta del Cliente**: Vista `Cuenta` con acceso a historial de turnos, cierre de sesión y atajos según rol.
+6.  **Mis Turnos Protegido**: El historial de citas ahora se consulta por `userId` y solo está disponible para usuarios autenticados.
+7.  **Bloqueo Manual de Horarios**: La administradora puede bloquear y desbloquear horarios manualmente desde el panel, con validación contra turnos ya agendados.
+8.  **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
+9.  **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
+10. **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
+11. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
 
 ---
 
@@ -65,6 +76,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 
 - Node.js (v18 o superior)
 - Una cuenta de Firebase con un proyecto creado.
+- Firebase Auth habilitado con proveedor Email/Password.
 - Una API Key de Google AI Studio (Gemini).
 
 ### Instalación
@@ -83,6 +95,7 @@ Crea un archivo `.env.local` en la raíz del proyecto y añade tu clave de Gemin
 GEMINI_API_KEY=tu_clave_aqui
 VITE_CLOUDINARY_CLOUD_NAME=tu_cloud_name
 VITE_CLOUDINARY_UPLOAD_PRESET=tu_unsigned_upload_preset
+VITE_BACKEND_URL=https://tu-backend.vercel.app
 ```
 
 ### Subida de Imágenes (Cloudinary)
@@ -103,6 +116,22 @@ Para habilitar los pagos con Mercado Pago:
 3. **Firebase**: Configura Service Account para el backend
 4. **URLs**: Actualiza las URLs de redirección en Mercado Pago
 
+### Seguridad de Firestore
+
+La app utiliza reglas basadas en rol almacenado en `users/{uid}`.
+
+- `users`: lectura del dueño o admin; creación inicial del propio perfil cliente.
+- `services`: lectura pública; escritura solo admin.
+- `promotions`: lectura pública; escritura solo admin.
+- `blocked_slots`: lectura pública para deshabilitar horarios en reservas; escritura solo admin.
+- `appointments`: lectura del dueño o admin; creación/actualización/eliminación solo admin o backend autorizado según el flujo.
+
+Para desplegar reglas:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
 ### Ejecución en Local
 
 Para iniciar el servidor de desarrollo:
@@ -118,10 +147,13 @@ La aplicación estará disponible en `http://localhost:3000`.
 ## 📝 Notas para Desarrolladores
 
 - **Base de Datos**: La app usa tres colecciones principales en Firestore:
-  - `appointments`: `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `createdAt`, `price`, `paid`.
+  - `users`: `uid`, `email`, `role`, `createdAt`.
+  - `appointments`: `userId`, `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `createdAt`, `price`, `paid`.
+  - `blocked_slots`: `date`, `time`, `createdAt`.
   - `services`: `name`, `description`, `duration`, `price`, `image`.
   - `promotions`: `title`, `description`, `badgeText`, `discountType`, `discountValue`, `featured`, `isActive`, `appliesToAllServices`, `serviceIds`, `startDate`, `endDate`, `priority`, `image`.
-- **Estilos**: Se utiliza una configuración de Tailwind personalizada en `index.html` y `index.css`. El color primario es `#A79FE1` (Lavanda).
+- **Autenticación**: `AuthProvider` centraliza sesión, perfil Firestore y detección de rol admin.
+- **Estilos**: Se utiliza una configuración de Tailwind personalizada en `index.html` y `index.css`. El color primario ya se gestiona desde tokens semánticos definidos en `constants.ts`.
 - **IA**: El asistente está configurado en `components/AIAssistant.tsx`. Puedes ajustar las `systemInstruction` para cambiar su personalidad o conocimientos.
 
 ---

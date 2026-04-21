@@ -9,6 +9,15 @@ export interface Service {
 
 export type PromotionDiscountType = "percentage" | "fixed";
 
+export type UserRole = "admin" | "client";
+
+export interface AppUser {
+  uid: string;
+  email: string;
+  role: UserRole;
+  createdAt?: string;
+}
+
 export interface Promotion {
   id: string;
   title: string;
@@ -38,6 +47,7 @@ export interface AppliedPromotion {
 
 export interface Appointment {
   id: string;
+  userId?: string;
   serviceId: string;
   serviceName: string;
   date: string; // ISO string
@@ -53,6 +63,13 @@ export interface Appointment {
   createdAt: string;
 }
 
+export interface BlockedSlot {
+  id: string;
+  date: string;
+  time: string;
+  createdAt: string;
+}
+
 export interface OccupiedSlot {
   date: string;
   time: string;
@@ -62,6 +79,9 @@ export enum AppRoute {
   HOME = "home",
   SERVICES = "services",
   BOOKING = "booking",
+  LOGIN = "login",
+  REGISTER = "register",
+  ACCOUNT = "account",
   MY_APPOINTMENTS = "my-appointments",
   CONTACT = "contact",
   ADMIN = "admin",

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Service, Appointment, Promotion } from "../types";
+import { Service, Appointment, Promotion, BlockedSlot } from "../types";
 import { CONTACT_INFO, BACKEND_URL } from "../constants";
 import { getServicePricing } from "../utils/promotionPricing";
 
@@ -8,8 +8,11 @@ interface BookingProps {
   promotions: Promotion[];
   promotionsLoading: boolean;
   occupiedSlots: { date: string; time: string }[];
+  blockedSlots: BlockedSlot[];
+  currentUserId: string | null;
   initialData: { name: string; phone: string };
   onConfirm: (appointment: Appointment) => Promise<void>;
+  onRequireLogin: () => void;
   onCancel: () => void;
 }
 
@@ -18,8 +21,11 @@ const Booking: React.FC<BookingProps> = ({
   promotions,
   promotionsLoading,
   occupiedSlots,
+  blockedSlots,
+  currentUserId,
   initialData,
   onConfirm,
+  onRequireLogin,
   onCancel,
 }) => {
   const [step, setStep] = useState(1);
@@ -76,6 +82,16 @@ const Booking: React.FC<BookingProps> = ({
     );
   };
 
+  const isSlotBlocked = (date: string, time: string) => {
+    return blockedSlots.some(
+      (slot) => slot.date === date && slot.time === time,
+    );
+  };
+
+  const isSlotUnavailable = (date: string, time: string) => {
+    return isSlotOccupied(date, time) || isSlotBlocked(date, time);
+  };
+
   const getSelectedDateDisplay = () => {
     const dateObj = dates.find((d) => d.iso === selectedDate);
     return dateObj ? dateObj.full : selectedDate;
@@ -98,17 +114,20 @@ const Booking: React.FC<BookingProps> = ({
     if (step < 3) {
       setStep(step + 1);
     } else {
+      if (!currentUserId) {
+        onRequireLogin();
+        return;
+      }
+
       // ✨ NUEVO: Paso 3 ahora es PAGO
       setIsSubmitting(true);
       try {
-        localStorage.setItem("enarmonia_user_phone", userPhone.trim());
-        localStorage.setItem("enarmonia_user_name", userName.trim());
-
         // Llamar al backend para crear preferencia de pago
         const response = await fetch(BACKEND_URL + "/api/create-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            userId: currentUserId,
             serviceId: service.id,
             customerData: {
               name: userName.trim(),
@@ -213,6 +232,53 @@ const Booking: React.FC<BookingProps> = ({
     );
   }
 
+  if (!currentUserId) {
+    return (
+      <div className="p-6 pt-12 animate-in">
+        <div className="rounded-[2.5rem] border border-line-subtle bg-shell p-8 text-center shadow-sm">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-surface text-brand">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="36"
+              height="36"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+          <h2 className="mb-2 text-2xl font-black text-ink-strong">
+            Reserva con cuenta
+          </h2>
+          <p className="mb-8 text-sm leading-relaxed text-ink-subtle">
+            Inicia sesión para continuar con tu reserva y vincularla a tu
+            cuenta.
+          </p>
+
+          <div className="space-y-3">
+            <button
+              onClick={onRequireLogin}
+              className="w-full rounded-2xl bg-action py-4 text-sm font-bold text-white shadow-xl transition-all active:scale-[0.98]"
+            >
+              INICIAR SESION
+            </button>
+            <button
+              onClick={onCancel}
+              className="w-full py-4 text-[10px] font-bold uppercase tracking-widest text-ink-subtle transition-colors hover:text-ink-soft"
+            >
+              Volver al inicio
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 pb-12">
       <div className="flex items-center gap-3 mb-8 pt-4">
@@ -283,14 +349,14 @@ const Booking: React.FC<BookingProps> = ({
               <div className="animate-in">
                 <div className="grid grid-cols-3 gap-2">
                   {timeSlots.map((t) => {
-                    const occupied = isSlotOccupied(selectedDate, t);
+                    const unavailable = isSlotUnavailable(selectedDate, t);
                     return (
                       <button
                         key={t}
-                        disabled={occupied}
+                        disabled={unavailable}
                         onClick={() => setSelectedTime(t)}
                         className={`py-3.5 rounded-xl border-2 text-xs font-bold transition-all ${
-                          occupied
+                          unavailable
                             ? "bg-shell-soft border-transparent text-ink-faint cursor-not-allowed line-through"
                             : selectedTime === t
                               ? "border-action bg-action text-white shadow-md"

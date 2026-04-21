@@ -96,7 +96,5 @@ export const EMAIL_CONFIG = {
 export const LOGO_URL =
   "https://raw.githubusercontent.com/StackBlitz-User-Assets/beauty-center-logo/main/logo.png";
 
-export const ADMIN_PASSWORD = "1234"; // ✨ NUEVO: contraseña para acceder al panel de administración
-
 export const BACKEND_URL =
   import.meta.env.VITE_BACKEND_URL || "https://enarmonia-backend.vercel.app"; // URL del backend, configurable vía variable de entorno
