@@ -231,22 +231,8 @@ const App: React.FC = () => {
     }
   }, [services, selectedService]);
 
+  // Siempre escuchar todos los appointments (necesario para deshabilitar slots ocupados en booking)
   useEffect(() => {
-    if (authLoading) {
-      return;
-    }
-
-    if (
-      currentRoute !== AppRoute.ADMIN ||
-      !currentUser?.uid ||
-      authLoading ||
-      profileLoading ||
-      !isAdmin
-    ) {
-      setAllAppointments([]);
-      return;
-    }
-
     const appointmentsRef = collection(db, "appointments");
     const unsubscribe = onSnapshot(
       appointmentsRef,
@@ -258,11 +244,11 @@ const App: React.FC = () => {
         setAllAppointments(appointments);
       },
       (error) => {
-        console.error("Error en listener global:", error);
+        console.error("Error al cargar appointments:", error);
       },
     );
     return () => unsubscribe();
-  }, [authLoading, currentRoute, currentUser, isAdmin, profileLoading]);
+  }, []);
 
   useEffect(() => {
     const blockedSlotsRef = collection(db, "blocked_slots");
@@ -378,7 +364,10 @@ const App: React.FC = () => {
             service={selectedServiceOrDefault}
             promotions={promotions}
             promotionsLoading={promotionsLoading}
-            occupiedSlots={blockedSlots}
+            occupiedSlots={allAppointments.map((apt) => ({
+              date: apt.date,
+              time: apt.time,
+            }))}
             blockedSlots={blockedSlots}
             currentUserId={currentUser?.uid || null}
             initialData={{ name: "", phone: appUser?.userPhone || "" }}

@@ -19,6 +19,7 @@ import {
 import { BACKEND_URL } from "../constants";
 import { getServicePricing } from "../utils/promotionPricing";
 import { useAuth } from "../contexts/AuthContext";
+import ClinicalRecordsPanel from "../components/ClinicalRecordsPanel";
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -50,11 +51,21 @@ const Admin: React.FC<AdminProps> = ({
 }) => {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<
-    "appointments" | "blockedSlots" | "services" | "promotions" | "users"
+    | "appointments"
+    | "blockedSlots"
+    | "services"
+    | "promotions"
+    | "users"
+    | "clinical"
   >("appointments");
-  const [blockDate, setBlockDate] = useState(
-    new Date().toISOString().split("T")[0],
-  );
+
+  // Función helper para obtener fecha local en formato YYYY-MM-DD
+  const getLocalDateString = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+
+  const [blockDate, setBlockDate] = useState(getLocalDateString());
   const [blockTime, setBlockTime] = useState("09:00");
   const [blockError, setBlockError] = useState<string | null>(null);
   const [blockFeedback, setBlockFeedback] = useState<string | null>(null);
@@ -691,7 +702,9 @@ const Admin: React.FC<AdminProps> = ({
     }
   };
 
-  const today = new Date().toISOString().split("T")[0];
+  // Usar fecha local, no UTC, para que coincida con como se guardan los appointments
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const sortedAppointments = [...appointments].sort((a, b) => {
     const dateComp = a.date.localeCompare(b.date);
     if (dateComp !== 0) return dateComp;
@@ -976,6 +989,12 @@ const Admin: React.FC<AdminProps> = ({
             >
               Usuarios
             </button>
+            <button
+              onClick={() => setActiveTab("clinical")}
+              className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${activeTab === "clinical" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
+            >
+              Historia clínica
+            </button>
           </div>
         </div>
 
@@ -1010,7 +1029,7 @@ const Admin: React.FC<AdminProps> = ({
                   Fecha
                   <input
                     type="date"
-                    min={new Date().toISOString().split("T")[0]}
+                    min={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`}
                     value={blockDate}
                     onChange={(e) => setBlockDate(e.target.value)}
                     className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
@@ -1186,6 +1205,14 @@ const Admin: React.FC<AdminProps> = ({
               )}
             </div>
           </div>
+        )}
+
+        {activeTab === "clinical" && (
+          <ClinicalRecordsPanel
+            users={users}
+            appointments={appointments}
+            currentAdminUid={currentUser?.uid || null}
+          />
         )}
 
         {activeTab === "services" && (

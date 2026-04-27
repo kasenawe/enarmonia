@@ -64,8 +64,14 @@ const Booking: React.FC<BookingProps> = ({
       "Dic",
     ];
 
+    // Convertir a fecha local sin UTC offset
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const iso = `${year}-${month}-${day}`;
+
     return {
-      iso: d.toISOString().split("T")[0],
+      iso,
       day: days[d.getDay()],
       num: d.getDate(),
       month: months[d.getMonth()],

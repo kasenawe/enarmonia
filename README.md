@@ -66,8 +66,9 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 8.  **Bloqueo Manual de Horarios**: La administradora puede bloquear y desbloquear horarios manualmente desde el panel, con validación contra turnos ya agendados.
 9.  **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
 10. **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
-11. **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
-12. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
+11. **Historia Clínica Digital**: Nueva pestaña en Admin para registrar la ficha de ingreso del paciente y la evolución por sesión, vinculable al usuario y opcionalmente al turno.
+12. **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
+13. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
 
 ---
 
@@ -126,6 +127,8 @@ La app utiliza reglas basadas en rol almacenado en `users/{uid}`.
 - `promotions`: lectura pública; escritura solo admin.
 - `blocked_slots`: lectura pública para deshabilitar horarios en reservas; escritura solo admin.
 - `appointments`: lectura del dueño o admin; creación/actualización/eliminación solo admin o backend autorizado según el flujo.
+- `clinical_profiles`: ficha de ingreso y antecedentes clínicos por paciente (`patientId` como ID de documento), acceso solo admin.
+- `clinical_sessions`: evolución clínica por sesión con vínculo opcional a `appointmentId`, acceso solo admin.
 
 Para desplegar reglas:
 
@@ -153,6 +156,8 @@ La aplicación estará disponible en `http://localhost:3000`.
   - `blocked_slots`: `date`, `time`, `createdAt`.
   - `services`: `name`, `description`, `duration`, `price`, `image`.
   - `promotions`: `title`, `description`, `badgeText`, `discountType`, `discountValue`, `featured`, `isActive`, `appliesToAllServices`, `serviceIds`, `startDate`, `endDate`, `priority`, `image`.
+  - `clinical_profiles`: `patientId`, `intakeDate`, datos de identificación y contacto, motivo de consulta, zonas de dolor, antecedentes de salud, `initialDiagnosis`, `treatmentStartDate`, `createdAt/updatedAt`, `createdBy/updatedBy`.
+  - `clinical_sessions`: `patientId`, `appointmentId` (opcional), `sessionDate`, `painLevel`, `clinicalObservations`, `techniquesApplied`, `recommendations`, `sessionNumber`, `createdAt/updatedAt`, `createdBy/updatedBy`.
 - **Autenticación**: `AuthProvider` centraliza sesión, perfil Firestore reactivo, teléfono del usuario y detección de rol admin.
 - **Reserva**: `appointments.userPhone` guarda el snapshot exacto usado en ese turno, aunque luego el usuario cambie su teléfono en `users`.
 - **Estilos**: Se utiliza una configuración de Tailwind personalizada en `index.html` y `index.css`. El color primario ya se gestiona desde tokens semánticos definidos en `constants.ts`.

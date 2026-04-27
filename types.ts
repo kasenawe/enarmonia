@@ -19,6 +19,72 @@ export interface AppUser {
   createdAt?: string;
 }
 
+export type PainDurationUnit = "days" | "weeks" | "months" | "years";
+
+export type PainZone =
+  | "neck"
+  | "upperBack"
+  | "midBack"
+  | "lowerBack"
+  | "shoulder"
+  | "arm"
+  | "hip"
+  | "leg"
+  | "other";
+
+export interface ClinicalHealthHistory {
+  hypertension: boolean;
+  diabetes: boolean;
+  heartProblems: boolean;
+  osteoporosis: boolean;
+  surgeries: string;
+  accidents: string;
+  currentMedication: string;
+}
+
+export interface ClinicalProfile {
+  patientId: string;
+  intakeDate: string;
+  fullName: string;
+  documentId: string;
+  birthDate: string;
+  phone: string;
+  email: string;
+  occupation: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+  chiefComplaint: string;
+  painZones: PainZone[];
+  painZoneOther: string;
+  painDurationUnit: PainDurationUnit | "";
+  painIntensity: number;
+  worseFactors: string;
+  reliefFactors: string;
+  healthHistory: ClinicalHealthHistory;
+  initialDiagnosis: string;
+  treatmentStartDate: string;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
+export interface ClinicalSession {
+  id: string;
+  patientId: string;
+  appointmentId?: string;
+  sessionNumber?: number;
+  sessionDate: string;
+  painLevel: number;
+  clinicalObservations: string;
+  techniquesApplied: string;
+  recommendations: string;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
 export interface Promotion {
   id: string;
   title: string;
