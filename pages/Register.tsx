@@ -14,6 +14,8 @@ const Register: React.FC<RegisterProps> = ({
   onGoToLogin,
 }) => {
   const { currentUser, register, loading } = useAuth();
+  const [fullName, setFullName] = useState("");
+  const [documentId, setDocumentId] = useState("");
   const [email, setEmail] = useState("");
   const [userPhone, setUserPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -55,6 +57,16 @@ const Register: React.FC<RegisterProps> = ({
     e.preventDefault();
     setError(null);
 
+    if (fullName.trim().length < 3) {
+      setError("Ingresa tu nombre y apellido.");
+      return;
+    }
+
+    if (documentId.trim().length < 5) {
+      setError("Ingresa un documento válido.");
+      return;
+    }
+
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !normalizedEmail.includes("@")) {
       setError("Ingresa un email válido.");
@@ -78,7 +90,13 @@ const Register: React.FC<RegisterProps> = ({
 
     setIsSubmitting(true);
     try {
-      await register(normalizedEmail, password, userPhone);
+      await register({
+        email: normalizedEmail,
+        password,
+        fullName,
+        documentId,
+        userPhone,
+      });
       onSuccess();
     } catch (error) {
       setError(getErrorMessage(error));
@@ -130,11 +148,37 @@ const Register: React.FC<RegisterProps> = ({
           </div>
           <h1 className="text-2xl font-black text-ink-strong">Crear cuenta</h1>
           <p className="mt-2 text-sm text-ink-muted">
-            Regístrate con email y contraseña para acceder a tu cuenta.
+            Completa tus datos para crear tu cuenta y gestionar tus turnos.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-2 ml-1 block text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
+              Nombre y apellido
+            </label>
+            <input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Como figura en tu documento"
+              autoComplete="name"
+              className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm text-ink-strong outline-none transition-all focus:border-brand focus:bg-shell"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 ml-1 block text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
+              Documento
+            </label>
+            <input
+              value={documentId}
+              onChange={(e) => setDocumentId(e.target.value)}
+              placeholder="CI o documento"
+              autoComplete="off"
+              className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm text-ink-strong outline-none transition-all focus:border-brand focus:bg-shell"
+            />
+          </div>
+
           <div>
             <label className="mb-2 ml-1 block text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
               Email

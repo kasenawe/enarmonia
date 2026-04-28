@@ -15,6 +15,8 @@ export interface AppUser {
   uid: string;
   email: string;
   role: UserRole;
+  fullName?: string;
+  documentId?: string;
   userPhone?: string;
   createdAt?: string;
 }
@@ -128,6 +130,8 @@ export interface Appointment {
   paymentId?: string; // ✨ NUEVO: ID del pago en MP
   appliedPromotion?: AppliedPromotion | null;
   createdAt: string;
+  bookingMode?: "account" | "guest";
+  userEmail?: string;
 }
 
 export interface BlockedSlot {

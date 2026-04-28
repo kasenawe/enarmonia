@@ -9,12 +9,16 @@ import type { ReactNode } from "react";
 import type { User, UserCredential } from "firebase/auth";
 import type { AppUser } from "../types";
 import {
+  EmailAuthProvider,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
+  updatePassword as firebaseUpdatePassword,
+  verifyBeforeUpdateEmail,
 } from "firebase/auth";
 import { auth, db, doc, onSnapshot, setDoc } from "../firebase";
 
@@ -26,13 +30,27 @@ interface AuthContextValue {
   profileLoading: boolean;
   login: (email: string, password: string) => Promise<UserCredential>;
   resendVerificationEmail: (email: string, password: string) => Promise<void>;
-  register: (
-    email: string,
-    password: string,
-    userPhone?: string,
-  ) => Promise<UserCredential>;
+  register: (payload: {
+    email: string;
+    password: string;
+    fullName: string;
+    documentId: string;
+    userPhone?: string;
+  }) => Promise<UserCredential>;
   resetPassword: (email: string) => Promise<void>;
-  saveUserPhone: (userPhone: string) => Promise<void>;
+  saveUserProfile: (payload: {
+    fullName: string;
+    documentId: string;
+    userPhone: string;
+  }) => Promise<void>;
+  changeUserEmail: (payload: {
+    newEmail: string;
+    currentPassword: string;
+  }) => Promise<void>;
+  changeUserPassword: (payload: {
+    currentPassword: string;
+    newPassword: string;
+  }) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -88,7 +106,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         doc(db, "users", user.uid),
         (userSnapshot) => {
           if (userSnapshot.exists()) {
-            setAppUser({ uid: user.uid, ...userSnapshot.data() } as AppUser);
+            const profileData = {
+              uid: user.uid,
+              ...userSnapshot.data(),
+            } as AppUser;
+
+            setAppUser(profileData);
+
+            if (user.email && profileData.email !== user.email) {
+              void setDoc(
+                doc(db, "users", user.uid),
+                { email: user.email },
+                { merge: true },
+              ).catch((syncError) => {
+                console.error(
+                  "Error syncing auth email to profile:",
+                  syncError,
+                );
+              });
+            }
           } else {
             setAppUser(null);
           }
@@ -137,7 +173,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await signOut(auth);
   };
 
-  const register = async (email: string, password: string, userPhone = "") => {
+  const register = async ({
+    email,
+    password,
+    fullName,
+    documentId,
+    userPhone = "",
+  }: {
+    email: string;
+    password: string;
+    fullName: string;
+    documentId: string;
+    userPhone?: string;
+  }) => {
     const credentials = await createUserWithEmailAndPassword(
       auth,
       email,
@@ -148,6 +196,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       uid: credentials.user.uid,
       email: credentials.user.email || email,
       role: "client",
+      fullName: fullName.trim(),
+      documentId: documentId.trim(),
       userPhone: userPhone.trim(),
       createdAt: new Date().toISOString(),
     });
@@ -158,7 +208,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return credentials;
   };
 
-  const saveUserPhone = async (userPhone: string) => {
+  const getAuthenticatedUser = () => {
     const authenticatedUser = auth.currentUser;
 
     if (!currentUser?.uid || !authenticatedUser?.uid) {
@@ -169,16 +219,68 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw new Error("AUTH_STATE_MISMATCH");
     }
 
+    return authenticatedUser;
+  };
+
+  const saveUserProfile = async ({
+    fullName,
+    documentId,
+    userPhone,
+  }: {
+    fullName: string;
+    documentId: string;
+    userPhone: string;
+  }) => {
+    const authenticatedUser = getAuthenticatedUser();
+
     await setDoc(
       doc(db, "users", authenticatedUser.uid),
       {
         uid: authenticatedUser.uid,
         email: authenticatedUser.email || appUser?.email || "",
         role: appUser?.role || "client",
+        fullName: fullName.trim(),
+        documentId: documentId.trim(),
         userPhone: userPhone.trim(),
       },
       { merge: true },
     );
+  };
+
+  const reauthenticateUser = async (currentPassword: string) => {
+    const authenticatedUser = getAuthenticatedUser();
+    const email = authenticatedUser.email;
+
+    if (!email) {
+      throw new Error("AUTH_EMAIL_MISSING");
+    }
+
+    const credential = EmailAuthProvider.credential(email, currentPassword);
+    await reauthenticateWithCredential(authenticatedUser, credential);
+
+    return authenticatedUser;
+  };
+
+  const changeUserEmail = async ({
+    newEmail,
+    currentPassword,
+  }: {
+    newEmail: string;
+    currentPassword: string;
+  }) => {
+    const authenticatedUser = await reauthenticateUser(currentPassword);
+    await verifyBeforeUpdateEmail(authenticatedUser, newEmail.trim());
+  };
+
+  const changeUserPassword = async ({
+    currentPassword,
+    newPassword,
+  }: {
+    currentPassword: string;
+    newPassword: string;
+  }) => {
+    const authenticatedUser = await reauthenticateUser(currentPassword);
+    await firebaseUpdatePassword(authenticatedUser, newPassword);
   };
 
   const resetPassword = async (email: string) => {
@@ -200,7 +302,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       resendVerificationEmail,
       register,
       resetPassword,
-      saveUserPhone,
+      saveUserProfile,
+      changeUserEmail,
+      changeUserPassword,
       logout,
     }),
     [appUser, currentUser, loading, profileLoading],
