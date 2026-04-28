@@ -38,7 +38,9 @@ const App: React.FC = () => {
     isAdmin,
     loading: authLoading,
     profileLoading,
-    saveUserPhone,
+    saveUserProfile,
+    changeUserEmail,
+    changeUserPassword,
     logout: authLogout,
   } = useAuth();
   const [currentRoute, setCurrentRoute] = useState<AppRoute>(AppRoute.HOME);
@@ -370,7 +372,11 @@ const App: React.FC = () => {
             }))}
             blockedSlots={blockedSlots}
             currentUserId={currentUser?.uid || null}
-            initialData={{ name: "", phone: appUser?.userPhone || "" }}
+            initialData={{
+              name: appUser?.fullName || "",
+              phone: appUser?.userPhone || "",
+              email: currentUser?.email || "",
+            }}
             onConfirm={handleConfirmAppointment}
             onRequireLogin={() => navigate(AppRoute.LOGIN)}
             onCancel={() => navigate(AppRoute.HOME)}
@@ -405,6 +411,8 @@ const App: React.FC = () => {
         return (
           <Account
             email={currentUser?.email || null}
+            fullName={appUser?.fullName || ""}
+            documentId={appUser?.documentId || ""}
             userPhone={appUser?.userPhone || ""}
             isAdmin={isAdmin}
             profileLoading={profileLoading}
@@ -412,7 +420,9 @@ const App: React.FC = () => {
             onGoToRegister={() => navigate(AppRoute.REGISTER)}
             onGoToAppointments={() => navigate(AppRoute.MY_APPOINTMENTS)}
             onGoToAdmin={() => navigate(AppRoute.ADMIN)}
-            onSavePhone={saveUserPhone}
+            onSaveProfile={saveUserProfile}
+            onChangeEmail={changeUserEmail}
+            onChangePassword={changeUserPassword}
             onLogout={handleLogout}
           />
         );
