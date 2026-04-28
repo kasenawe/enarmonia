@@ -147,7 +147,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const credentials = await signInWithEmailAndPassword(auth, email, password);
 
     if (!credentials.user.emailVerified) {
-      await sendEmailVerification(credentials.user);
       await signOut(auth);
 
       const verificationError = new Error("EMAIL_NOT_VERIFIED") as Error & {
