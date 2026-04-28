@@ -235,9 +235,8 @@ const App: React.FC = () => {
     }
   }, [services, selectedService]);
 
-  // Escuchar todos los appointments; requiere auth (regla Firestore: admin o dueño).
-  // La dependencia en currentUser garantiza que el listener se reinicie cuando el
-  // usuario inicia o cierra sesión, evitando el bug de "primera carga sin auth".
+  // Escuchar todos los appointments para bloquear horarios ocupados en booking.
+  // Debe funcionar también para invitados y usuarios no admin.
   useEffect(() => {
     if (authLoading) return;
 
