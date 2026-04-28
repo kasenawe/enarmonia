@@ -10,7 +10,7 @@ interface BookingProps {
   occupiedSlots: { date: string; time: string }[];
   blockedSlots: BlockedSlot[];
   currentUserId: string | null;
-  initialData: { name: string; phone: string };
+  initialData: { name: string; phone: string; email: string };
   onConfirm: (appointment: Appointment) => Promise<void>;
   onRequireLogin: () => void;
   onCancel: () => void;
@@ -33,6 +33,7 @@ const Booking: React.FC<BookingProps> = ({
   const [selectedTime, setSelectedTime] = useState("");
   const [userName, setUserName] = useState(initialData.name);
   const [userPhone, setUserPhone] = useState(initialData.phone);
+  const [userEmail, setUserEmail] = useState(initialData.email);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const pricing = getServicePricing(service, promotions);
@@ -44,6 +45,10 @@ const Booking: React.FC<BookingProps> = ({
   useEffect(() => {
     setUserPhone((currentPhone) => currentPhone || initialData.phone);
   }, [initialData.phone]);
+
+  useEffect(() => {
+    setUserEmail((currentEmail) => currentEmail || initialData.email);
+  }, [initialData.email]);
 
   const dates = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
@@ -128,11 +133,6 @@ const Booking: React.FC<BookingProps> = ({
     if (step < 3) {
       setStep(step + 1);
     } else {
-      if (!currentUserId) {
-        onRequireLogin();
-        return;
-      }
-
       // ✨ NUEVO: Paso 3 ahora es PAGO
       setIsSubmitting(true);
       try {
@@ -141,11 +141,12 @@ const Booking: React.FC<BookingProps> = ({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            userId: currentUserId,
+            userId: currentUserId || null,
             serviceId: service.id,
             customerData: {
               name: userName.trim(),
               phone: userPhone.trim(),
+              email: userEmail.trim().toLowerCase(),
             },
             date: selectedDate,
             time: selectedTime,
@@ -246,55 +247,26 @@ const Booking: React.FC<BookingProps> = ({
     );
   }
 
-  if (!currentUserId) {
-    return (
-      <div className="p-6 pt-12 animate-in">
-        <div className="rounded-[2.5rem] border border-line-subtle bg-shell p-8 text-center shadow-sm">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-surface text-brand">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="36"
-              height="36"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </div>
-          <h2 className="mb-2 text-2xl font-black text-ink-strong">
-            Reserva con cuenta
-          </h2>
-          <p className="mb-8 text-sm leading-relaxed text-ink-subtle">
-            Inicia sesión para continuar con tu reserva y vincularla a tu
-            cuenta.
-          </p>
-
-          <div className="space-y-3">
-            <button
-              onClick={onRequireLogin}
-              className="w-full rounded-2xl bg-action py-4 text-sm font-bold text-white shadow-xl transition-all active:scale-[0.98]"
-            >
-              INICIAR SESION
-            </button>
-            <button
-              onClick={onCancel}
-              className="w-full py-4 text-[10px] font-bold uppercase tracking-widest text-ink-subtle transition-colors hover:text-ink-soft"
-            >
-              Volver al inicio
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 pb-12">
+      {!currentUserId && (
+        <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-blue-800">
+          <p className="text-xs font-bold uppercase tracking-widest">
+            Reserva como invitado
+          </p>
+          <p className="mt-1 text-sm text-blue-700">
+            Puedes reservar sin cuenta. Si prefieres ver y gestionar tus turnos
+            luego, inicia sesión antes de pagar.
+          </p>
+          <button
+            onClick={onRequireLogin}
+            className="mt-3 rounded-xl border border-blue-200 bg-white px-4 py-2 text-xs font-bold text-blue-700"
+          >
+            INICIAR SESION
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center gap-3 mb-8 pt-4">
         <button
           disabled={isSubmitting}
@@ -417,6 +389,18 @@ const Booking: React.FC<BookingProps> = ({
                   className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm font-medium text-ink-strong outline-none transition-all focus:border-action focus:bg-shell"
                 />
               </div>
+              <div>
+                <label className="ml-1 mb-2 block text-[10px] font-bold uppercase text-ink-subtle">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={userEmail}
+                  onChange={(e) => setUserEmail(e.target.value)}
+                  placeholder="tu@email.com"
+                  className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm font-medium text-ink-strong outline-none transition-all focus:border-action focus:bg-shell"
+                />
+              </div>
             </div>
           </div>
         )}
@@ -478,6 +462,7 @@ const Booking: React.FC<BookingProps> = ({
                 <span className="text-sm font-bold text-ink-strong">
                   {userName} ({userPhone})
                 </span>
+                <span className="text-xs text-ink-muted">{userEmail}</span>
               </div>
               <div className="border-t border-line/50 pt-2">
                 <div className="space-y-3">
@@ -569,14 +554,18 @@ const Booking: React.FC<BookingProps> = ({
           isSubmitting ||
           (step === 1 && (!selectedDate || !selectedTime)) ||
           (step === 2 &&
-            (userName.trim().length < 3 || userPhone.trim().length < 7)) ||
+            (userName.trim().length < 3 ||
+              userPhone.trim().length < 7 ||
+              !userEmail.trim().includes("@"))) ||
           (step === 3 && promotionsLoading)
         }
         onClick={handleNextStep}
         className={`w-full py-4 rounded-2xl font-bold text-white shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
           (step === 1 && (!selectedDate || !selectedTime)) ||
           (step === 2 &&
-            (userName.trim().length < 3 || userPhone.trim().length < 7)) ||
+            (userName.trim().length < 3 ||
+              userPhone.trim().length < 7 ||
+              !userEmail.trim().includes("@"))) ||
           (step === 3 && promotionsLoading)
             ? "bg-shell-soft text-ink-faint cursor-not-allowed shadow-none"
             : "bg-action hover:bg-action-hover"
