@@ -1,5 +1,9 @@
 # Soledad Cedres Quiropráctica
 
+## Manual para uso diario
+
+Si necesitas una guía pensada para la dueña del negocio, sin lenguaje técnico, consulta [docs/Manual-Usuario-Final.md](docs/Manual-Usuario-Final.md).
+
 Esta es una aplicación web para la gestión de turnos y servicios de Soledad Cedres Quiropráctica. La plataforma permite explorar prestaciones, agendar citas en tiempo real y recibir orientación inicial mediante un asistente con Inteligencia Artificial.
 
 ## 🚀 Tecnologías Utilizadas
@@ -35,9 +39,9 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 ├── pages/               # Vistas principales de la aplicación
 │   ├── Home.tsx         # Landing page con servicios destacados
 │   ├── Services.tsx     # Catálogo completo de servicios
-│   ├── Booking.tsx      # Reserva con validación de horarios y login requerido
+│   ├── Booking.tsx      # Reserva con validación de horarios, pago y modo invitado/opcional con cuenta
 │   ├── Login.tsx        # Inicio de sesión con Firebase Auth
-│   ├── Register.tsx     # Registro de usuarios con email y contraseña
+│   ├── Register.tsx     # Registro de usuarios con nombre, documento, email y contraseña
 │   ├── Account.tsx      # Resumen de cuenta y accesos rápidos
 │   ├── MyAppointments.tsx # Historial de turnos del usuario autenticado
 │   ├── Contact.tsx      # Información de contacto y acceso admin
@@ -59,16 +63,19 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 1.  **Catálogo de Servicios**: Presentación detallada de las prestaciones disponibles.
 2.  **Sistema de Reservas con Pago**: Los clientes pueden agendar citas pagando online de forma segura con Mercado Pago.
 3.  **Validación de Disponibilidad**: Sistema en tiempo real que previene doble-booking.
-4.  **Cuentas de Usuario**: Registro e inicio de sesión con Firebase Auth usando email y contraseña.
+4.  **Cuentas de Usuario**: Registro e inicio de sesión con Firebase Auth usando nombre, documento, email, teléfono y contraseña.
 5.  **Cuenta del Cliente**: Vista `Cuenta` con acceso a historial de turnos, cierre de sesión, edición del teléfono de contacto y atajos según rol.
-6.  **Mis Turnos Protegido**: El historial de citas ahora se consulta por `userId` y solo está disponible para usuarios autenticados.
-7.  **Perfil de Contacto Reutilizable**: El teléfono del usuario se guarda en `users` al registrarse o desde `Cuenta`, se autocompleta en la reserva y sigue siendo editable por turno.
-8.  **Bloqueo Manual de Horarios**: La administradora puede bloquear y desbloquear horarios manualmente desde el panel, con validación contra turnos ya agendados.
-9.  **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
-10. **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
-11. **Historia Clínica Digital**: Nueva pestaña en Admin para registrar la ficha de ingreso del paciente y la evolución por sesión, vinculable al usuario y opcionalmente al turno.
-12. **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
-13. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
+5.  **Cuenta del Cliente**: Vista `Cuenta` con acceso a historial de turnos, cierre de sesión, y edición de perfil completo: nombre, documento, teléfono, email y contraseña.
+6.  **Mis Turnos Protegido**: El historial de citas se consulta por `userId` y está disponible para usuarios autenticados; las reservas de invitados quedan visibles solo para admin.
+7.  **Reserva como Invitado**: Los usuarios pueden reservar sin cuenta. En el paso 2 se recopila nombre, teléfono y email. Las citas se guardan con `bookingMode: "guest"` para distinguirlas en el admin.
+8.  **Perfil de Contacto Reutilizable**: El nombre, documento y teléfono del usuario se autocompletan en la reserva desde su perfil, y siguen siendo editables por turno.
+9.  **Distinción Cuenta / Invitado en Admin**: Cada tarjeta de turno en el panel admin muestra un badge: "Cuenta" (verde) para usuarios registrados o "Invitado" (ámbar) para reservas sin cuenta, usando el campo `bookingMode`.
+10. **Bloqueo Manual de Horarios**: La administradora puede bloquear y desbloquear horarios manualmente desde el panel, con validación contra turnos ya agendados.
+11. **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
+12. **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
+13. **Historia Clínica Digital**: Nueva pestaña en Admin para registrar la ficha de ingreso del paciente y la evolución por sesión, vinculable al usuario y opcionalmente al turno.
+14. **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
+15. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
 
 ---
 
@@ -151,15 +158,17 @@ La aplicación estará disponible en `http://localhost:3000`.
 ## 📝 Notas para Desarrolladores
 
 - **Base de Datos**: La app usa tres colecciones principales en Firestore:
-  - `users`: `uid`, `email`, `role`, `userPhone`, `createdAt`.
+  - `users`: `uid`, `fullName`, `documentId`, `email`, `role`, `userPhone`, `createdAt`.
   - `appointments`: `userId`, `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `createdAt`, `price`, `paid`.
+    - `appointments`: `userId` (opcional), `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `userEmail`, `bookingMode` (`"account"` | `"guest"`), `createdAt`, `price`, `paid`, `basePrice`, `discountAmount`, `appliedPromotion`.
   - `blocked_slots`: `date`, `time`, `createdAt`.
   - `services`: `name`, `description`, `duration`, `price`, `image`.
   - `promotions`: `title`, `description`, `badgeText`, `discountType`, `discountValue`, `featured`, `isActive`, `appliesToAllServices`, `serviceIds`, `startDate`, `endDate`, `priority`, `image`.
   - `clinical_profiles`: `patientId`, `intakeDate`, datos de identificación y contacto, motivo de consulta, zonas de dolor, antecedentes de salud, `initialDiagnosis`, `treatmentStartDate`, `createdAt/updatedAt`, `createdBy/updatedBy`.
   - `clinical_sessions`: `patientId`, `appointmentId` (opcional), `sessionDate`, `painLevel`, `clinicalObservations`, `techniquesApplied`, `recommendations`, `sessionNumber`, `createdAt/updatedAt`, `createdBy/updatedBy`.
 - **Autenticación**: `AuthProvider` centraliza sesión, perfil Firestore reactivo, teléfono del usuario y detección de rol admin.
-- **Reserva**: `appointments.userPhone` guarda el snapshot exacto usado en ese turno, aunque luego el usuario cambie su teléfono en `users`.
+- **Autenticación**: `AuthProvider` centraliza sesión, perfil Firestore reactivo, y expone `updateProfile()`, `updateEmail()` (con reautenticación) y `updatePassword()`.
+- **Reserva**: `appointments.userName`, `appointments.userPhone` y `appointments.userEmail` guardan el snapshot exacto del turno. `bookingMode: "account"` identifica reservas de usuarios registrados; `"guest"` identifica reservas sin cuenta. El backend (`create-payment.js`) acepta `userId` como opcional.
 - **Estilos**: Se utiliza una configuración de Tailwind personalizada en `index.html` y `index.css`. El color primario ya se gestiona desde tokens semánticos definidos en `constants.ts`.
 - **IA**: El asistente está configurado en `components/AIAssistant.tsx`. Puedes ajustar las `systemInstruction` para cambiar su personalidad o conocimientos.
 
