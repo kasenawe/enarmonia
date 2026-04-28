@@ -233,8 +233,12 @@ const App: React.FC = () => {
     }
   }, [services, selectedService]);
 
-  // Siempre escuchar todos los appointments (necesario para deshabilitar slots ocupados en booking)
+  // Escuchar todos los appointments; requiere auth (regla Firestore: admin o dueño).
+  // La dependencia en currentUser garantiza que el listener se reinicie cuando el
+  // usuario inicia o cierra sesión, evitando el bug de "primera carga sin auth".
   useEffect(() => {
+    if (authLoading) return;
+
     const appointmentsRef = collection(db, "appointments");
     const unsubscribe = onSnapshot(
       appointmentsRef,
@@ -250,7 +254,7 @@ const App: React.FC = () => {
       },
     );
     return () => unsubscribe();
-  }, []);
+  }, [authLoading, currentUser]);
 
   useEffect(() => {
     const blockedSlotsRef = collection(db, "blocked_slots");
