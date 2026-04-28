@@ -5,6 +5,7 @@ import {
   Appointment,
   Promotion,
   BlockedSlot,
+  OccupiedSlot,
 } from "./types";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
@@ -52,6 +53,7 @@ const App: React.FC = () => {
   const [promotionsLoading, setPromotionsLoading] = useState(true);
   const [promotionError, setPromotionError] = useState<string | null>(null);
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
+  const [occupiedSlots, setOccupiedSlots] = useState<OccupiedSlot[]>([]);
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [myAppointments, setMyAppointments] = useState<Appointment[]>([]);
   const [isSyncing, setIsSyncing] = useState(true);
@@ -235,10 +237,12 @@ const App: React.FC = () => {
     }
   }, [services, selectedService]);
 
-  // Escuchar todos los appointments para bloquear horarios ocupados en booking.
-  // Debe funcionar también para invitados y usuarios no admin.
+  // Appointments completos: solo necesarios para administración.
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !isAdmin) {
+      setAllAppointments([]);
+      return;
+    }
 
     const appointmentsRef = collection(db, "appointments");
     const unsubscribe = onSnapshot(
@@ -255,7 +259,26 @@ const App: React.FC = () => {
       },
     );
     return () => unsubscribe();
-  }, [authLoading, currentUser]);
+  }, [authLoading, isAdmin]);
+
+  // Slots ocupados públicos (solo fecha/hora) para bloquear disponibilidad en booking.
+  useEffect(() => {
+    const occupiedSlotsRef = collection(db, "occupied_slots");
+    const unsubscribe = onSnapshot(
+      occupiedSlotsRef,
+      (snapshot) => {
+        const occupied: OccupiedSlot[] = [];
+        snapshot.forEach((entry) => {
+          occupied.push(entry.data() as OccupiedSlot);
+        });
+        setOccupiedSlots(occupied);
+      },
+      (error) => {
+        console.error("Error al cargar horarios ocupados:", error);
+      },
+    );
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const blockedSlotsRef = collection(db, "blocked_slots");
@@ -317,6 +340,9 @@ const App: React.FC = () => {
     if (!window.confirm("¿Estás seguro de cancelar?")) return;
     try {
       const appointmentDoc = doc(db, "appointments", id);
+      const occupiedSlotDoc = doc(db, "occupied_slots", id);
+
+      await deleteDoc(occupiedSlotDoc);
       await deleteDoc(appointmentDoc);
     } catch (e) {
       console.error("Error al eliminar:", e);
@@ -371,10 +397,7 @@ const App: React.FC = () => {
             service={selectedServiceOrDefault}
             promotions={promotions}
             promotionsLoading={promotionsLoading}
-            occupiedSlots={allAppointments.map((apt) => ({
-              date: apt.date,
-              time: apt.time,
-            }))}
+            occupiedSlots={occupiedSlots}
             blockedSlots={blockedSlots}
             currentUserId={currentUser?.uid || null}
             initialData={{

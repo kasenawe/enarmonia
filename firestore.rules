@@ -45,6 +45,11 @@ service cloud.firestore {
     }
 
     match /appointments/{appointmentId} {
+      allow read: if isAdmin() || isOwner(resource.data.userId);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /occupied_slots/{slotId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
