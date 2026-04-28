@@ -113,6 +113,7 @@ const Admin: React.FC<AdminProps> = ({
   const [userFeedback, setUserFeedback] = useState<string | null>(null);
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
   const [demotingUserId, setDemotingUserId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   const blockTimeOptions = [
     "09:00",
@@ -578,6 +579,59 @@ const Admin: React.FC<AdminProps> = ({
       setUsersError(promoteError?.message || "No se pudo promover el usuario.");
     } finally {
       setPromotingUserId(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userEmail: string) => {
+    if (!currentUser) {
+      setUsersError(
+        "Debes iniciar sesión con una cuenta admin para eliminar usuarios.",
+      );
+      return;
+    }
+
+    if (currentUser.uid === userId) {
+      setUsersError("No puedes darte de baja a ti misma.");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `¿Dar de baja a ${userEmail}?\n\nEsto eliminará la cuenta, el perfil y la historia clínica del usuario. Las citas históricas se conservan.\n\nEsta acción no se puede deshacer.`,
+      )
+    ) {
+      return;
+    }
+
+    setUsersError(null);
+    setUserFeedback(null);
+    setDeletingUserId(userId);
+
+    try {
+      const idToken = await currentUser.getIdToken();
+      const response = await fetch(`${BACKEND_URL}/api/delete-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || "No se pudo dar de baja al usuario.");
+      }
+
+      setUserFeedback(`Usuario ${userEmail} dado de baja correctamente.`);
+    } catch (deleteError: any) {
+      console.error(deleteError);
+      setUsersError(
+        deleteError?.message || "No se pudo dar de baja al usuario.",
+      );
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -1214,6 +1268,19 @@ const Admin: React.FC<AdminProps> = ({
                               {promotingUserId === user.uid
                                 ? "Promoviendo..."
                                 : "Hacer admin"}
+                            </button>
+                          )}
+                          {!isCurrentUser && (
+                            <button
+                              onClick={() =>
+                                handleDeleteUser(user.uid, user.email)
+                              }
+                              disabled={deletingUserId === user.uid}
+                              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-600 transition-all active:scale-95 disabled:opacity-40"
+                            >
+                              {deletingUserId === user.uid
+                                ? "Eliminando..."
+                                : "Dar de baja"}
                             </button>
                           )}
                         </div>
