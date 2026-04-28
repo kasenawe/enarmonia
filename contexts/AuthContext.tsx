@@ -85,16 +85,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       if (!user.emailVerified) {
+        // No llamamos signOut aquí para evitar una race condition con register():
+        // register() crea el doc en Firestore y luego hace signOut por sí mismo.
+        // Si hacemos signOut aquí concurrentemente, el setDoc falla por permission-denied
+        // y la promesa de register() queda colgada.
         setCurrentUser(null);
         setAppUser(null);
         setProfileLoading(false);
-
-        try {
-          await signOut(auth);
-        } catch (error) {
-          console.error("Error signing out unverified user:", error);
-        }
-
         return;
       }
 
