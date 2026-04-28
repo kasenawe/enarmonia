@@ -159,6 +159,16 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
       });
   }, [appointments, selectedPatientId]);
 
+  const getPatientOptionLabel = (user: AppUser) => {
+    const name = user.fullName?.trim();
+    const documentId = user.documentId?.trim();
+    const email = user.email?.trim();
+
+    if (name && documentId) return `${name} - ${documentId}`;
+    if (name && email) return `${name} - ${email}`;
+    return name || email || user.uid;
+  };
+
   useEffect(() => {
     if (!selectedPatientId) {
       setProfileForm(defaultProfileForm());
@@ -173,10 +183,14 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
       doc(db, "clinical_profiles", selectedPatientId),
       (snapshot) => {
         if (!snapshot.exists()) {
+          const fallbackName = selectedPatient?.fullName || "";
+          const fallbackDocumentId = selectedPatient?.documentId || "";
           const fallbackPhone = selectedPatient?.userPhone || "";
           const fallbackEmail = selectedPatient?.email || "";
           setProfileForm({
             ...defaultProfileForm(),
+            fullName: fallbackName,
+            documentId: fallbackDocumentId,
             phone: fallbackPhone,
             email: fallbackEmail,
           });
@@ -487,13 +501,21 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
           <option value="">Selecciona un paciente...</option>
           {clientUsers.map((user) => (
             <option key={user.uid} value={user.uid}>
-              {user.email || user.uid}
+              {getPatientOptionLabel(user)}
             </option>
           ))}
         </select>
 
         {selectedPatient && (
           <div className="rounded-3xl border border-gray-100 bg-gray-50 p-4 text-xs text-gray-600">
+            <p>
+              <span className="font-bold">Nombre:</span>{" "}
+              {selectedPatient.fullName || "Sin dato"}
+            </p>
+            <p>
+              <span className="font-bold">Documento:</span>{" "}
+              {selectedPatient.documentId || "Sin dato"}
+            </p>
             <p>
               <span className="font-bold">UID:</span> {selectedPatient.uid}
             </p>

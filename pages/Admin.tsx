@@ -841,6 +841,15 @@ const Admin: React.FC<AdminProps> = ({
                       >
                         {app.paid ? "Pagado ✓" : "Sin Pago"}
                       </span>
+                      <span
+                        className={`text-[9px] font-bold px-2 py-1 rounded-full ${
+                          app.bookingMode === "guest"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-[#f0f7f4] text-[#2d6a4f]"
+                        }`}
+                      >
+                        {app.bookingMode === "guest" ? "Invitado" : "Cuenta"}
+                      </span>
                       {app.appliedPromotion && (
                         <span className="text-[9px] font-bold px-2 py-1 rounded-full bg-rose-100 text-rose-600">
                           {app.appliedPromotion.badgeText ||
@@ -1149,6 +1158,10 @@ const Admin: React.FC<AdminProps> = ({
                   {users.map((user) => {
                     const isUserAdmin = user.role === "admin";
                     const isCurrentUser = currentUser?.uid === user.uid;
+                    const displayName = user.fullName?.trim() || "Sin nombre";
+                    const displayDocument =
+                      user.documentId?.trim() || "Sin documento";
+                    const displayEmail = user.email?.trim() || user.uid;
 
                     return (
                       <div
@@ -1157,7 +1170,13 @@ const Admin: React.FC<AdminProps> = ({
                       >
                         <div className="min-w-0">
                           <p className="truncate text-sm font-bold text-gray-800">
-                            {user.email || user.uid}
+                            {displayName}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-gray-500">
+                            Doc: {displayDocument}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-gray-500">
+                            {displayEmail}
                           </p>
                           <div className="mt-1 flex flex-wrap items-center gap-2">
                             <span
