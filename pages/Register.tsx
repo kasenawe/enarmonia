@@ -4,7 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 interface RegisterProps {
   onBack: () => void;
-  onSuccess: () => void;
+  onSuccess: (payload: { email: string }) => void;
   onGoToLogin: () => void;
 }
 
@@ -25,7 +25,7 @@ const Register: React.FC<RegisterProps> = ({
 
   useEffect(() => {
     if (!loading && currentUser) {
-      onSuccess();
+      onSuccess({ email: currentUser.email || "" });
     }
   }, [currentUser, loading, onSuccess]);
 
@@ -97,7 +97,7 @@ const Register: React.FC<RegisterProps> = ({
         documentId,
         userPhone,
       });
-      onSuccess();
+      onSuccess({ email: normalizedEmail });
     } catch (error) {
       setError(getErrorMessage(error));
     } finally {

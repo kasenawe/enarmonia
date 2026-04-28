@@ -3,12 +3,22 @@ import { FirebaseError } from "firebase/app";
 import { useAuth } from "../contexts/AuthContext";
 
 interface LoginProps {
+  initialEmail?: string;
+  initialNotice?: string | null;
+  initialShowResendVerification?: boolean;
   onBack: () => void;
   onSuccess: () => void;
   onGoToRegister: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onBack, onSuccess, onGoToRegister }) => {
+const Login: React.FC<LoginProps> = ({
+  initialEmail = "",
+  initialNotice = null,
+  initialShowResendVerification = false,
+  onBack,
+  onSuccess,
+  onGoToRegister,
+}) => {
   const {
     currentUser,
     login,
@@ -16,13 +26,15 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess, onGoToRegister }) => {
     resetPassword,
     loading,
   } = useAuth();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [showResendVerification, setShowResendVerification] = useState(false);
+  const [showResendVerification, setShowResendVerification] = useState(
+    initialShowResendVerification,
+  );
   const [verificationFeedback, setVerificationFeedback] = useState<
     string | null
-  >(null);
+  >(initialNotice);
   const [isResendingVerification, setIsResendingVerification] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetFeedback, setResetFeedback] = useState<string | null>(null);
@@ -36,6 +48,14 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess, onGoToRegister }) => {
       onSuccess();
     }
   }, [currentUser, loading, onSuccess]);
+
+  useEffect(() => {
+    if (initialEmail) {
+      setEmail(initialEmail);
+    }
+    setShowResendVerification(initialShowResendVerification);
+    setVerificationFeedback(initialNotice);
+  }, [initialEmail, initialNotice, initialShowResendVerification]);
 
   const getErrorMessage = (error: unknown) => {
     const errorCode =

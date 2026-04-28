@@ -56,6 +56,8 @@ const App: React.FC = () => {
   const [myAppointments, setMyAppointments] = useState<Appointment[]>([]);
   const [isSyncing, setIsSyncing] = useState(true);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [loginPrefillEmail, setLoginPrefillEmail] = useState("");
+  const [loginNotice, setLoginNotice] = useState<string | null>(null);
 
   const mapRouteToPath = (route: AppRoute) => {
     switch (route) {
@@ -398,6 +400,9 @@ const App: React.FC = () => {
       case AppRoute.LOGIN:
         return (
           <Login
+            initialEmail={loginPrefillEmail}
+            initialNotice={loginNotice}
+            initialShowResendVerification={Boolean(loginPrefillEmail)}
             onBack={() => navigate(AppRoute.HOME)}
             onSuccess={() => navigate(AppRoute.HOME, true)}
             onGoToRegister={() => navigate(AppRoute.REGISTER)}
@@ -407,7 +412,13 @@ const App: React.FC = () => {
         return (
           <Register
             onBack={() => navigate(AppRoute.HOME)}
-            onSuccess={() => navigate(AppRoute.LOGIN, true)}
+            onSuccess={(payload) => {
+              setLoginPrefillEmail(payload.email);
+              setLoginNotice(
+                "Cuenta creada. Te enviamos un correo de verificación. Revisa tu bandeja de entrada o spam antes de intentar ingresar de nuevo.",
+              );
+              navigate(AppRoute.LOGIN, true);
+            }}
             onGoToLogin={() => navigate(AppRoute.LOGIN)}
           />
         );
