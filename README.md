@@ -75,7 +75,8 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 13. **Historia Clínica Digital**: Nueva pestaña en Admin para registrar la ficha de ingreso del paciente y la evolución por sesión, vinculable al usuario y opcionalmente al turno.
 14. **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
 15. **Filtros y Búsqueda en Turnos**: Admin puede buscar por nombre/teléfono/email/servicio, filtrar por estado temporal (hoy/próximos/pasados), modo de reserva (cuenta/invitado), estado de pago (pagado/sin pago) y rango de fechas. Carga incremental de 20 turnos para mejor rendimiento.
-16. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
+16. **Ficha de Contacto Expandible en Turnos**: Cada turno tiene acceso a un modal con información de contacto de la paciente (teléfono, email y documento cuando fue proporcionado), sin sobrecargar visualmente la tarjeta principal.
+17. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
 
 ---
 
@@ -160,7 +161,7 @@ La aplicación estará disponible en `http://localhost:3000`.
 
 - **Base de Datos**: La app usa tres colecciones principales en Firestore:
   - `users`: `uid`, `fullName`, `documentId`, `email`, `role`, `userPhone`, `createdAt`.
-  - `appointments`: `userId` (opcional), `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `userEmail`, `bookingMode` (`"account"` | `"guest"`), `createdAt`, `price`, `paid`, `basePrice`, `discountAmount`, `appliedPromotion`.
+  - `appointments`: `userId` (opcional), `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `userEmail`, `userDocumentId` (opcional), `bookingMode` (`"account"` | `"guest"`), `createdAt`, `price`, `paid`, `basePrice`, `discountAmount`, `appliedPromotion`.
   - `occupied_slots`: `appointmentId`, `serviceId`, `date`, `time`, `createdAt` (colección pública mínima para disponibilidad).
   - `blocked_slots`: `date`, `time`, `createdAt`.
   - `services`: `name`, `description`, `duration`, `price`, `image`.
@@ -168,7 +169,7 @@ La aplicación estará disponible en `http://localhost:3000`.
   - `clinical_profiles`: `patientId`, `intakeDate`, datos de identificación y contacto, motivo de consulta, zonas de dolor, antecedentes de salud, `initialDiagnosis`, `treatmentStartDate`, `createdAt/updatedAt`, `createdBy/updatedBy`.
   - `clinical_sessions`: `patientId`, `appointmentId` (opcional), `sessionDate`, `painLevel`, `clinicalObservations`, `techniquesApplied`, `recommendations`, `sessionNumber`, `createdAt/updatedAt`, `createdBy/updatedBy`.
 - **Autenticación**: `AuthProvider` centraliza sesión, perfil Firestore reactivo, y expone `updateProfile()`, `updateEmail()` (con reautenticación) y `updatePassword()`.
-- **Reserva**: `appointments.userName`, `appointments.userPhone` y `appointments.userEmail` guardan el snapshot exacto del turno. `bookingMode: "account"` identifica reservas de usuarios registrados; `"guest"` identifica reservas sin cuenta. El backend (`create-payment.js`) acepta `userId` como opcional.
+- **Reserva**: `appointments.userName`, `appointments.userPhone`, `appointments.userEmail` y `appointments.userDocumentId` (si fue provisto) guardan el snapshot exacto del turno. `bookingMode: "account"` identifica reservas de usuarios registrados; `"guest"` identifica reservas sin cuenta. El backend (`create-payment.js`) acepta `userId` y `documentId` como opcionales.
 - **Disponibilidad**: Booking consume `occupied_slots` + `blocked_slots`; `appointments` completas quedan restringidas por reglas para proteger datos personales.
 - **Migración inicial de disponibilidad**: tras desplegar backend/rules por primera vez, ejecutar una vez `/api/backfill-occupied-slots` (admin) para sincronizar turnos históricos en `occupied_slots`.
 - **Estilos**: Se utiliza una configuración de Tailwind personalizada en `index.html` y `index.css`. El color primario ya se gestiona desde tokens semánticos definidos en `constants.ts`.

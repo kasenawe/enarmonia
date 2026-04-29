@@ -71,7 +71,7 @@ Nota interna:
 Las clientas pueden reservar de dos formas:
 
 - **Con cuenta registrada**: si la persona ya tiene su cuenta creada e inicia sesión antes de reservar, sus datos (nombre, teléfono) se cargan automáticamente. El turno queda vinculado a su cuenta y ella podrá verlo desde \`Mis turnos\`.
-- **Como invitada**: si la persona no tiene cuenta o no inicia sesión, puede reservar igual completando su nombre, teléfono y email en el paso 2. El turno queda registrado normalmente, pero ella no podrá verlo desde la app (solo tú lo verás en el panel).
+- **Como invitada**: si la persona no tiene cuenta o no inicia sesión, puede reservar igual completando su nombre, teléfono y email en el paso 2. También puede completar su documento de forma opcional. El turno queda registrado normalmente, pero ella no podrá verlo desde la app (solo tú lo verás en el panel).
 
 En el panel de turnos puedes distinguirlos por el badge que aparece en cada tarjeta:
 
@@ -112,27 +112,32 @@ Mientras escribes, la lista se actualiza automáticamente mostrando solo los tur
 Debajo de la barra de búsqueda encontrarás filtros independientes que puedes combinar:
 
 **1. Estado temporal:**
+
 - `Todos`: muestra toda la lista
 - `Solo hoy`: solo turnos de hoy
 - `Próximos (incluye hoy)`: turnos desde hoy en adelante
 - `Pasados`: turnos vencidos
 
 **2. Modo de reserva:**
+
 - `Todos`: todas las reservas
 - `Solo Cuenta`: solo reservas de usuarios registrados
 - `Solo Invitado`: solo reservas sin cuenta
 
 **3. Estado de pago:**
+
 - `Todos`: todas las reservas
 - `Pagados`: turnos con pago completado
 - `Sin pago`: turnos no pagados
 
 **4. Rango de fechas:**
+
 - Selecciona una fecha de inicio y una fecha de fin para filtrar dentro de ese período
 
 ### Limpiar filtros
 
 El botón **"Limpiar filtros"** reinicia todos los filtros a sus valores por defecto:
+
 - búsqueda: vacía
 - estado temporal: próximos
 - modo: todos
@@ -159,6 +164,23 @@ Para qué te sirve esta sección:
 - revisar quién reservó y qué servicio eligió
 - controlar precios finales cuando hubo descuento
 - cancelar un turno si hace falta
+
+### Ver datos de contacto completos (modal)
+
+En cada tarjeta de turno verás un ícono de información junto al nombre de la paciente.
+
+1. Pulsa ese ícono.
+2. Se abrirá una ventana con información ampliada de contacto.
+
+En esa ventana podrás ver:
+
+- nombre
+- teléfono (con acceso directo a WhatsApp)
+- correo electrónico
+- documento (si fue proporcionado en la reserva)
+- tipo de reserva (Cuenta o Invitado)
+
+Puedes cerrarla con el botón \`Cerrar\` o tocando fuera de la ventana.
 
 Sugerencia de uso diario:
 
