@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Service, Appointment, Promotion, BlockedSlot } from "../types";
 import { CONTACT_INFO, BACKEND_URL } from "../constants";
 import { getServicePricing } from "../utils/promotionPricing";
@@ -34,9 +34,10 @@ const Booking: React.FC<BookingProps> = ({
   const [userName, setUserName] = useState(initialData.name);
   const [userPhone, setUserPhone] = useState(initialData.phone);
   const [userEmail, setUserEmail] = useState(initialData.email);
-    const [userDocumentId, setUserDocumentId] = useState("");
+  const [userDocumentId, setUserDocumentId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const timeSectionRef = useRef<HTMLDivElement | null>(null);
   const pricing = getServicePricing(service, promotions);
 
   useEffect(() => {
@@ -50,6 +51,16 @@ const Booking: React.FC<BookingProps> = ({
   useEffect(() => {
     setUserEmail((currentEmail) => currentEmail || initialData.email);
   }, [initialData.email]);
+
+  useEffect(() => {
+    if (!selectedDate || step !== 1) return;
+    requestAnimationFrame(() => {
+      timeSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    });
+  }, [selectedDate, step]);
 
   const dates = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
@@ -117,6 +128,25 @@ const Booking: React.FC<BookingProps> = ({
     return dateObj ? dateObj.full : selectedDate;
   };
 
+  const availableSlotsForSelectedDate = selectedDate
+    ? timeSlots.filter((time) => !isSlotUnavailable(selectedDate, time)).length
+    : 0;
+
+  const firstAvailableSlot = dates
+    .flatMap((dateOption) =>
+      timeSlots.map((timeOption) => ({
+        date: dateOption.iso,
+        time: timeOption,
+      })),
+    )
+    .find((slot) => !isSlotUnavailable(slot.date, slot.time));
+
+  const handleSelectFirstAvailable = () => {
+    if (!firstAvailableSlot) return;
+    setSelectedDate(firstAvailableSlot.date);
+    setSelectedTime(firstAvailableSlot.time);
+  };
+
   const constructWhatsAppUrl = () => {
     const message =
       `*Nuevo Turno - Soledad Cedres Quiropráctica*\n\n` +
@@ -148,7 +178,7 @@ const Booking: React.FC<BookingProps> = ({
               name: userName.trim(),
               phone: userPhone.trim(),
               email: userEmail.trim().toLowerCase(),
-                         documentId: userDocumentId.trim() || undefined,
+              documentId: userDocumentId.trim() || undefined,
             },
             date: selectedDate,
             time: selectedTime,
@@ -303,38 +333,80 @@ const Booking: React.FC<BookingProps> = ({
         ))}
       </div>
 
+      <div className="mb-6 px-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
+        <span className={step >= 1 ? "text-action" : ""}>1. Fecha y Hora</span>
+        <span className={step >= 2 ? "text-action" : ""}>2. Datos</span>
+        <span className={step >= 3 ? "text-action" : ""}>3. Pago</span>
+      </div>
+
       <div className="mb-8 flex min-h-[380px] flex-col justify-center rounded-[2rem] border border-line-subtle bg-shell p-7 shadow-sm">
         {step === 1 && (
           <div className="animate-in">
-            <h4 className="mb-6 text-xs font-bold uppercase tracking-widest text-ink-subtle">
-              Paso 1: Fecha y Hora
-            </h4>
-            <div className="flex overflow-x-auto gap-3 pb-6 mb-6 -mx-2 px-2 scroll-smooth">
-              {dates.map((d) => (
-                <button
-                  key={d.iso}
-                  onClick={() => {
-                    setSelectedDate(d.iso);
-                    setSelectedTime("");
-                  }}
-                  className={`flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 rounded-2xl border-2 transition-all ${
-                    selectedDate === d.iso
-                      ? "border-action bg-action text-white shadow-xl scale-105"
-                      : "border-transparent bg-shell-subtle text-ink-subtle"
-                  }`}
-                >
-                  <span className="text-[10px] uppercase font-bold mb-1 opacity-60">
-                    {d.day}
-                  </span>
-                  <span className="text-xl font-black leading-none">
-                    {d.num}
-                  </span>
-                </button>
-              ))}
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-ink-subtle">
+                Paso 1: Fecha y Hora
+              </h4>
+              <button
+                type="button"
+                onClick={handleSelectFirstAvailable}
+                disabled={!firstAvailableSlot}
+                className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-700 disabled:opacity-40"
+              >
+                Primer horario
+              </button>
+            </div>
+
+            <p className="mb-4 text-[11px] text-ink-muted">
+              Desliza para ver mas fechas disponibles.
+            </p>
+
+            <div className="relative mb-6">
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-shell to-transparent z-10" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-shell to-transparent z-10" />
+              <div className="flex overflow-x-auto gap-3 pb-2 -mx-2 px-2 scroll-smooth">
+                {dates.map((d) => (
+                  <button
+                    key={d.iso}
+                    onClick={() => {
+                      setSelectedDate(d.iso);
+                      setSelectedTime("");
+                    }}
+                    className={`flex-shrink-0 flex flex-col items-center justify-center w-[4.5rem] h-24 rounded-2xl border-2 transition-all ${
+                      selectedDate === d.iso
+                        ? "border-action bg-action text-white shadow-xl scale-105"
+                        : "border-transparent bg-shell-subtle text-ink-subtle"
+                    }`}
+                  >
+                    <span className="text-[10px] uppercase font-bold mb-1 opacity-70">
+                      {d.day}
+                    </span>
+                    <span className="text-xl font-black leading-none">
+                      {d.num}
+                    </span>
+                    <span className="mt-1 text-[9px] uppercase font-bold opacity-70">
+                      {d.month}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {selectedDate && (
-              <div className="animate-in">
+              <div ref={timeSectionRef} className="animate-in space-y-4">
+                <div className="rounded-2xl border border-line-subtle bg-shell-subtle px-4 py-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
+                    Disponibilidad para
+                  </p>
+                  <div className="mt-1 flex items-center justify-between gap-3">
+                    <p className="text-sm font-bold text-ink-strong">
+                      {getSelectedDateDisplay()}
+                    </p>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-action">
+                      {availableSlotsForSelectedDate} libres
+                    </span>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-3 gap-2">
                   {timeSlots.map((t) => {
                     const unavailable = isSlotUnavailable(selectedDate, t);
@@ -343,15 +415,20 @@ const Booking: React.FC<BookingProps> = ({
                         key={t}
                         disabled={unavailable}
                         onClick={() => setSelectedTime(t)}
-                        className={`py-3.5 rounded-xl border-2 text-xs font-bold transition-all ${
+                        className={`py-3 rounded-xl border-2 text-xs font-bold transition-all ${
                           unavailable
-                            ? "bg-shell-soft border-transparent text-ink-faint cursor-not-allowed line-through"
+                            ? "bg-shell-soft border-shell-soft text-ink-subtle/70 cursor-not-allowed"
                             : selectedTime === t
                               ? "border-action bg-action text-white shadow-md"
                               : "border-transparent bg-shell-subtle text-ink-muted hover:border-line"
                         }`}
                       >
-                        {t}
+                        <span className="block">{t}</span>
+                        {unavailable && (
+                          <span className="mt-0.5 block text-[8px] uppercase tracking-widest">
+                            No disp.
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -378,18 +455,6 @@ const Booking: React.FC<BookingProps> = ({
                   placeholder="Tu nombre"
                   className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm font-medium text-ink-strong outline-none transition-all focus:border-action focus:bg-shell"
                 />
-                            <div>
-                              <label className="ml-1 mb-2 block text-[10px] font-bold uppercase text-ink-subtle">
-                                Documento (opcional)
-                              </label>
-                              <input
-                                type="text"
-                                value={userDocumentId}
-                                onChange={(e) => setUserDocumentId(e.target.value)}
-                                placeholder="Ej: 12345678"
-                                className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm font-medium text-ink-strong outline-none transition-all focus:border-action focus:bg-shell"
-                              />
-                            </div>
               </div>
               <div>
                 <label className="ml-1 mb-2 block text-[10px] font-bold uppercase text-ink-subtle">
@@ -412,6 +477,18 @@ const Booking: React.FC<BookingProps> = ({
                   value={userEmail}
                   onChange={(e) => setUserEmail(e.target.value)}
                   placeholder="tu@email.com"
+                  className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm font-medium text-ink-strong outline-none transition-all focus:border-action focus:bg-shell"
+                />
+              </div>
+              <div>
+                <label className="ml-1 mb-2 block text-[10px] font-bold uppercase text-ink-subtle">
+                  Documento (opcional)
+                </label>
+                <input
+                  type="text"
+                  value={userDocumentId}
+                  onChange={(e) => setUserDocumentId(e.target.value)}
+                  placeholder="Ej: 12345678"
                   className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm font-medium text-ink-strong outline-none transition-all focus:border-action focus:bg-shell"
                 />
               </div>
