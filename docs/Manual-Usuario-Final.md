@@ -61,6 +61,11 @@ Importante:
 - los horarios ocupados o bloqueados dejan de aparecer como disponibles
 - la clienta puede ver sus propios turnos desde \`Mis turnos\`
 
+Nota interna:
+
+- el sistema muestra disponibilidad pública sin exponer datos personales de otras clientas
+- si alguna vez cambian reglas o backend y notas horarios viejos sin bloquear, pide al equipo técnico ejecutar una sincronización inicial de horarios ocupados
+
 ### Reserva con cuenta vs. reserva como invitada
 
 Las clientas pueden reservar de dos formas:
@@ -328,6 +333,8 @@ Si no aparece:
 - también puede haber abandonado el proceso antes del final
 
 En ese caso, pídele que vuelva a intentar la reserva.
+
+Si el pago quedó aprobado pero el horario no aparece bloqueado en la agenda pública, avisa al equipo técnico para que revise la sincronización de horarios ocupados.
 
 ## 11. Buenas prácticas recomendadas
 

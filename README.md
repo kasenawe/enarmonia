@@ -62,9 +62,8 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 
 1.  **Catálogo de Servicios**: Presentación detallada de las prestaciones disponibles.
 2.  **Sistema de Reservas con Pago**: Los clientes pueden agendar citas pagando online de forma segura con Mercado Pago.
-3.  **Validación de Disponibilidad**: Sistema en tiempo real que previene doble-booking.
+3.  **Validación de Disponibilidad**: Sistema en tiempo real que previene doble-booking usando `occupied_slots` (colección pública mínima sin datos personales).
 4.  **Cuentas de Usuario**: Registro e inicio de sesión con Firebase Auth usando nombre, documento, email, teléfono y contraseña.
-5.  **Cuenta del Cliente**: Vista `Cuenta` con acceso a historial de turnos, cierre de sesión, edición del teléfono de contacto y atajos según rol.
 5.  **Cuenta del Cliente**: Vista `Cuenta` con acceso a historial de turnos, cierre de sesión, y edición de perfil completo: nombre, documento, teléfono, email y contraseña.
 6.  **Mis Turnos Protegido**: El historial de citas se consulta por `userId` y está disponible para usuarios autenticados; las reservas de invitados quedan visibles solo para admin.
 7.  **Reserva como Invitado**: Los usuarios pueden reservar sin cuenta. En el paso 2 se recopila nombre, teléfono y email. Las citas se guardan con `bookingMode: "guest"` para distinguirlas en el admin.
@@ -133,6 +132,7 @@ La app utiliza reglas basadas en rol almacenado en `users/{uid}`.
 - `services`: lectura pública; escritura solo admin.
 - `promotions`: lectura pública; escritura solo admin.
 - `blocked_slots`: lectura pública para deshabilitar horarios en reservas; escritura solo admin.
+- `occupied_slots`: lectura pública para deshabilitar horarios ocupados sin exponer datos sensibles; escritura solo admin/backend.
 - `appointments`: lectura del dueño o admin; creación/actualización/eliminación solo admin o backend autorizado según el flujo.
 - `clinical_profiles`: ficha de ingreso y antecedentes clínicos por paciente (`patientId` como ID de documento), acceso solo admin.
 - `clinical_sessions`: evolución clínica por sesión con vínculo opcional a `appointmentId`, acceso solo admin.
@@ -159,16 +159,17 @@ La aplicación estará disponible en `http://localhost:3000`.
 
 - **Base de Datos**: La app usa tres colecciones principales en Firestore:
   - `users`: `uid`, `fullName`, `documentId`, `email`, `role`, `userPhone`, `createdAt`.
-  - `appointments`: `userId`, `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `createdAt`, `price`, `paid`.
-    - `appointments`: `userId` (opcional), `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `userEmail`, `bookingMode` (`"account"` | `"guest"`), `createdAt`, `price`, `paid`, `basePrice`, `discountAmount`, `appliedPromotion`.
+  - `appointments`: `userId` (opcional), `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `userEmail`, `bookingMode` (`"account"` | `"guest"`), `createdAt`, `price`, `paid`, `basePrice`, `discountAmount`, `appliedPromotion`.
+  - `occupied_slots`: `appointmentId`, `serviceId`, `date`, `time`, `createdAt` (colección pública mínima para disponibilidad).
   - `blocked_slots`: `date`, `time`, `createdAt`.
   - `services`: `name`, `description`, `duration`, `price`, `image`.
   - `promotions`: `title`, `description`, `badgeText`, `discountType`, `discountValue`, `featured`, `isActive`, `appliesToAllServices`, `serviceIds`, `startDate`, `endDate`, `priority`, `image`.
   - `clinical_profiles`: `patientId`, `intakeDate`, datos de identificación y contacto, motivo de consulta, zonas de dolor, antecedentes de salud, `initialDiagnosis`, `treatmentStartDate`, `createdAt/updatedAt`, `createdBy/updatedBy`.
   - `clinical_sessions`: `patientId`, `appointmentId` (opcional), `sessionDate`, `painLevel`, `clinicalObservations`, `techniquesApplied`, `recommendations`, `sessionNumber`, `createdAt/updatedAt`, `createdBy/updatedBy`.
-- **Autenticación**: `AuthProvider` centraliza sesión, perfil Firestore reactivo, teléfono del usuario y detección de rol admin.
 - **Autenticación**: `AuthProvider` centraliza sesión, perfil Firestore reactivo, y expone `updateProfile()`, `updateEmail()` (con reautenticación) y `updatePassword()`.
 - **Reserva**: `appointments.userName`, `appointments.userPhone` y `appointments.userEmail` guardan el snapshot exacto del turno. `bookingMode: "account"` identifica reservas de usuarios registrados; `"guest"` identifica reservas sin cuenta. El backend (`create-payment.js`) acepta `userId` como opcional.
+- **Disponibilidad**: Booking consume `occupied_slots` + `blocked_slots`; `appointments` completas quedan restringidas por reglas para proteger datos personales.
+- **Migración inicial de disponibilidad**: tras desplegar backend/rules por primera vez, ejecutar una vez `/api/backfill-occupied-slots` (admin) para sincronizar turnos históricos en `occupied_slots`.
 - **Estilos**: Se utiliza una configuración de Tailwind personalizada en `index.html` y `index.css`. El color primario ya se gestiona desde tokens semánticos definidos en `constants.ts`.
 - **IA**: El asistente está configurado en `components/AIAssistant.tsx`. Puedes ajustar las `systemInstruction` para cambiar su personalidad o conocimientos.
 
