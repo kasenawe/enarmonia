@@ -123,6 +123,8 @@ export interface Appointment {
   time: string;
   userName: string;
   userPhone: string;
+  userEmail?: string;
+  userDocumentId?: string; // 📄 Added for complete contact info
   price: number; // ✨ NUEVO: precio pagado
   basePrice?: number;
   discountAmount?: number;
@@ -131,7 +133,6 @@ export interface Appointment {
   appliedPromotion?: AppliedPromotion | null;
   createdAt: string;
   bookingMode?: "account" | "guest";
-  userEmail?: string;
 }
 
 export interface BlockedSlot {

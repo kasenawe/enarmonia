@@ -34,6 +34,7 @@ const Booking: React.FC<BookingProps> = ({
   const [userName, setUserName] = useState(initialData.name);
   const [userPhone, setUserPhone] = useState(initialData.phone);
   const [userEmail, setUserEmail] = useState(initialData.email);
+    const [userDocumentId, setUserDocumentId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const pricing = getServicePricing(service, promotions);
@@ -147,6 +148,7 @@ const Booking: React.FC<BookingProps> = ({
               name: userName.trim(),
               phone: userPhone.trim(),
               email: userEmail.trim().toLowerCase(),
+                         documentId: userDocumentId.trim() || undefined,
             },
             date: selectedDate,
             time: selectedTime,
@@ -376,6 +378,18 @@ const Booking: React.FC<BookingProps> = ({
                   placeholder="Tu nombre"
                   className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm font-medium text-ink-strong outline-none transition-all focus:border-action focus:bg-shell"
                 />
+                            <div>
+                              <label className="ml-1 mb-2 block text-[10px] font-bold uppercase text-ink-subtle">
+                                Documento (opcional)
+                              </label>
+                              <input
+                                type="text"
+                                value={userDocumentId}
+                                onChange={(e) => setUserDocumentId(e.target.value)}
+                                placeholder="Ej: 12345678"
+                                className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm font-medium text-ink-strong outline-none transition-all focus:border-action focus:bg-shell"
+                              />
+                            </div>
               </div>
               <div>
                 <label className="ml-1 mb-2 block text-[10px] font-bold uppercase text-ink-subtle">

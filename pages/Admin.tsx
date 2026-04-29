@@ -127,6 +127,9 @@ const Admin: React.FC<AdminProps> = ({
   const [dateFromFilter, setDateFromFilter] = useState("");
   const [dateToFilter, setDateToFilter] = useState("");
   const [visibleAppointments, setVisibleAppointments] = useState(20);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [selectedContactApp, setSelectedContactApp] =
+    useState<Appointment | null>(null);
 
   const blockTimeOptions = [
     "09:00",
@@ -1108,24 +1111,50 @@ const Admin: React.FC<AdminProps> = ({
                         <h3 className="font-bold text-gray-800 text-base leading-tight">
                           {app.serviceName}
                         </h3>
-                        <div className="flex items-center gap-1.5 mt-2 text-gray-400">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                        <div className="flex items-center gap-1.5 mt-2 text-gray-400 justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                              <circle cx="12" cy="7" r="4" />
+                            </svg>
+                            <span className="text-xs font-bold text-gray-600">
+                              {app.userName}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedContactApp(app);
+                              setShowContactModal(true);
+                            }}
+                            className="p-1.5 hover:bg-gray-100 rounded-full transition text-gray-400 hover:text-gray-600"
+                            title="Ver información de contacto"
                           >
-                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                          </svg>
-                          <span className="text-xs font-bold text-gray-600">
-                            {app.userName}
-                          </span>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle cx="12" cy="12" r="10" />
+                              <line x1="12" y1="16" x2="12" y2="12" />
+                              <line x1="12" y1="8" x2="12.01" y2="8" />
+                            </svg>
+                          </button>
                         </div>
                         <div className="flex items-center gap-2 mt-3">
                           <span
@@ -1259,6 +1288,183 @@ const Admin: React.FC<AdminProps> = ({
               >
                 Cargar 20 más
               </button>
+            )}
+
+            {/* Contact Details Modal */}
+            {showContactModal && selectedContactApp && (
+              <div 
+                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+                onClick={() => {
+                  setShowContactModal(false);
+                  setSelectedContactApp(null);
+                }}
+              >
+                <div 
+                  className="bg-white rounded-3xl shadow-2xl max-w-md w-full animate-in fade-in zoom-in-95"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="border-b border-gray-100 p-6 flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-gray-800">
+                      Información de contacto
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setShowContactModal(false);
+                        setSelectedContactApp(null);
+                      }}
+                      className="text-gray-400 hover:text-gray-600 transition"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="p-6 space-y-4">
+                    {/* Name */}
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                        Nombre
+                      </p>
+                      <p className="text-sm font-bold text-gray-800">
+                        {selectedContactApp.userName}
+                      </p>
+                    </div>
+
+                    {/* Phone */}
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                        Teléfono
+                      </p>
+                      <a
+                        href={`https://wa.me/${selectedContactApp.userPhone.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-bold text-green-600 hover:text-green-700 flex items-center gap-1.5 transition"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                        {selectedContactApp.userPhone}
+                      </a>
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                        Correo electrónico
+                      </p>
+                      <a
+                        href={`mailto:${selectedContactApp.userEmail}`}
+                        className="text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 transition break-all"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                          <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                        {selectedContactApp.userEmail}
+                      </a>
+                    </div>
+
+                    {/* Document ID */}
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                        Documento
+                      </p>
+                      <p className="text-sm font-mono text-gray-700">
+                        {selectedContactApp.bookingMode === "account" && selectedContactApp.userId
+                          ? "Ver en Historia clínica"
+                          : selectedContactApp.bookingMode === "guest"
+                            ? "No proporcionado"
+                            : "-"}
+                      </p>
+                    </div>
+
+                    {/* Booking Mode */}
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                        Tipo de reserva
+                      </p>
+                      <span
+                        className={`inline-block text-[9px] font-bold px-2.5 py-1 rounded-full ${
+                          selectedContactApp.bookingMode === "guest"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-[#f0f7f4] text-[#2d6a4f]"
+                        }`}
+                      >
+                        {selectedContactApp.bookingMode === "guest"
+                          ? "Invitado (sin cuenta)"
+                          : "Cuenta registrada"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-100 p-6 flex gap-2">
+                    <a
+                      href={`https://wa.me/${selectedContactApp.userPhone.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-3 bg-green-500 text-white rounded-2xl text-[10px] font-bold uppercase flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md shadow-green-100 hover:bg-green-600"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7l.8.1" />
+                        <path d="M10 14.7 9 22l11-11-4.7-1" />
+                      </svg>
+                      WhatsApp
+                    </a>
+                    <button
+                      onClick={() => {
+                        setShowContactModal(false);
+                        setSelectedContactApp(null);
+                      }}
+                      className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-2xl text-[10px] font-bold uppercase transition-all hover:bg-gray-200 active:scale-95"
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}
