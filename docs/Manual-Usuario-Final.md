@@ -74,6 +74,7 @@ Las clientas pueden reservar de dos formas:
 - **Como invitada**: si la persona no tiene cuenta o no inicia sesión, puede reservar igual completando su nombre, teléfono y email en el paso 2. El turno queda registrado normalmente, pero ella no podrá verlo desde la app (solo tú lo verás en el panel).
 
 En el panel de turnos puedes distinguirlos por el badge que aparece en cada tarjeta:
+
 - **"Cuenta"** (verde): la reserva fue hecha por una usuaria registrada.
 - **"Invitado"** (amarillo): la reserva fue hecha sin cuenta.
 
