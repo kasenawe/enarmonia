@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Appointment,
   AppUser,
@@ -114,6 +114,19 @@ const Admin: React.FC<AdminProps> = ({
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
   const [demotingUserId, setDemotingUserId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [appointmentSearch, setAppointmentSearch] = useState("");
+  const [appointmentStatusFilter, setAppointmentStatusFilter] = useState<
+    "all" | "today" | "upcoming" | "past"
+  >("upcoming");
+  const [bookingModeFilter, setBookingModeFilter] = useState<
+    "all" | "account" | "guest"
+  >("all");
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "unpaid">(
+    "all",
+  );
+  const [dateFromFilter, setDateFromFilter] = useState("");
+  const [dateToFilter, setDateToFilter] = useState("");
+  const [visibleAppointments, setVisibleAppointments] = useState(20);
 
   const blockTimeOptions = [
     "09:00",
@@ -765,6 +778,90 @@ const Admin: React.FC<AdminProps> = ({
     return a.time.localeCompare(b.time);
   });
 
+  const filteredAppointments = useMemo(() => {
+    const search = appointmentSearch.trim().toLowerCase();
+
+    return sortedAppointments.filter((appointment) => {
+      if (appointmentStatusFilter === "today" && appointment.date !== today) {
+        return false;
+      }
+
+      if (appointmentStatusFilter === "upcoming" && appointment.date < today) {
+        return false;
+      }
+
+      if (appointmentStatusFilter === "past" && appointment.date >= today) {
+        return false;
+      }
+
+      if (
+        bookingModeFilter !== "all" &&
+        (appointment.bookingMode || "account") !== bookingModeFilter
+      ) {
+        return false;
+      }
+
+      if (paymentFilter === "paid" && !appointment.paid) {
+        return false;
+      }
+
+      if (paymentFilter === "unpaid" && appointment.paid) {
+        return false;
+      }
+
+      if (dateFromFilter && appointment.date < dateFromFilter) {
+        return false;
+      }
+
+      if (dateToFilter && appointment.date > dateToFilter) {
+        return false;
+      }
+
+      if (!search) {
+        return true;
+      }
+
+      const searchableText = [
+        appointment.userName,
+        appointment.userPhone,
+        appointment.userEmail,
+        appointment.serviceName,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(search);
+    });
+  }, [
+    sortedAppointments,
+    appointmentSearch,
+    appointmentStatusFilter,
+    bookingModeFilter,
+    paymentFilter,
+    dateFromFilter,
+    dateToFilter,
+    today,
+  ]);
+
+  const paginatedAppointments = filteredAppointments.slice(
+    0,
+    visibleAppointments,
+  );
+  const hasMoreAppointments =
+    paginatedAppointments.length < filteredAppointments.length;
+
+  useEffect(() => {
+    setVisibleAppointments(20);
+  }, [
+    activeTab,
+    appointmentSearch,
+    appointmentStatusFilter,
+    bookingModeFilter,
+    paymentFilter,
+    dateFromFilter,
+    dateToFilter,
+  ]);
+
   const todayCount = appointments.filter((a) => a.date === today).length;
 
   return (
@@ -837,188 +934,15 @@ const Admin: React.FC<AdminProps> = ({
         </div>
       </div>
 
-      <div className="space-y-4">
-        {sortedAppointments.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
-            <p className="text-gray-300 font-bold text-sm">
-              No hay turnos registrados.
-            </p>
-          </div>
-        ) : (
-          sortedAppointments.map((app, idx) => {
-            const isToday = app.date === today;
-            return (
-              <div
-                key={app.id}
-                className={`bg-white rounded-3xl p-6 border shadow-sm relative overflow-hidden transition-all ${isToday ? "border-outline-strong ring-2 ring-surface" : "border-transparent"}`}
-                style={{ animationDelay: `${idx * 0.05}s` }}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span
-                        className={`inline-block px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter ${isToday ? "bg-brand-accent text-white" : "bg-gray-100 text-gray-500"}`}
-                      >
-                        {app.date}
-                      </span>
-                      {isToday && (
-                        <span className="text-[8px] font-black text-brand uppercase animate-pulse">
-                          ¡Hoy!
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-bold text-gray-800 text-base leading-tight">
-                      {app.serviceName}
-                    </h3>
-                    <div className="flex items-center gap-1.5 mt-2 text-gray-400">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
-                      <span className="text-xs font-bold text-gray-600">
-                        {app.userName}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-3">
-                      <span
-                        className={`text-[9px] font-bold px-2 py-1 rounded-full ${app.paid ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}
-                      >
-                        {app.paid ? "Pagado ✓" : "Sin Pago"}
-                      </span>
-                      <span
-                        className={`text-[9px] font-bold px-2 py-1 rounded-full ${
-                          app.bookingMode === "guest"
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-[#f0f7f4] text-[#2d6a4f]"
-                        }`}
-                      >
-                        {app.bookingMode === "guest" ? "Invitado" : "Cuenta"}
-                      </span>
-                      {app.appliedPromotion && (
-                        <span className="text-[9px] font-bold px-2 py-1 rounded-full bg-rose-100 text-rose-600">
-                          {app.appliedPromotion.badgeText ||
-                            app.appliedPromotion.title}
-                        </span>
-                      )}
-                      {app.price && (
-                        <span className="text-[9px] font-bold text-gray-500">
-                          ${app.price.toLocaleString("es-UY")}
-                        </span>
-                      )}
-                    </div>
-                    {(app.basePrice || app.discountAmount) && (
-                      <div className="mt-3 rounded-2xl bg-gray-50 border border-gray-100 p-3 grid grid-cols-3 gap-2 text-xs">
-                        <div>
-                          <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                            Base
-                          </p>
-                          <p className="font-bold text-gray-700">
-                            $
-                            {(app.basePrice || app.price)?.toLocaleString(
-                              "es-UY",
-                            )}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                            Desc.
-                          </p>
-                          <p className="font-bold text-rose-600">
-                            -$
-                            {(app.discountAmount || 0).toLocaleString("es-UY")}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                            Total
-                          </p>
-                          <p className="font-black text-gray-900">
-                            ${app.price?.toLocaleString("es-UY")}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-black text-gray-900 leading-none mb-1">
-                      {app.time}
-                    </p>
-                    <span className="text-[9px] font-bold text-gray-300 uppercase tracking-widest">
-                      HS
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 pt-4 mt-2 border-t border-gray-50">
-                  <a
-                    href={`https://wa.me/${app.userPhone.replace(/\D/g, "")}`}
-                    target="_blank"
-                    className="flex-1 py-3 bg-green-500 text-white rounded-2xl text-[10px] font-bold uppercase flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md shadow-green-100"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7l.8.1" />
-                      <path d="M10 14.7 9 22l11-11-4.7-1" />
-                    </svg>
-                    WhatsApp
-                  </a>
-                  <button
-                    onClick={() => onDelete(app.id)}
-                    className="p-3 bg-red-50 text-red-400 rounded-2xl hover:bg-red-100 active:scale-95 transition-all border border-red-100"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M3 6h18" />
-                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                      <line x1="10" x2="10" y1="11" y2="17" />
-                      <line x1="14" x2="14" y1="11" y2="17" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
       <section className="mt-12 space-y-6">
         <div className="flex flex-col gap-4">
           <div>
             <h3 className="text-xl font-bold text-gray-800">
-              Catálogo de servicios
+              Panel de gestión
             </h3>
             <p className="text-gray-400 text-[11px]">
-              Administra el catálogo de servicios, precios, descripciones e
-              imágenes.
+              Turnos, bloqueos, servicios, promociones, usuarios e historia
+              clínica.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -1060,6 +984,284 @@ const Admin: React.FC<AdminProps> = ({
             </button>
           </div>
         </div>
+
+        {activeTab === "appointments" && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-5 space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <input
+                  value={appointmentSearch}
+                  onChange={(e) => setAppointmentSearch(e.target.value)}
+                  placeholder="Buscar por nombre, teléfono, email o servicio"
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-gray-900"
+                />
+                <select
+                  value={appointmentStatusFilter}
+                  onChange={(e) =>
+                    setAppointmentStatusFilter(
+                      e.target.value as "all" | "today" | "upcoming" | "past",
+                    )
+                  }
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-gray-900"
+                >
+                  <option value="all">Estado temporal: Todos</option>
+                  <option value="today">Solo hoy</option>
+                  <option value="upcoming">Próximos (incluye hoy)</option>
+                  <option value="past">Pasados</option>
+                </select>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-4">
+                <select
+                  value={bookingModeFilter}
+                  onChange={(e) =>
+                    setBookingModeFilter(
+                      e.target.value as "all" | "account" | "guest",
+                    )
+                  }
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-gray-900"
+                >
+                  <option value="all">Modo: Todos</option>
+                  <option value="account">Solo Cuenta</option>
+                  <option value="guest">Solo Invitado</option>
+                </select>
+
+                <select
+                  value={paymentFilter}
+                  onChange={(e) =>
+                    setPaymentFilter(
+                      e.target.value as "all" | "paid" | "unpaid",
+                    )
+                  }
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-gray-900"
+                >
+                  <option value="all">Pago: Todos</option>
+                  <option value="paid">Pagados</option>
+                  <option value="unpaid">Sin pago</option>
+                </select>
+
+                <input
+                  type="date"
+                  value={dateFromFilter}
+                  onChange={(e) => setDateFromFilter(e.target.value)}
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-gray-900"
+                />
+
+                <input
+                  type="date"
+                  value={dateToFilter}
+                  onChange={(e) => setDateToFilter(e.target.value)}
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-gray-900"
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                  {filteredAppointments.length} resultado(s)
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppointmentSearch("");
+                    setAppointmentStatusFilter("upcoming");
+                    setBookingModeFilter("all");
+                    setPaymentFilter("all");
+                    setDateFromFilter("");
+                    setDateToFilter("");
+                  }}
+                  className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2 text-xs font-bold text-gray-600"
+                >
+                  Limpiar filtros
+                </button>
+              </div>
+            </div>
+
+            {paginatedAppointments.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
+                <p className="text-gray-300 font-bold text-sm">
+                  No hay turnos para los filtros seleccionados.
+                </p>
+              </div>
+            ) : (
+              paginatedAppointments.map((app, idx) => {
+                const isToday = app.date === today;
+                return (
+                  <div
+                    key={app.id}
+                    className={`bg-white rounded-3xl p-6 border shadow-sm relative overflow-hidden transition-all ${isToday ? "border-outline-strong ring-2 ring-surface" : "border-transparent"}`}
+                    style={{ animationDelay: `${idx * 0.05}s` }}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span
+                            className={`inline-block px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter ${isToday ? "bg-brand-accent text-white" : "bg-gray-100 text-gray-500"}`}
+                          >
+                            {app.date}
+                          </span>
+                          {isToday && (
+                            <span className="text-[8px] font-black text-brand uppercase animate-pulse">
+                              ¡Hoy!
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="font-bold text-gray-800 text-base leading-tight">
+                          {app.serviceName}
+                        </h3>
+                        <div className="flex items-center gap-1.5 mt-2 text-gray-400">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                          <span className="text-xs font-bold text-gray-600">
+                            {app.userName}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-3">
+                          <span
+                            className={`text-[9px] font-bold px-2 py-1 rounded-full ${app.paid ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}
+                          >
+                            {app.paid ? "Pagado ✓" : "Sin Pago"}
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold px-2 py-1 rounded-full ${
+                              app.bookingMode === "guest"
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-[#f0f7f4] text-[#2d6a4f]"
+                            }`}
+                          >
+                            {app.bookingMode === "guest"
+                              ? "Invitado"
+                              : "Cuenta"}
+                          </span>
+                          {app.appliedPromotion && (
+                            <span className="text-[9px] font-bold px-2 py-1 rounded-full bg-rose-100 text-rose-600">
+                              {app.appliedPromotion.badgeText ||
+                                app.appliedPromotion.title}
+                            </span>
+                          )}
+                          {app.price && (
+                            <span className="text-[9px] font-bold text-gray-500">
+                              ${app.price.toLocaleString("es-UY")}
+                            </span>
+                          )}
+                        </div>
+                        {(app.basePrice || app.discountAmount) && (
+                          <div className="mt-3 rounded-2xl bg-gray-50 border border-gray-100 p-3 grid grid-cols-3 gap-2 text-xs">
+                            <div>
+                              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                Base
+                              </p>
+                              <p className="font-bold text-gray-700">
+                                $
+                                {(app.basePrice || app.price)?.toLocaleString(
+                                  "es-UY",
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                Desc.
+                              </p>
+                              <p className="font-bold text-rose-600">
+                                -$
+                                {(app.discountAmount || 0).toLocaleString(
+                                  "es-UY",
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                Total
+                              </p>
+                              <p className="font-black text-gray-900">
+                                ${app.price?.toLocaleString("es-UY")}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-black text-gray-900 leading-none mb-1">
+                          {app.time}
+                        </p>
+                        <span className="text-[9px] font-bold text-gray-300 uppercase tracking-widest">
+                          HS
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-4 mt-2 border-t border-gray-50">
+                      <a
+                        href={`https://wa.me/${app.userPhone.replace(/\D/g, "")}`}
+                        target="_blank"
+                        className="flex-1 py-3 bg-green-500 text-white rounded-2xl text-[10px] font-bold uppercase flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md shadow-green-100"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7l.8.1" />
+                          <path d="M10 14.7 9 22l11-11-4.7-1" />
+                        </svg>
+                        WhatsApp
+                      </a>
+                      <button
+                        onClick={() => onDelete(app.id)}
+                        className="p-3 bg-red-50 text-red-400 rounded-2xl hover:bg-red-100 active:scale-95 transition-all border border-red-100"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M3 6h18" />
+                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                          <line x1="10" x2="10" y1="11" y2="17" />
+                          <line x1="14" x2="14" y1="11" y2="17" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            {hasMoreAppointments && (
+              <button
+                type="button"
+                onClick={() => setVisibleAppointments((prev) => prev + 20)}
+                className="w-full rounded-2xl border border-gray-200 bg-white py-4 text-sm font-bold text-gray-700"
+              >
+                Cargar 20 más
+              </button>
+            )}
+          </div>
+        )}
 
         {activeTab === "blockedSlots" && (
           <div className="space-y-6">
