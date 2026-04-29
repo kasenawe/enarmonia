@@ -74,7 +74,8 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 12. **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
 13. **Historia Clínica Digital**: Nueva pestaña en Admin para registrar la ficha de ingreso del paciente y la evolución por sesión, vinculable al usuario y opcionalmente al turno.
 14. **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
-15. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
+15. **Filtros y Búsqueda en Turnos**: Admin puede buscar por nombre/teléfono/email/servicio, filtrar por estado temporal (hoy/próximos/pasados), modo de reserva (cuenta/invitado), estado de pago (pagado/sin pago) y rango de fechas. Carga incremental de 20 turnos para mejor rendimiento.
+16. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
 
 ---
 

@@ -82,7 +82,9 @@ En el panel de turnos puedes distinguirlos por el badge que aparece en cada tarj
 
 ## 4. Sección Turnos
 
-En \`Turnos\` puedes revisar las reservas confirmadas.
+En `Turnos` puedes revisar las reservas confirmadas de forma rápida y organizada.
+
+### Visualización de turnos
 
 Qué vas a ver en cada turno:
 
@@ -93,6 +95,63 @@ Qué vas a ver en cada turno:
 - importe abonado
 - si tuvo promoción aplicada
 - badge **"Cuenta"** o **"Invitado"** según cómo se hizo la reserva
+
+### Buscar un turno específico
+
+En la barra **"Buscar por nombre, teléfono, email o servicio"** puedes escribir:
+
+- nombre de la persona
+- número de teléfono
+- email de la clienta
+- nombre del servicio
+
+Mientras escribes, la lista se actualiza automáticamente mostrando solo los turnos coincidentes.
+
+### Filtrar turnos
+
+Debajo de la barra de búsqueda encontrarás filtros independientes que puedes combinar:
+
+**1. Estado temporal:**
+- `Todos`: muestra toda la lista
+- `Solo hoy`: solo turnos de hoy
+- `Próximos (incluye hoy)`: turnos desde hoy en adelante
+- `Pasados`: turnos vencidos
+
+**2. Modo de reserva:**
+- `Todos`: todas las reservas
+- `Solo Cuenta`: solo reservas de usuarios registrados
+- `Solo Invitado`: solo reservas sin cuenta
+
+**3. Estado de pago:**
+- `Todos`: todas las reservas
+- `Pagados`: turnos con pago completado
+- `Sin pago`: turnos no pagados
+
+**4. Rango de fechas:**
+- Selecciona una fecha de inicio y una fecha de fin para filtrar dentro de ese período
+
+### Limpiar filtros
+
+El botón **"Limpiar filtros"** reinicia todos los filtros a sus valores por defecto:
+- búsqueda: vacía
+- estado temporal: próximos
+- modo: todos
+- pago: todos
+- fechas: sin rango
+
+### Contador de resultados
+
+Bajo los filtros verás el número de turnos que coinciden: `X resultado(s)`.
+
+Esto te ayuda a saber cuántos turnos hay con los filtros aplicados.
+
+### Carga incremental de turnos
+
+Para que la pantalla sea rápida incluso con cientos de turnos:
+
+- los primeros 20 turnos se cargan automáticamente
+- cuando termines de revisar estos, un botón **"Cargar 20 más"** aparece al final
+- pulsa el botón para ver los siguientes 20 turnos
 
 Para qué te sirve esta sección:
 
