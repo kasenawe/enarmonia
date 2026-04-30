@@ -44,9 +44,8 @@ const Services: React.FC<ServicesProps> = ({
                   <img
                     src={service.image}
                     alt={service.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover brightness-110 saturate-110 transition-transform duration-700 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
 
                   <div className="absolute top-4 right-4 rounded-full bg-shell/90 px-3 py-1 shadow-lg backdrop-blur-md">
                     <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-tighter text-ink-strong">
@@ -82,18 +81,18 @@ const Services: React.FC<ServicesProps> = ({
                   <h3 className="mb-2 text-lg font-bold leading-tight text-ink-strong">
                     {service.name}
                   </h3>
-                  <p className="mb-6 text-xs font-medium leading-relaxed text-ink-subtle">
+                  <p className="mb-6 text-xs font-medium leading-relaxed text-ink">
                     {service.description}
                   </p>
 
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-bold uppercase tracking-widest text-ink-faint">
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted">
                         Inversión en ti
                       </span>
                       {pricing.appliedPromotion ? (
                         <>
-                          <span className="text-[11px] font-bold text-ink-faint line-through">
+                          <span className="text-[11px] font-bold text-ink-subtle line-through">
                             ${pricing.basePrice.toLocaleString("es-UY")}
                           </span>
                           <span className="text-base font-black text-rose-600">
