@@ -52,13 +52,30 @@ El flujo de reserva funciona así:
 1. La persona elige un servicio.
 2. Selecciona día y hora.
 3. Completa sus datos.
-4. Realiza el pago.
-5. Solo si el pago se aprueba, el turno queda confirmado dentro del sistema.
+4. Elige cómo pagar: **Mercado Pago** o **transferencia bancaria**.
+5. Confirma la reserva.
+
+### Pago con Mercado Pago
+
+- El precio incluye un recargo del 8.73% por el uso del servicio.
+- El pago se procesa inmediatamente en el checkout online.
+- Solo si el pago se aprueba, el turno queda confirmado dentro del sistema.
+- La persona es redirigida a una pantalla de éxito.
+
+### Pago por transferencia bancaria
+
+- El precio no tiene recargo adicional.
+- El turno queda guardado como **pendiente** en el momento de la reserva y el horario queda bloqueado.
+- La app le muestra a la persona los datos bancarios para realizar la transferencia.
+- La persona tiene **4 horas** para acreditar el pago.
+- Vos recibes el comprobante por WhatsApp y confirmás el pago manualmente desde el panel (ver sección 4.5).
+- Si el pago no llega en ese plazo, podés vencer el turno y liberar el horario.
 
 Importante:
 
-- si el pago no se completa, el turno no se guarda como confirmado
-- los horarios ocupados o bloqueados dejan de aparecer como disponibles
+- si el pago por Mercado Pago no se completa, el turno no se guarda
+- en transferencia el horario se bloquea de inmediato, incluso antes de que pagues; si luego la persona no paga, vos lo eliminanás manualmente
+- los horarios ocupados o bloqueados dejan de mostrarse como disponibles
 - la clienta puede ver sus propios turnos desde \`Mis turnos\`
 
 Nota interna:
@@ -95,6 +112,7 @@ Qué vas a ver en cada turno:
 - importe abonado
 - si tuvo promoción aplicada
 - badge **"Cuenta"** o **"Invitado"** según cómo se hizo la reserva
+- badge del estado de pago (ver más abajo)
 
 ### Buscar un turno específico
 
@@ -130,7 +148,20 @@ Debajo de la barra de búsqueda encontrarás filtros independientes que puedes c
 - `Pagados`: turnos con pago completado
 - `Sin pago`: turnos no pagados
 
-**4. Rango de fechas:**
+**4. Método de pago:**
+
+- `Todos`: todos los métodos
+- `Mercado Pago`: solo turnos pagados con MP
+- `Transferencia`: solo turnos por transferencia
+
+**5. Estado de pago de transferencia:**
+
+- `Todos`: todos los estados
+- `Pendiente transferencia`: la persona reservó pero aún no confirmó el pago
+- `Pagado (transferencia)`: transferencia confirmada por vos
+- `Vencida`: el plazo venció sin pago
+
+**6. Rango de fechas:**
 
 - Selecciona una fecha de inicio y una fecha de fin para filtrar dentro de ese período
 
@@ -142,6 +173,8 @@ El botón **"Limpiar filtros"** reinicia todos los filtros a sus valores por def
 - estado temporal: próximos
 - modo: todos
 - pago: todos
+- método de pago: todos
+- estado de transferencia: todos
 - fechas: sin rango
 
 ### Contador de resultados
@@ -163,7 +196,43 @@ Para qué te sirve esta sección:
 - confirmar que una reserva ya quedó registrada
 - revisar quién reservó y qué servicio eligió
 - controlar precios finales cuando hubo descuento
+- confirmar o vencer pagos por transferencia
 - cancelar un turno si hace falta
+
+### Badges de estado de pago
+
+Cada tarjeta de turno muestra un badge de color según el estado del pago:
+
+- **"Pagado (MP)"** (verde): pago aprobado vía Mercado Pago
+- **"Pagado (transferencia)"** (verde): transferencia confirmada por vos
+- **"Pendiente transferencia"** (ámbar): la persona reservó por transferencia pero todavía no la confirmaste
+- **"Vencida"** (gris): el plazo de 4 horas pasó sin pago
+- **"Pagado ✓"** (verde): turnos históricos antes del sistema dual
+- **"Sin Pago"** (amarillo): sin pago registrado
+
+### 4.5 Confirmar o vencer un pago por transferencia
+
+Cuando una persona elije pagar por transferencia, su turno aparece en la lista con el badge **"Pendiente transferencia"**.
+
+Cuando recibás el comprobante (por WhatsApp u otro medio), tenés tres acciones disponibles en la tarjeta del turno:
+
+**Confirmar pago (botón verde “✓ Confirmar pago”)**
+1. Verificá que el comprobante es correcto y el monto coincide.
+2. Pulsá el botón.
+3. El badge pasa a **"Pagado (transferencia)"**.
+
+**Vencer (botón gris “Vencer”)**
+1. Si las 4 horas pasaron y no llegó el pago, pulsá “Vencer”.
+2. El turno queda como **“Vencida”** y el horario se libera automáticamente para que otra persona pueda reservar.
+
+**Cancelar (botón rojo “Cancelar”)**
+1. Usalo si la persona te avisa que desiste.
+2. El turno pasa a **“Cancelada”** y el horario se libera.
+
+Sugerencia:
+
+- Revisá la lista de transferencias pendientes al comienzo de tu jornada.
+- Usá el filtro **"Pendiente transferencia"** para verlas todas rápidamente.
 
 ### Ver datos de contacto completos (modal)
 
@@ -468,6 +537,10 @@ Ve a \`Bloqueos\`, elige la fecha y la hora, y guarda el bloqueo.
 Primero esa persona debe crearse una cuenta y confirmar su correo. Después, desde \`Usuarios\`, puedes darle permiso de administradora.
 
 ## 14. Resumen rápido de tareas comunes
+
+### Para confirmar un pago por transferencia
+
+`Panel de gestión > Turnos > Buscar el turno pendiente > Confirmar pago`
 
 ### Para bloquear una hora
 
