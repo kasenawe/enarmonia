@@ -98,3 +98,14 @@ export const LOGO_URL =
 
 export const BACKEND_URL =
   import.meta.env.VITE_BACKEND_URL || "https://enarmonia-backend.vercel.app"; // URL del backend, configurable vía variable de entorno
+
+export const MP_SURCHARGE_PERCENT = 8.73;
+
+export const TRANSFER_DUE_HOURS = 4;
+
+export const TRANSFER_BANK_INFO = {
+  bank: "Mi dinero",
+  accountType: "Cuenta Local",
+  accountNumber: "1749453",
+  holder: "Soledad Cedrés",
+};

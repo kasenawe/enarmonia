@@ -4,6 +4,8 @@ import {
   Appointment,
   AppUser,
   BlockedSlot,
+  PaymentMethod,
+  PaymentStatus,
   Promotion,
   PromotionDiscountType,
   Service,
@@ -125,6 +127,10 @@ const Admin: React.FC<AdminProps> = ({
   const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "unpaid">(
     "all",
   );
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<"all" | "mp" | "transfer">("all");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<"all" | "pending_transfer" | "paid_transfer" | "expired_transfer">("all");
+  const [isValidatingTransfer, setIsValidatingTransfer] = useState<string | null>(null);
+  const [transferFeedback, setTransferFeedback] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
   const [dateFromFilter, setDateFromFilter] = useState("");
   const [dateToFilter, setDateToFilter] = useState("");
   const [visibleAppointments, setVisibleAppointments] = useState(20);
@@ -181,6 +187,42 @@ const Admin: React.FC<AdminProps> = ({
 
   const handleLogout = () => {
     onBack();
+  };
+
+  const handleValidateTransfer = async (
+    appointmentId: string,
+    action: "confirm" | "expire" | "cancel",
+  ) => {
+    if (!currentUser) return;
+    setIsValidatingTransfer(appointmentId + action);
+    setTransferFeedback(null);
+    try {
+      const response = await fetch(BACKEND_URL + "/api/validate-transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appointmentId,
+          action,
+          adminUserId: currentUser.uid,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Error");
+      setTransferFeedback({
+        id: appointmentId,
+        msg:
+          action === "confirm"
+            ? "Pago confirmado"
+            : action === "expire"
+              ? "Turno vencido"
+              : "Turno cancelado",
+        ok: true,
+      });
+    } catch (err: any) {
+      setTransferFeedback({ id: appointmentId, msg: err.message, ok: false });
+    } finally {
+      setIsValidatingTransfer(null);
+    }
   };
 
   const isPromotionLive = (promotion: Promotion) => {
@@ -813,6 +855,14 @@ const Admin: React.FC<AdminProps> = ({
         return false;
       }
 
+      if (paymentMethodFilter !== "all" && appointment.paymentMethod !== paymentMethodFilter) {
+        return false;
+      }
+
+      if (paymentStatusFilter !== "all" && appointment.paymentStatus !== paymentStatusFilter) {
+        return false;
+      }
+
       if (dateFromFilter && appointment.date < dateFromFilter) {
         return false;
       }
@@ -842,6 +892,8 @@ const Admin: React.FC<AdminProps> = ({
     appointmentStatusFilter,
     bookingModeFilter,
     paymentFilter,
+    paymentMethodFilter,
+    paymentStatusFilter,
     dateFromFilter,
     dateToFilter,
     today,
@@ -862,6 +914,8 @@ const Admin: React.FC<AdminProps> = ({
     appointmentStatusFilter,
     bookingModeFilter,
     paymentFilter,
+    paymentMethodFilter,
+    paymentStatusFilter,
     dateFromFilter,
     dateToFilter,
   ]);
@@ -1015,7 +1069,7 @@ const Admin: React.FC<AdminProps> = ({
                 </select>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <select
                   value={bookingModeFilter}
                   onChange={(e) =>
@@ -1044,6 +1098,37 @@ const Admin: React.FC<AdminProps> = ({
                   <option value="unpaid">Sin pago</option>
                 </select>
 
+                <select
+                  value={paymentMethodFilter}
+                  onChange={(e) =>
+                    setPaymentMethodFilter(
+                      e.target.value as "all" | "mp" | "transfer",
+                    )
+                  }
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-gray-900"
+                >
+                  <option value="all">Método: Todos</option>
+                  <option value="mp">Mercado Pago</option>
+                  <option value="transfer">Transferencia</option>
+                </select>
+
+                <select
+                  value={paymentStatusFilter}
+                  onChange={(e) =>
+                    setPaymentStatusFilter(
+                      e.target.value as "all" | "pending_transfer" | "paid_transfer" | "expired_transfer",
+                    )
+                  }
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-gray-900"
+                >
+                  <option value="all">Estado pago: Todos</option>
+                  <option value="pending_transfer">Pendiente transferencia</option>
+                  <option value="paid_transfer">Pagado (transferencia)</option>
+                  <option value="expired_transfer">Vencida</option>
+                </select>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
                 <input
                   type="date"
                   value={dateFromFilter}
@@ -1070,6 +1155,8 @@ const Admin: React.FC<AdminProps> = ({
                     setAppointmentStatusFilter("upcoming");
                     setBookingModeFilter("all");
                     setPaymentFilter("all");
+                    setPaymentMethodFilter("all");
+                    setPaymentStatusFilter("all");
                     setDateFromFilter("");
                     setDateToFilter("");
                   }}
@@ -1159,9 +1246,29 @@ const Admin: React.FC<AdminProps> = ({
                         </div>
                         <div className="flex items-center gap-2 mt-3">
                           <span
-                            className={`text-[9px] font-bold px-2 py-1 rounded-full ${app.paid ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}
+                            className={`text-[9px] font-bold px-2 py-1 rounded-full ${
+                              app.paymentStatus === "pending_transfer"
+                                ? "bg-amber-100 text-amber-700"
+                                : app.paymentStatus === "expired_transfer"
+                                  ? "bg-gray-100 text-gray-500"
+                                  : app.paymentStatus === "paid_transfer"
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : app.paid
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-yellow-100 text-yellow-700"
+                            }`}
                           >
-                            {app.paid ? "Pagado ✓" : "Sin Pago"}
+                            {app.paymentStatus === "pending_transfer"
+                              ? "Pendiente transferencia"
+                              : app.paymentStatus === "expired_transfer"
+                                ? "Vencida"
+                                : app.paymentStatus === "paid_transfer"
+                                  ? "Pagado (transferencia)"
+                                  : app.paymentStatus === "paid_mp"
+                                    ? "Pagado (MP)"
+                                    : app.paid
+                                      ? "Pagado ✓"
+                                      : "Sin Pago"}
                           </span>
                           <span
                             className={`text-[9px] font-bold px-2 py-1 rounded-full ${
@@ -1276,6 +1383,40 @@ const Admin: React.FC<AdminProps> = ({
                         </svg>
                       </button>
                     </div>
+
+                    {/* Transfer actions */}
+                    {app.paymentStatus === "pending_transfer" && (
+                      <div className="mt-3 space-y-2">
+                        {transferFeedback?.id === app.id && (
+                          <p className={`text-[10px] font-bold text-center ${transferFeedback.ok ? "text-emerald-600" : "text-red-500"}`}>
+                            {transferFeedback.msg}
+                          </p>
+                        )}
+                        <div className="flex gap-2">
+                          <button
+                            disabled={!!isValidatingTransfer}
+                            onClick={() => handleValidateTransfer(app.id, "confirm")}
+                            className="flex-1 py-2.5 rounded-2xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider disabled:opacity-50"
+                          >
+                            {isValidatingTransfer === app.id + "confirm" ? "..." : "✓ Confirmar pago"}
+                          </button>
+                          <button
+                            disabled={!!isValidatingTransfer}
+                            onClick={() => handleValidateTransfer(app.id, "expire")}
+                            className="flex-1 py-2.5 rounded-2xl bg-gray-100 text-gray-600 text-[10px] font-black uppercase tracking-wider disabled:opacity-50"
+                          >
+                            {isValidatingTransfer === app.id + "expire" ? "..." : "Vencer"}
+                          </button>
+                          <button
+                            disabled={!!isValidatingTransfer}
+                            onClick={() => handleValidateTransfer(app.id, "cancel")}
+                            className="flex-1 py-2.5 rounded-2xl bg-red-50 text-red-500 text-[10px] font-black uppercase tracking-wider disabled:opacity-50"
+                          >
+                            {isValidatingTransfer === app.id + "cancel" ? "..." : "Cancelar"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })

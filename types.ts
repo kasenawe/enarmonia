@@ -11,6 +11,17 @@ export type PromotionDiscountType = "percentage" | "fixed";
 
 export type UserRole = "admin" | "client";
 
+export type PaymentMethod = "mp" | "transfer";
+
+export type PaymentStatus =
+  | "pending_mp"
+  | "paid_mp"
+  | "failed_mp"
+  | "pending_transfer"
+  | "paid_transfer"
+  | "expired_transfer"
+  | "cancelled";
+
 export interface AppUser {
   uid: string;
   email: string;
@@ -128,8 +139,17 @@ export interface Appointment {
   price: number; // ✨ NUEVO: precio pagado
   basePrice?: number;
   discountAmount?: number;
-  paid: boolean; // ✨ NUEVO: si está pagado
-  paymentId?: string; // ✨ NUEVO: ID del pago en MP
+  paid: boolean;
+  paymentId?: string;
+  paymentMethod?: PaymentMethod;
+  paymentStatus?: PaymentStatus;
+  subtotalAmount?: number;
+  mpSurchargeAmount?: number;
+  totalAmount?: number;
+  mpFeePercent?: number;
+  paymentDueAt?: string;
+  paymentValidatedAt?: string;
+  paymentValidatedBy?: string;
   appliedPromotion?: AppliedPromotion | null;
   createdAt: string;
   bookingMode?: "account" | "guest";

@@ -1,6 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Service, Appointment, Promotion, BlockedSlot } from "../types";
-import { CONTACT_INFO, BACKEND_URL } from "../constants";
+import {
+  CONTACT_INFO,
+  BACKEND_URL,
+  MP_SURCHARGE_PERCENT,
+  TRANSFER_BANK_INFO,
+  TRANSFER_DUE_HOURS,
+} from "../constants";
 import { getServicePricing } from "../utils/promotionPricing";
 
 interface BookingProps {
@@ -35,10 +41,22 @@ const Booking: React.FC<BookingProps> = ({
   const [userPhone, setUserPhone] = useState(initialData.phone);
   const [userEmail, setUserEmail] = useState(initialData.email);
   const [userDocumentId, setUserDocumentId] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"mp" | "transfer" | "">("mp");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  // Transfer pending state
+  const [transferPending, setTransferPending] = useState<{
+    appointmentId: string;
+    dueAt: string;
+    totalAmount: number;
+  } | null>(null);
   const timeSectionRef = useRef<HTMLDivElement | null>(null);
   const pricing = getServicePricing(service, promotions);
+
+  // Surcharge calculation (always computed in frontend for display, backend recalculates authoritatively)
+  const mpSurcharge = Math.round(pricing.finalPrice * (MP_SURCHARGE_PERCENT / 100));
+  const totalWithSurcharge = pricing.finalPrice + mpSurcharge;
+  const displayTotal = paymentMethod === "mp" ? totalWithSurcharge : pricing.finalPrice;
 
   useEffect(() => {
     setUserName((currentName) => currentName || initialData.name);
@@ -163,117 +181,159 @@ const Booking: React.FC<BookingProps> = ({
   const handleNextStep = async () => {
     if (step < 3) {
       setStep(step + 1);
-    } else {
-      // ✨ NUEVO: Paso 3 ahora es PAGO
-      setIsSubmitting(true);
-      try {
-        // Llamar al backend para crear preferencia de pago
-        const response = await fetch(BACKEND_URL + "/api/create-payment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: currentUserId || null,
-            serviceId: service.id,
-            customerData: {
-              name: userName.trim(),
-              phone: userPhone.trim(),
-              email: userEmail.trim().toLowerCase(),
-              documentId: userDocumentId.trim() || undefined,
-            },
-            date: selectedDate,
-            time: selectedTime,
-          }),
-        });
+      return;
+    }
 
-        if (!response.ok) {
-          throw new Error("Error al crear preferencia de pago");
-        }
+    if (!paymentMethod) return;
 
-        const { initPoint } = await response.json();
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(BACKEND_URL + "/api/create-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUserId || null,
+          serviceId: service.id,
+          paymentMethod,
+          customerData: {
+            name: userName.trim(),
+            phone: userPhone.trim(),
+            email: userEmail.trim().toLowerCase(),
+            documentId: userDocumentId.trim() || undefined,
+          },
+          date: selectedDate,
+          time: selectedTime,
+        }),
+      });
 
-        // Redirigir a Mercado Pago
-        window.location.href = initPoint;
-      } catch (error: any) {
-        setIsSubmitting(false);
-        alert("Hubo un problema al procesar el pago. Inténtalo de nuevo.");
-        console.error("Error:", error);
+      if (!response.ok) {
+        throw new Error("Error al procesar la reserva");
       }
+
+      const data = await response.json();
+
+      if (paymentMethod === "mp") {
+        window.location.href = data.initPoint;
+      } else {
+        // Transfer: show pending screen
+        setTransferPending({
+          appointmentId: data.appointmentId,
+          dueAt: data.dueAt,
+          totalAmount: data.pricing.totalAmount,
+        });
+      }
+    } catch (error: any) {
+      setIsSubmitting(false);
+      alert("Hubo un problema al procesar la reserva. Inténtalo de nuevo.");
+      console.error("Error:", error);
     }
   };
 
-  if (showSuccess) {
-    return (
-      <div className="p-6 pt-12 text-center animate-in">
-        <div className="relative overflow-hidden rounded-[3rem] border border-line-subtle bg-shell p-10 shadow-xl">
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-300 to-emerald-400"></div>
+  // Transfer pending screen
+  if (transferPending) {
+    const dueDate = new Date(transferPending.dueAt);
+    const dueDateStr = dueDate.toLocaleDateString("es-UY", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+    });
+    const dueTimeStr = dueDate.toLocaleTimeString("es-UY", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const whatsappMsg = encodeURIComponent(
+      `*Comprobante de transferencia*\n\n` +
+        `Servicio: ${service.name}\n` +
+        `Fecha: ${getSelectedDateDisplay()}\n` +
+        `Hora: ${selectedTime} hs\n` +
+        `Turno ID: ${transferPending.appointmentId}\n` +
+        `Monto: $${transferPending.totalAmount.toLocaleString("es-UY")} UYU\n\n` +
+        `Adjunto comprobante de transferencia.`,
+    );
 
-          <div className="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="48"
-              height="48"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="20 6 9 17 4 12" />
+    return (
+      <div className="p-6 pb-20 animate-in">
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-amber-200 bg-shell p-8 shadow-xl">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-300 to-yellow-400"></div>
+
+          <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" x2="12" y1="8" y2="12" />
+              <line x1="12" x2="12.01" y1="16" y2="16" />
             </svg>
           </div>
 
-          <h2 className="mb-4 text-3xl font-black leading-tight text-ink-strong">
-            ¡Turno Agendado!
-          </h2>
+          <h2 className="mb-1 text-center text-2xl font-black text-ink-strong">Reserva recibida</h2>
+          <p className="mb-6 text-center text-[11px] font-medium text-ink-subtle">Pendiente de confirmación de pago</p>
 
-          <div className="flex items-center justify-center gap-2 mb-6 bg-blue-50 py-2 px-4 rounded-full w-fit mx-auto">
-            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></div>
-            <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">
-              Aviso enviado al centro por Email
-            </span>
+          {/* Turno resumen */}
+          <div className="mb-6 rounded-2xl border border-line-subtle bg-shell-subtle p-5 space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Servicio</span>
+              <span className="font-bold text-ink-strong">{service.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Fecha</span>
+              <span className="font-bold text-ink-strong">{getSelectedDateDisplay()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Hora</span>
+              <span className="font-bold text-action">{selectedTime} HS</span>
+            </div>
+            <div className="flex justify-between border-t border-line/50 pt-2">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Total a transferir</span>
+              <span className="font-black text-lg text-ink-strong">${transferPending.totalAmount.toLocaleString("es-UY")} UYU</span>
+            </div>
           </div>
 
-          <p className="mb-10 px-2 text-sm leading-relaxed text-ink-muted">
-            Tu reserva ha sido registrada con éxito. <br />
-            <span className="font-bold text-ink">
-              Opcional: puedes reforzar tu aviso por WhatsApp si lo deseas.
-            </span>
-          </p>
-
-          <div className="space-y-4">
-            <a
-              href={constructWhatsAppUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full py-5 bg-[#25D366] text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-green-100 active:scale-95 transition-all"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7l.8.1" />
-                <path d="m22 2-7.5 7.5" />
-                <path d="M10 14.7 9 22l11-11-4.7-1" />
-                <path d="M15.5 15.5 19 19" />
-              </svg>
-              REFORZAR POR WHATSAPP
-            </a>
-
-            <button
-              onClick={onCancel}
-              className="w-full py-4 text-[10px] font-bold uppercase tracking-widest text-ink-subtle transition-colors hover:text-ink-soft"
-            >
-              Volver al inicio
-            </button>
+          {/* Datos bancarios */}
+          <div className="mb-5 rounded-2xl bg-amber-50 border border-amber-100 p-5">
+            <p className="mb-3 text-[9px] font-black uppercase tracking-widest text-amber-700">Datos para la transferencia</p>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-ink-subtle">Banco</span>
+                <span className="font-bold text-ink-strong">{TRANSFER_BANK_INFO.bank}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-ink-subtle">{TRANSFER_BANK_INFO.accountType}</span>
+                <span className="font-bold text-ink-strong">{TRANSFER_BANK_INFO.accountNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-ink-subtle">Titular</span>
+                <span className="font-bold text-ink-strong">{TRANSFER_BANK_INFO.holder}</span>
+              </div>
+            </div>
           </div>
+
+          {/* Vencimiento */}
+          <div className="mb-6 rounded-2xl bg-red-50 border border-red-100 p-4 text-center">
+            <p className="text-[9px] font-black uppercase tracking-widest text-red-500 mb-1">Vencimiento del pago</p>
+            <p className="text-sm font-bold text-red-700">{dueDateStr} a las {dueTimeStr}</p>
+            <p className="mt-1 text-[10px] text-red-400">Pasado ese horario el turno se libera</p>
+          </div>
+
+          {/* WhatsApp */}
+          <a
+            href={`https://wa.me/${CONTACT_INFO.whatsapp}?text=${whatsappMsg}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-3 w-full py-4 bg-[#25D366] text-white rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all mb-3"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7l.8.1" />
+              <path d="m22 2-7.5 7.5" />
+              <path d="M10 14.7 9 22l11-11-4.7-1" />
+            </svg>
+            ENVIAR COMPROBANTE POR WHATSAPP
+          </a>
+
+          <button
+            onClick={onCancel}
+            className="w-full py-3 text-[10px] font-bold uppercase tracking-widest text-ink-subtle"
+          >
+            Volver al inicio
+          </button>
         </div>
       </div>
     );
@@ -497,145 +557,101 @@ const Booking: React.FC<BookingProps> = ({
         )}
 
         {step === 3 && (
-          <div className="animate-in space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+          <div className="animate-in space-y-5">
+            <h4 className="text-xs font-bold uppercase tracking-widest text-ink-subtle">
+              Paso 3: Método de Pago
+            </h4>
+
+            {/* Method selector */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Mercado Pago */}
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("mp")}
+                className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-4 text-center transition-all ${
+                  paymentMethod === "mp"
+                    ? "border-action bg-action/5"
+                    : "border-line-subtle bg-shell-subtle"
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={paymentMethod === "mp" ? "text-action" : "text-ink-subtle"}>
                   <rect width="20" height="14" x="2" y="5" rx="2" />
                   <line x1="2" x2="22" y1="10" y2="10" />
                 </svg>
-              </div>
-              <h3 className="text-xl font-bold text-ink-strong">Pago Seguro</h3>
-              <p className="mt-1 px-8 text-[11px] text-ink-subtle">
-                {promotionsLoading
-                  ? "Verificando promociones vigentes antes de cobrar."
-                  : "Completa tu reserva pagando de forma segura."}
-              </p>
+                <span className={`text-[10px] font-black uppercase tracking-wider ${
+                  paymentMethod === "mp" ? "text-action" : "text-ink-subtle"
+                }`}>Mercado Pago</span>
+                {paymentMethod === "mp" && (
+                  <span className="text-[9px] text-ink-muted leading-tight">Recargo {MP_SURCHARGE_PERCENT}%</span>
+                )}
+              </button>
+
+              {/* Transferencia */}
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("transfer")}
+                className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-4 text-center transition-all ${
+                  paymentMethod === "transfer"
+                    ? "border-emerald-500 bg-emerald-50"
+                    : "border-line-subtle bg-shell-subtle"
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={paymentMethod === "transfer" ? "text-emerald-600" : "text-ink-subtle"}>
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                <span className={`text-[10px] font-black uppercase tracking-wider ${
+                  paymentMethod === "transfer" ? "text-emerald-700" : "text-ink-subtle"
+                }`}>Transferencia</span>
+                {paymentMethod === "transfer" && (
+                  <span className="text-[9px] text-emerald-600 font-bold leading-tight">Sin recargo</span>
+                )}
+              </button>
             </div>
 
-            <div className="space-y-4 rounded-3xl border border-line-subtle bg-shell-subtle p-6">
+            {/* Price breakdown */}
+            <div className="rounded-2xl border border-line-subtle bg-shell-subtle p-5 space-y-2">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
-                  Servicio
-                </span>
-                <span className="text-right font-bold text-ink-strong">
-                  {service.name}
-                </span>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Servicio</span>
+                <span className="font-bold text-ink-strong text-right">{service.name}</span>
               </div>
               <div className="flex justify-between items-center text-xs">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
-                  Fecha
-                </span>
-                <span className="font-bold text-ink-strong">
-                  {getSelectedDateDisplay()}
-                </span>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Fecha / Hora</span>
+                <span className="font-bold text-ink-strong">{getSelectedDateDisplay()} – {selectedTime} hs</span>
               </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
-                  Hora
-                </span>
-                <span className="font-bold text-action">{selectedTime} HS</span>
-              </div>
-              <div className="flex flex-col gap-1 border-t border-line/50 pt-2">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
-                  Cliente
-                </span>
-                <span className="text-sm font-bold text-ink-strong">
-                  {userName} ({userPhone})
-                </span>
-                <span className="text-xs text-ink-muted">{userEmail}</span>
-              </div>
-              <div className="border-t border-line/50 pt-2">
-                <div className="space-y-3">
+              <div className="border-t border-line/50 pt-2 space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Subtotal</span>
+                  <span className="font-bold text-ink">${pricing.finalPrice.toLocaleString("es-UY")}</span>
+                </div>
+                {paymentMethod === "mp" && (
                   <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
-                      Precio base
-                    </span>
-                    <span className="font-bold text-ink">
-                      ${pricing.basePrice.toLocaleString("es-UY")}
-                    </span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Recargo MP ({MP_SURCHARGE_PERCENT}%)</span>
+                    <span className="font-bold text-amber-600">+${mpSurcharge.toLocaleString("es-UY")}</span>
                   </div>
-                  {pricing.appliedPromotion && (
-                    <>
-                      <div className="flex justify-between items-center gap-4 text-xs">
-                        <span className="text-rose-500 font-bold uppercase tracking-widest text-[9px]">
-                          Promoción aplicada
-                        </span>
-                        <span className="text-right font-bold text-rose-600">
-                          {pricing.appliedPromotion.badgeText ||
-                            pricing.appliedPromotion.title}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
-                          Descuento
-                        </span>
-                        <span className="font-bold text-rose-600">
-                          -${pricing.discountAmount.toLocaleString("es-UY")}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                  <div className="flex justify-between items-center border-t border-line/70 pt-2">
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
-                      Total a Pagar
-                    </span>
-                    <span className="font-black text-green-600 text-lg">
-                      ${pricing.finalPrice.toLocaleString("es-UY")}
-                    </span>
-                  </div>
+                )}
+                <div className="flex justify-between items-center border-t border-line/70 pt-1.5">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Total</span>
+                  <span className={`font-black text-lg ${
+                    paymentMethod === "transfer" ? "text-emerald-600" : "text-ink-strong"
+                  }`}>${displayTotal.toLocaleString("es-UY")} UYU</span>
                 </div>
               </div>
             </div>
 
-            {promotionsLoading && (
-              <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100">
-                <p className="text-amber-700 text-[11px] leading-relaxed font-medium">
-                  Estamos validando promociones activas antes de enviarte a
-                  Mercado Pago.
-                </p>
+            {/* Info banner per method */}
+            {paymentMethod === "mp" && (
+              <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4">
+                <p className="text-blue-800 font-bold text-[11px] mb-0.5">Pago con Mercado Pago</p>
+                <p className="text-blue-600 text-[10px] leading-relaxed">Serás redirigido a Mercado Pago. Tu turno se confirma automáticamente al aprobarse el pago.</p>
               </div>
             )}
-
-            <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
-              <div className="flex items-start gap-3">
-                <div className="w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-blue-800 font-bold text-xs mb-1">
-                    Pago 100% Seguro
-                  </p>
-                  <p className="text-blue-600 text-[10px] leading-relaxed">
-                    Serás redirigido a Mercado Pago para completar el pago de
-                    forma segura. Tu turno se confirmará automáticamente una vez
-                    aprobado el pago.
-                  </p>
-                </div>
+            {paymentMethod === "transfer" && (
+              <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4">
+                <p className="text-emerald-800 font-bold text-[11px] mb-0.5">Pago por transferencia</p>
+                <p className="text-emerald-700 text-[10px] leading-relaxed">Recibirás los datos bancarios para transferir. Tendrás {TRANSFER_DUE_HOURS} horas para enviar el comprobante por WhatsApp.</p>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>
@@ -648,7 +664,7 @@ const Booking: React.FC<BookingProps> = ({
             (userName.trim().length < 3 ||
               userPhone.trim().length < 7 ||
               !userEmail.trim().includes("@"))) ||
-          (step === 3 && promotionsLoading)
+          (step === 3 && (!paymentMethod || promotionsLoading))
         }
         onClick={handleNextStep}
         className={`w-full py-4 rounded-2xl font-bold text-white shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
@@ -657,9 +673,11 @@ const Booking: React.FC<BookingProps> = ({
             (userName.trim().length < 3 ||
               userPhone.trim().length < 7 ||
               !userEmail.trim().includes("@"))) ||
-          (step === 3 && promotionsLoading)
+          (step === 3 && (!paymentMethod || promotionsLoading))
             ? "bg-shell-soft text-ink-faint cursor-not-allowed shadow-none"
-            : "bg-action hover:bg-action-hover"
+            : paymentMethod === "transfer"
+              ? "bg-emerald-600 hover:bg-emerald-700"
+              : "bg-action hover:bg-action-hover"
         }`}
       >
         {isSubmitting ? (
@@ -670,8 +688,10 @@ const Booking: React.FC<BookingProps> = ({
         ) : step === 3 ? (
           promotionsLoading ? (
             "VERIFICANDO PROMOCIONES..."
+          ) : paymentMethod === "transfer" ? (
+            "CONFIRMAR POR TRANSFERENCIA"
           ) : (
-            "PROCEDER AL PAGO"
+            "PAGAR CON MERCADO PAGO"
           )
         ) : (
           "CONTINUAR"

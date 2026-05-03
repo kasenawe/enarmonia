@@ -1,6 +1,34 @@
 import React from "react";
+import { CONTACT_INFO } from "../constants";
 
 const Success: React.FC = () => {
+  const params = new URLSearchParams(window.location.search);
+  const method = params.get("method"); // "transfer" or null (mp)
+
+  if (method === "transfer") {
+    // Transfer success is handled inside Booking.tsx (transferPending screen)
+    // This route should not normally be reached for transfers, but just in case:
+    return (
+      <div className="p-6 pt-12 text-center animate-in">
+        <div className="relative overflow-hidden rounded-[3rem] border border-amber-200 bg-shell p-10 shadow-xl">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-300 to-yellow-400"></div>
+          <h2 className="mb-4 text-2xl font-black text-ink-strong">Reserva pendiente</h2>
+          <p className="mb-8 text-sm text-ink-muted">
+            Tu reserva está pendiente de confirmación de pago por transferencia.
+            Revisá tu WhatsApp para los datos bancarios.
+          </p>
+          <a
+            href="/"
+            className="flex w-full items-center justify-center gap-3 rounded-[1.5rem] bg-action py-5 text-sm font-black text-white shadow-xl transition-all active:scale-95"
+          >
+            VOLVER AL INICIO
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // MP success (default)
   return (
     <div className="p-6 pt-12 text-center animate-in">
       <div className="relative overflow-hidden rounded-[3rem] border border-line-subtle bg-shell p-10 shadow-xl">
@@ -43,6 +71,20 @@ const Success: React.FC = () => {
 
         <div className="space-y-4">
           <a
+            href={`https://wa.me/${CONTACT_INFO.whatsapp}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center justify-center gap-3 rounded-[1.5rem] bg-[#25D366] py-4 text-sm font-black text-white shadow-xl transition-all active:scale-95"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7l.8.1" />
+              <path d="m22 2-7.5 7.5" />
+              <path d="M10 14.7 9 22l11-11-4.7-1" />
+            </svg>
+            CONTACTAR POR WHATSAPP
+          </a>
+
+          <a
             href="/"
             className="flex w-full items-center justify-center gap-3 rounded-[1.5rem] bg-action py-5 text-sm font-black text-white shadow-xl transition-all active:scale-95"
           >
@@ -76,3 +118,4 @@ const Success: React.FC = () => {
 };
 
 export default Success;
+
