@@ -69,7 +69,7 @@ El flujo de reserva funciona así:
 - La app le muestra a la persona los datos bancarios para realizar la transferencia.
 - La persona tiene **4 horas** para acreditar el pago.
 - Vos recibes el comprobante por WhatsApp y confirmás el pago manualmente desde el panel (ver sección 4.5).
-- Si el pago no llega en ese plazo, podés vencer el turno y liberar el horario.
+- Si el pago no llega en ese plazo, el sistema **vence el turno automáticamente** y libera el horario. También podés hacerlo vos antes de que se cumpla el plazo desde el panel.
 
 Importante:
 
@@ -222,8 +222,9 @@ Cuando recibás el comprobante (por WhatsApp u otro medio), tenés tres acciones
 3. El badge pasa a **"Pagado (transferencia)"**.
 
 **Vencer (botón gris “Vencer”)**
-1. Si las 4 horas pasaron y no llegó el pago, pulsá “Vencer”.
-2. El turno queda como **“Vencida”** y el horario se libera automáticamente para que otra persona pueda reservar.
+1. Usalo si querés liberar el horario antes de que se cumplan las 4 horas.
+2. El turno queda como **"Vencida"** y el horario se libera automáticamente para que otra persona pueda reservar.
+3. Si las 4 horas ya pasaron sin pago, el sistema lo vence solo cada hora — no necesitás hacer nada.
 
 **Cancelar (botón rojo “Cancelar”)**
 1. Usalo si la persona te avisa que desiste.
