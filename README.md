@@ -160,7 +160,7 @@ La aplicación estará disponible en `http://localhost:3000`.
 ## 📝 Notas para Desarrolladores
 
 - **Base de Datos**: La app usa tres colecciones principales en Firestore:
-  - `users`: `uid`, `fullName`, `documentId`, `email`, `role`, `userPhone`, `createdAt`.
+  - `users`: `uid`, `fullName`, `documentId`, `email`, `role`, `userPhone` (formato E.164, ej: `+59899123456`), `createdAt`.
   - `appointments`: `userId` (opcional), `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `userEmail`, `userDocumentId` (opcional), `bookingMode` (`"account"` | `"guest"`), `createdAt`, `price`, `paid`, `basePrice`, `discountAmount`, `appliedPromotion`, `paymentMethod` (`"mp"` | `"transfer"`), `paymentStatus` (`"paid_mp"` | `"pending_transfer"` | `"paid_transfer"` | `"expired_transfer"` | `"cancelled"`), `subtotalAmount`, `mpSurchargeAmount`, `totalAmount`, `mpFeePercent`, `paymentDueAt` (solo transferencia), `paymentValidatedAt`, `paymentValidatedBy`.
   - `occupied_slots`: `appointmentId`, `serviceId`, `date`, `time`, `createdAt`, `expiresAt` (solo en slots de transferencia; el frontend lo usa para ignorar slots vencidos sin esperar al cron).
   - `blocked_slots`: `date`, `time`, `createdAt`.
