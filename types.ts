@@ -165,6 +165,7 @@ export interface BlockedSlot {
 export interface OccupiedSlot {
   date: string;
   time: string;
+  expiresAt?: string;
 }
 
 export enum AppRoute {

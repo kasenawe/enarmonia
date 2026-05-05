@@ -267,9 +267,14 @@ const App: React.FC = () => {
     const unsubscribe = onSnapshot(
       occupiedSlotsRef,
       (snapshot) => {
+        const nowIso = new Date().toISOString();
         const occupied: OccupiedSlot[] = [];
         snapshot.forEach((entry) => {
-          occupied.push(entry.data() as OccupiedSlot);
+          const slot = entry.data() as OccupiedSlot;
+          if (slot.expiresAt && slot.expiresAt <= nowIso) {
+            return;
+          }
+          occupied.push(slot);
         });
         setOccupiedSlots(occupied);
       },
