@@ -8,6 +8,7 @@ import {
   TRANSFER_DUE_HOURS,
 } from "../constants";
 import { getServicePricing } from "../utils/promotionPricing";
+import PhoneInput from "../components/PhoneInput";
 
 interface BookingProps {
   service: Service;
@@ -520,12 +521,10 @@ const Booking: React.FC<BookingProps> = ({
                 <label className="ml-1 mb-2 block text-[10px] font-bold uppercase text-ink-subtle">
                   Teléfono / WhatsApp
                 </label>
-                <input
-                  type="tel"
+                <PhoneInput
                   value={userPhone}
-                  onChange={(e) => setUserPhone(e.target.value)}
-                  placeholder="Ej: 099 123 456"
-                  className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm font-medium text-ink-strong outline-none transition-all focus:border-action focus:bg-shell"
+                  onChange={setUserPhone}
+                  placeholder="99 123 456"
                 />
               </div>
               <div>
@@ -662,7 +661,7 @@ const Booking: React.FC<BookingProps> = ({
           (step === 1 && (!selectedDate || !selectedTime)) ||
           (step === 2 &&
             (userName.trim().length < 3 ||
-              userPhone.trim().length < 7 ||
+              userPhone.replace(/\D/g, "").length < 8 ||
               !userEmail.trim().includes("@"))) ||
           (step === 3 && (!paymentMethod || promotionsLoading))
         }
@@ -671,7 +670,7 @@ const Booking: React.FC<BookingProps> = ({
           (step === 1 && (!selectedDate || !selectedTime)) ||
           (step === 2 &&
             (userName.trim().length < 3 ||
-              userPhone.trim().length < 7 ||
+              userPhone.replace(/\D/g, "").length < 8 ||
               !userEmail.trim().includes("@"))) ||
           (step === 3 && (!paymentMethod || promotionsLoading))
             ? "bg-shell-soft text-ink-faint cursor-not-allowed shadow-none"

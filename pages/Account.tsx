@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FirebaseError } from "firebase/app";
+import PhoneInput from "../components/PhoneInput";
 
 interface AccountProps {
   email: string | null;
@@ -117,7 +118,7 @@ const Account: React.FC<AccountProps> = ({
       return;
     }
 
-    if (normalizedPhone && normalizedPhone.length < 7) {
+    if (normalizedPhone && normalizedPhone.replace(/\D/g, "").length < 8) {
       setProfileError("Ingresa un teléfono válido o déjalo vacío.");
       setProfileFeedback(null);
       return;
@@ -330,13 +331,10 @@ const Account: React.FC<AccountProps> = ({
           <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
             Teléfono para reservas
           </p>
-          <input
-            type="tel"
+          <PhoneInput
             value={phoneValue}
-            onChange={(e) => setPhoneValue(e.target.value)}
-            placeholder="Ej: 099 123 456"
-            autoComplete="tel"
-            className="w-full rounded-2xl border-2 border-transparent bg-shell p-4 text-sm text-ink-strong outline-none transition-all focus:border-brand"
+            onChange={setPhoneValue}
+            placeholder="99 123 456"
           />
           <p className="mt-2 text-xs text-ink-muted">
             Se usará como valor inicial en la reserva, pero podrás editarlo en

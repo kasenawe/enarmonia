@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FirebaseError } from "firebase/app";
 import { useAuth } from "../contexts/AuthContext";
+import PhoneInput from "../components/PhoneInput";
 
 interface RegisterProps {
   onBack: () => void;
@@ -73,7 +74,7 @@ const Register: React.FC<RegisterProps> = ({
       return;
     }
 
-    if (userPhone.trim() && userPhone.trim().length < 7) {
+    if (userPhone.trim() && userPhone.replace(/\D/g, "").length < 8) {
       setError("Ingresa un teléfono válido o déjalo vacío por ahora.");
       return;
     }
@@ -195,15 +196,12 @@ const Register: React.FC<RegisterProps> = ({
 
           <div>
             <label className="mb-2 ml-1 block text-[10px] font-bold uppercase tracking-widest text-ink-subtle">
-              Teléfono / WhatsApp
+              Teléfono / WhatsApp <span className="normal-case font-normal">(opcional)</span>
             </label>
-            <input
-              type="tel"
+            <PhoneInput
               value={userPhone}
-              onChange={(e) => setUserPhone(e.target.value)}
-              placeholder="Opcional: 099 123 456"
-              autoComplete="tel"
-              className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm text-ink-strong outline-none transition-all focus:border-brand focus:bg-shell"
+              onChange={setUserPhone}
+              placeholder="99 123 456"
             />
           </div>
 
