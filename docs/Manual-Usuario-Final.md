@@ -224,7 +224,7 @@ Cuando recibás el comprobante (por WhatsApp u otro medio), tenés tres acciones
 **Vencer (botón gris “Vencer”)**
 1. Usalo si querés liberar el horario antes de que se cumplan las 4 horas.
 2. El turno queda como **"Vencida"** y el horario se libera automáticamente para que otra persona pueda reservar.
-3. Si las 4 horas ya pasaron sin pago, el sistema lo vence solo cada hora — no necesitás hacer nada.
+3. Si las 4 horas ya pasaron sin pago, el sistema lo vence automáticamente (ya sea al instante cuando alguien más intenta reservar ese horario, o durante la limpieza nocturna) — no necesitás hacer nada.
 
 **Cancelar (botón rojo “Cancelar”)**
 1. Usalo si la persona te avisa que desiste.
