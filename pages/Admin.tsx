@@ -95,6 +95,16 @@ const Admin: React.FC<AdminProps> = ({
   const [bulkBlockFeedback, setBulkBlockFeedback] = useState<string | null>(
     null,
   );
+  const [bulkUnblockFrom, setBulkUnblockFrom] = useState(getLocalDateString());
+  const [bulkUnblockTo, setBulkUnblockTo] = useState(getLocalDateString());
+  const [bulkUnblockAllDay, setBulkUnblockAllDay] = useState(true);
+  const [bulkUnblockTimeFrom, setBulkUnblockTimeFrom] = useState("09:00");
+  const [bulkUnblockTimeTo, setBulkUnblockTimeTo] = useState("18:00");
+  const [isBulkUnblocking, setIsBulkUnblocking] = useState(false);
+  const [bulkUnblockError, setBulkUnblockError] = useState<string | null>(null);
+  const [bulkUnblockFeedback, setBulkUnblockFeedback] = useState<string | null>(
+    null,
+  );
 
   // Schedule editor state
   const [scheduleForm, setScheduleForm] = useState<Schedule>(schedule);
@@ -934,6 +944,81 @@ const Admin: React.FC<AdminProps> = ({
       setBulkBlockError("Error al bloquear los horarios. Intentá nuevamente.");
     } finally {
       setIsBulkBlocking(false);
+    }
+  };
+
+  const handleBulkUnblock = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setBulkUnblockError(null);
+    setBulkUnblockFeedback(null);
+
+    if (!bulkUnblockFrom || !bulkUnblockTo) {
+      setBulkUnblockError("Seleccioná fecha de inicio y fin.");
+      return;
+    }
+    if (bulkUnblockTo < bulkUnblockFrom) {
+      setBulkUnblockError(
+        "La fecha de fin no puede ser anterior a la de inicio.",
+      );
+      return;
+    }
+
+    const allSlots = generateTimeSlots(schedule, 60);
+    const timeRange = bulkUnblockAllDay
+      ? allSlots
+      : allSlots.filter(
+          (t) => t >= bulkUnblockTimeFrom && t <= bulkUnblockTimeTo,
+        );
+
+    if (timeRange.length === 0) {
+      setBulkUnblockError("El rango de horas no contiene horarios válidos.");
+      return;
+    }
+
+    setIsBulkUnblocking(true);
+    try {
+      const slotsToDelete = blockedSlots.filter(
+        (slot) =>
+          slot.date >= bulkUnblockFrom &&
+          slot.date <= bulkUnblockTo &&
+          timeRange.includes(slot.time),
+      );
+
+      if (slotsToDelete.length === 0) {
+        setBulkUnblockFeedback("No hay bloqueos en ese rango para eliminar.");
+        setIsBulkUnblocking(false);
+        return;
+      }
+
+      if (
+        !window.confirm(
+          `Vas a eliminar ${slotsToDelete.length} bloqueo${slotsToDelete.length !== 1 ? "s" : ""}. ¿Confirmar?`,
+        )
+      ) {
+        setIsBulkUnblocking(false);
+        return;
+      }
+
+      const batchSize = 499;
+      for (let i = 0; i < slotsToDelete.length; i += batchSize) {
+        const batch = writeBatch(db);
+        const chunk = slotsToDelete.slice(i, i + batchSize);
+        for (const slot of chunk) {
+          batch.delete(doc(db, "blocked_slots", slot.id));
+        }
+        await batch.commit();
+      }
+
+      setBulkUnblockFeedback(
+        `${slotsToDelete.length} bloqueo${slotsToDelete.length !== 1 ? "s" : ""} eliminado${slotsToDelete.length !== 1 ? "s" : ""} correctamente.`,
+      );
+    } catch (err) {
+      console.error(err);
+      setBulkUnblockError(
+        "Error al eliminar bloqueos por rango. Intentá nuevamente.",
+      );
+    } finally {
+      setIsBulkUnblocking(false);
     }
   };
 
@@ -1831,6 +1916,16 @@ const Admin: React.FC<AdminProps> = ({
                 {bulkBlockFeedback}
               </div>
             )}
+            {bulkUnblockError && (
+              <div className="rounded-3xl bg-red-50 border border-red-100 p-4 text-red-600 text-sm">
+                {bulkUnblockError}
+              </div>
+            )}
+            {bulkUnblockFeedback && (
+              <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 text-sm">
+                {bulkUnblockFeedback}
+              </div>
+            )}
 
             <form
               onSubmit={handleBulkBlock}
@@ -1908,6 +2003,83 @@ const Admin: React.FC<AdminProps> = ({
                 className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all disabled:opacity-40"
               >
                 {isBulkBlocking ? "BLOQUEANDO..." : "BLOQUEAR RANGO"}
+              </button>
+            </form>
+
+            <form
+              onSubmit={handleBulkUnblock}
+              className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-5"
+            >
+              <div>
+                <h4 className="text-lg font-bold text-gray-800">
+                  Desbloqueo por rango
+                </h4>
+                <p className="text-gray-400 text-[11px]">
+                  Elimina bloqueos cargados por error en múltiples fechas de una
+                  sola vez.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Desde
+                  <input
+                    type="date"
+                    value={bulkUnblockFrom}
+                    onChange={(e) => setBulkUnblockFrom(e.target.value)}
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Hasta
+                  <input
+                    type="date"
+                    value={bulkUnblockTo}
+                    onChange={(e) => setBulkUnblockTo(e.target.value)}
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                  />
+                </label>
+              </div>
+
+              <label className="flex items-center gap-3 text-sm font-medium text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={bulkUnblockAllDay}
+                  onChange={(e) => setBulkUnblockAllDay(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-200"
+                />
+                Todo el horario
+              </label>
+
+              {!bulkUnblockAllDay && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Desde hora
+                    <input
+                      type="time"
+                      value={bulkUnblockTimeFrom}
+                      onChange={(e) => setBulkUnblockTimeFrom(e.target.value)}
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                    />
+                  </label>
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Hasta hora
+                    <input
+                      type="time"
+                      value={bulkUnblockTimeTo}
+                      onChange={(e) => setBulkUnblockTimeTo(e.target.value)}
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                    />
+                  </label>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isBulkUnblocking}
+                className="w-full py-4 bg-red-600 text-white rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all disabled:opacity-40"
+              >
+                {isBulkUnblocking ? "DESBLOQUEANDO..." : "DESBLOQUEAR RANGO"}
               </button>
             </form>
 
