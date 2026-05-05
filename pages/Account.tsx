@@ -48,6 +48,12 @@ const Account: React.FC<AccountProps> = ({
   const [fullNameValue, setFullNameValue] = useState(fullName);
   const [documentValue, setDocumentValue] = useState(documentId);
   const [phoneValue, setPhoneValue] = useState(userPhone);
+
+  const formatCI = (raw: string) => {
+    const digits = raw.replace(/\D/g, "").slice(0, 8);
+    if (digits.length < 2) return digits;
+    return digits.slice(0, -1) + "-" + digits.slice(-1);
+  };
   const [emailValue, setEmailValue] = useState(email || "");
   const [emailPasswordValue, setEmailPasswordValue] = useState("");
   const [currentPasswordValue, setCurrentPasswordValue] = useState("");
@@ -321,9 +327,10 @@ const Account: React.FC<AccountProps> = ({
             />
             <input
               value={documentValue}
-              onChange={(e) => setDocumentValue(e.target.value)}
-              placeholder="Documento"
+              onChange={(e) => setDocumentValue(formatCI(e.target.value))}
+              placeholder="Ej: 3984010-8"
               autoComplete="off"
+              inputMode="numeric"
               className="w-full rounded-2xl border-2 border-transparent bg-shell p-4 text-sm text-ink-strong outline-none transition-all focus:border-brand"
             />
           </div>

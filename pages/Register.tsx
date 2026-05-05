@@ -17,6 +17,12 @@ const Register: React.FC<RegisterProps> = ({
   const { currentUser, register, loading } = useAuth();
   const [fullName, setFullName] = useState("");
   const [documentId, setDocumentId] = useState("");
+
+  const formatCI = (raw: string) => {
+    const digits = raw.replace(/\D/g, "").slice(0, 8);
+    if (digits.length < 2) return digits;
+    return digits.slice(0, -1) + "-" + digits.slice(-1);
+  };
   const [email, setEmail] = useState("");
   const [userPhone, setUserPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -173,9 +179,10 @@ const Register: React.FC<RegisterProps> = ({
             </label>
             <input
               value={documentId}
-              onChange={(e) => setDocumentId(e.target.value)}
-              placeholder="CI o documento"
+              onChange={(e) => setDocumentId(formatCI(e.target.value))}
+              placeholder="Ej: 3984010-8"
               autoComplete="off"
+              inputMode="numeric"
               className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm text-ink-strong outline-none transition-all focus:border-brand focus:bg-shell"
             />
           </div>

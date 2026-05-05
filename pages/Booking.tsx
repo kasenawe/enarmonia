@@ -42,6 +42,12 @@ const Booking: React.FC<BookingProps> = ({
   const [userPhone, setUserPhone] = useState(initialData.phone);
   const [userEmail, setUserEmail] = useState(initialData.email);
   const [userDocumentId, setUserDocumentId] = useState("");
+
+  const formatCI = (raw: string) => {
+    const digits = raw.replace(/\D/g, "").slice(0, 8);
+    if (digits.length < 2) return digits;
+    return digits.slice(0, -1) + "-" + digits.slice(-1);
+  };
   const [paymentMethod, setPaymentMethod] = useState<"mp" | "transfer" | "">("mp");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -546,8 +552,9 @@ const Booking: React.FC<BookingProps> = ({
                 <input
                   type="text"
                   value={userDocumentId}
-                  onChange={(e) => setUserDocumentId(e.target.value)}
-                  placeholder="Ej: 12345678"
+                  onChange={(e) => setUserDocumentId(formatCI(e.target.value))}
+                  placeholder="Ej: 3984010-8"
+                  inputMode="numeric"
                   className="w-full rounded-2xl border-2 border-transparent bg-shell-subtle p-4 text-sm font-medium text-ink-strong outline-none transition-all focus:border-action focus:bg-shell"
                 />
               </div>
