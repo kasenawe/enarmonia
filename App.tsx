@@ -6,7 +6,9 @@ import {
   Promotion,
   BlockedSlot,
   OccupiedSlot,
+  Schedule,
 } from "./types";
+import { DEFAULT_SCHEDULE } from "./constants";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
 import Booking from "./pages/Booking";
@@ -57,6 +59,7 @@ const App: React.FC = () => {
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [myAppointments, setMyAppointments] = useState<Appointment[]>([]);
   const [isSyncing, setIsSyncing] = useState(true);
+  const [schedule, setSchedule] = useState<Schedule>(DEFAULT_SCHEDULE);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [loginPrefillEmail, setLoginPrefillEmail] = useState("");
   const [loginNotice, setLoginNotice] = useState<string | null>(null);
@@ -308,6 +311,22 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const scheduleDoc = doc(db, "settings", "schedule");
+    const unsubscribe = onSnapshot(
+      scheduleDoc,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setSchedule(snapshot.data() as Schedule);
+        }
+      },
+      (error) => {
+        console.error("Error al cargar configuración de horario:", error);
+      },
+    );
+    return () => unsubscribe();
+  }, []);
+
   const handleLogout = async () => {
     if (currentUser) {
       try {
@@ -400,6 +419,7 @@ const App: React.FC = () => {
         return selectedServiceOrDefault ? (
           <Booking
             service={selectedServiceOrDefault}
+            schedule={schedule}
             promotions={promotions}
             promotionsLoading={promotionsLoading}
             occupiedSlots={occupiedSlots}
@@ -541,6 +561,8 @@ const App: React.FC = () => {
           <Admin
             appointments={allAppointments}
             blockedSlots={blockedSlots}
+            occupiedSlots={occupiedSlots}
+            schedule={schedule}
             services={services}
             servicesLoading={servicesLoading}
             serviceError={serviceError}

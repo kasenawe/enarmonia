@@ -12,6 +12,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  writeBatch,
 } from "@firebase/firestore";
 import {
   getStorage,
@@ -57,4 +58,5 @@ export {
   doc,
   getDoc,
   setDoc,
+  writeBatch,
 };

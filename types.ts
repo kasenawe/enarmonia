@@ -82,6 +82,36 @@ export interface ClinicalProfile {
   updatedBy: string;
 }
 
+export interface OccupiedSlot {
+  appointmentId: string;
+  serviceId: string;
+  date: string;
+  time: string;
+  duration?: number; // in minutes
+  expiresAt?: string;
+  createdAt: string;
+}
+
+export interface BlockedSlot {
+  id: string;
+  date: string;
+  time: string;
+  createdAt?: string;
+}
+
+export interface ScheduleBreak {
+  start: string; // "HH:MM"
+  end: string; // "HH:MM"
+}
+
+export interface Schedule {
+  workDays: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
+  startTime: string; // "HH:MM"
+  endTime: string; // "HH:MM"
+  slotIntervalMinutes: number;
+  breaks: ScheduleBreak[];
+}
+
 export interface ClinicalSession {
   id: string;
   patientId: string;
@@ -153,19 +183,6 @@ export interface Appointment {
   appliedPromotion?: AppliedPromotion | null;
   createdAt: string;
   bookingMode?: "account" | "guest";
-}
-
-export interface BlockedSlot {
-  id: string;
-  date: string;
-  time: string;
-  createdAt: string;
-}
-
-export interface OccupiedSlot {
-  date: string;
-  time: string;
-  expiresAt?: string;
 }
 
 export enum AppRoute {

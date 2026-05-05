@@ -4,10 +4,13 @@ import {
   Appointment,
   AppUser,
   BlockedSlot,
+  OccupiedSlot,
   PaymentMethod,
   PaymentStatus,
   Promotion,
   PromotionDiscountType,
+  Schedule,
+  ScheduleBreak,
   Service,
 } from "../types";
 import {
@@ -18,8 +21,10 @@ import {
   deleteDoc,
   addDoc,
   onSnapshot,
+  writeBatch,
 } from "../firebase";
-import { BACKEND_URL } from "../constants";
+import { BACKEND_URL, DEFAULT_SCHEDULE } from "../constants";
+import { generateTimeSlots } from "../utils/scheduleUtils";
 import { getServicePricing } from "../utils/promotionPricing";
 import { useAuth } from "../contexts/AuthContext";
 import ClinicalRecordsPanel from "../components/ClinicalRecordsPanel";
@@ -30,6 +35,8 @@ const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 interface AdminProps {
   appointments: Appointment[];
   blockedSlots: BlockedSlot[];
+  occupiedSlots: OccupiedSlot[];
+  schedule: Schedule;
   services: Service[];
   servicesLoading: boolean;
   serviceError: string | null;
@@ -43,6 +50,8 @@ interface AdminProps {
 const Admin: React.FC<AdminProps> = ({
   appointments,
   blockedSlots,
+  occupiedSlots,
+  schedule,
   services,
   servicesLoading,
   serviceError,
@@ -60,6 +69,7 @@ const Admin: React.FC<AdminProps> = ({
     | "promotions"
     | "users"
     | "clinical"
+    | "schedule"
   >("appointments");
 
   // Función helper para obtener fecha local en formato YYYY-MM-DD
@@ -73,6 +83,24 @@ const Admin: React.FC<AdminProps> = ({
   const [blockError, setBlockError] = useState<string | null>(null);
   const [blockFeedback, setBlockFeedback] = useState<string | null>(null);
   const [isBlocking, setIsBlocking] = useState(false);
+
+  // Bulk block state
+  const [bulkFrom, setBulkFrom] = useState(getLocalDateString());
+  const [bulkTo, setBulkTo] = useState(getLocalDateString());
+  const [bulkAllDay, setBulkAllDay] = useState(true);
+  const [bulkTimeFrom, setBulkTimeFrom] = useState("09:00");
+  const [bulkTimeTo, setBulkTimeTo] = useState("18:00");
+  const [isBulkBlocking, setIsBulkBlocking] = useState(false);
+  const [bulkBlockError, setBulkBlockError] = useState<string | null>(null);
+  const [bulkBlockFeedback, setBulkBlockFeedback] = useState<string | null>(
+    null,
+  );
+
+  // Schedule editor state
+  const [scheduleForm, setScheduleForm] = useState<Schedule>(schedule);
+  const [isScheduleSaving, setIsScheduleSaving] = useState(false);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [scheduleFeedback, setScheduleFeedback] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [serviceForm, setServiceForm] = useState({
@@ -127,10 +155,20 @@ const Admin: React.FC<AdminProps> = ({
   const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "unpaid">(
     "all",
   );
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState<"all" | "mp" | "transfer">("all");
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState<"all" | "pending_transfer" | "paid_transfer" | "expired_transfer">("all");
-  const [isValidatingTransfer, setIsValidatingTransfer] = useState<string | null>(null);
-  const [transferFeedback, setTransferFeedback] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<
+    "all" | "mp" | "transfer"
+  >("all");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<
+    "all" | "pending_transfer" | "paid_transfer" | "expired_transfer"
+  >("all");
+  const [isValidatingTransfer, setIsValidatingTransfer] = useState<
+    string | null
+  >(null);
+  const [transferFeedback, setTransferFeedback] = useState<{
+    id: string;
+    msg: string;
+    ok: boolean;
+  } | null>(null);
   const [dateFromFilter, setDateFromFilter] = useState("");
   const [dateToFilter, setDateToFilter] = useState("");
   const [visibleAppointments, setVisibleAppointments] = useState(20);
@@ -138,16 +176,12 @@ const Admin: React.FC<AdminProps> = ({
   const [selectedContactApp, setSelectedContactApp] =
     useState<Appointment | null>(null);
 
-  const blockTimeOptions = [
-    "09:00",
-    "10:00",
-    "11:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-    "18:00",
-  ];
+  const blockTimeOptions = generateTimeSlots(schedule, 60);
+
+  // Keep scheduleForm in sync with prop (updated by Firestore listener in App)
+  useEffect(() => {
+    setScheduleForm(schedule);
+  }, [schedule]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -815,6 +849,134 @@ const Admin: React.FC<AdminProps> = ({
     }
   };
 
+  const handleBulkBlock = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setBulkBlockError(null);
+    setBulkBlockFeedback(null);
+
+    if (!bulkFrom || !bulkTo) {
+      setBulkBlockError("Seleccioná fecha de inicio y fin.");
+      return;
+    }
+    if (bulkTo < bulkFrom) {
+      setBulkBlockError(
+        "La fecha de fin no puede ser anterior a la de inicio.",
+      );
+      return;
+    }
+
+    const allSlots = generateTimeSlots(schedule, 60);
+    const timeRange = bulkAllDay
+      ? allSlots
+      : allSlots.filter((t) => t >= bulkTimeFrom && t <= bulkTimeTo);
+
+    if (timeRange.length === 0) {
+      setBulkBlockError("El rango de horas no contiene horarios válidos.");
+      return;
+    }
+
+    setIsBulkBlocking(true);
+    try {
+      const slotsToAdd: { date: string; time: string }[] = [];
+      const cursor = new Date(bulkFrom + "T12:00:00");
+      const end = new Date(bulkTo + "T12:00:00");
+
+      while (cursor <= end) {
+        if (schedule.workDays.includes(cursor.getDay())) {
+          const iso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
+          for (const time of timeRange) {
+            const alreadyBlocked = blockedSlots.some(
+              (b) => b.date === iso && b.time === time,
+            );
+            const hasAppointment = appointments.some(
+              (a) => a.date === iso && a.time === time,
+            );
+            const isOccupied = occupiedSlots.some(
+              (o) => o.date === iso && o.time === time,
+            );
+            if (!alreadyBlocked && !hasAppointment && !isOccupied) {
+              slotsToAdd.push({ date: iso, time });
+            }
+          }
+        }
+        cursor.setDate(cursor.getDate() + 1);
+      }
+
+      if (slotsToAdd.length === 0) {
+        setBulkBlockFeedback(
+          "No hay horarios disponibles para bloquear en ese rango (ya bloqueados o con turnos).",
+        );
+        setIsBulkBlocking(false);
+        return;
+      }
+
+      // Firestore batch max 500 writes
+      const batchSize = 499;
+      for (let i = 0; i < slotsToAdd.length; i += batchSize) {
+        const batch = writeBatch(db);
+        const chunk = slotsToAdd.slice(i, i + batchSize);
+        for (const slot of chunk) {
+          const ref = doc(collection(db, "blocked_slots"));
+          batch.set(ref, {
+            date: slot.date,
+            time: slot.time,
+            createdAt: new Date().toISOString(),
+          });
+        }
+        await batch.commit();
+      }
+
+      setBulkBlockFeedback(
+        `${slotsToAdd.length} horario${slotsToAdd.length !== 1 ? "s" : ""} bloqueado${slotsToAdd.length !== 1 ? "s" : ""} correctamente.`,
+      );
+    } catch (err) {
+      console.error(err);
+      setBulkBlockError("Error al bloquear los horarios. Intentá nuevamente.");
+    } finally {
+      setIsBulkBlocking(false);
+    }
+  };
+
+  const handleScheduleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setScheduleError(null);
+    setScheduleFeedback(null);
+
+    if (scheduleForm.workDays.length === 0) {
+      setScheduleError("Seleccioná al menos un día de trabajo.");
+      return;
+    }
+    if (scheduleForm.startTime >= scheduleForm.endTime) {
+      setScheduleError("La hora de inicio debe ser anterior a la hora de fin.");
+      return;
+    }
+    for (const b of scheduleForm.breaks) {
+      if (b.start >= b.end) {
+        setScheduleError(
+          "El inicio de cada descanso debe ser anterior al fin.",
+        );
+        return;
+      }
+    }
+
+    setIsScheduleSaving(true);
+    try {
+      await setDoc(doc(db, "settings", "schedule"), {
+        workDays: scheduleForm.workDays,
+        startTime: scheduleForm.startTime,
+        endTime: scheduleForm.endTime,
+        slotIntervalMinutes: scheduleForm.slotIntervalMinutes,
+        breaks: scheduleForm.breaks,
+      });
+      setScheduleFeedback("Horario guardado correctamente.");
+    } catch (err) {
+      console.error(err);
+      setScheduleError("Error al guardar el horario. Intentá nuevamente.");
+    } finally {
+      setIsScheduleSaving(false);
+    }
+  };
+
   // Usar fecha local, no UTC, para que coincida con como se guardan los appointments
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -855,11 +1017,17 @@ const Admin: React.FC<AdminProps> = ({
         return false;
       }
 
-      if (paymentMethodFilter !== "all" && appointment.paymentMethod !== paymentMethodFilter) {
+      if (
+        paymentMethodFilter !== "all" &&
+        appointment.paymentMethod !== paymentMethodFilter
+      ) {
         return false;
       }
 
-      if (paymentStatusFilter !== "all" && appointment.paymentStatus !== paymentStatusFilter) {
+      if (
+        paymentStatusFilter !== "all" &&
+        appointment.paymentStatus !== paymentStatusFilter
+      ) {
         return false;
       }
 
@@ -1017,6 +1185,12 @@ const Admin: React.FC<AdminProps> = ({
               Bloqueos
             </button>
             <button
+              onClick={() => setActiveTab("schedule")}
+              className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${activeTab === "schedule" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
+            >
+              Horario
+            </button>
+            <button
               onClick={() => setActiveTab("services")}
               className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${activeTab === "services" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
             >
@@ -1116,13 +1290,19 @@ const Admin: React.FC<AdminProps> = ({
                   value={paymentStatusFilter}
                   onChange={(e) =>
                     setPaymentStatusFilter(
-                      e.target.value as "all" | "pending_transfer" | "paid_transfer" | "expired_transfer",
+                      e.target.value as
+                        | "all"
+                        | "pending_transfer"
+                        | "paid_transfer"
+                        | "expired_transfer",
                     )
                   }
                   className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-gray-900"
                 >
                   <option value="all">Estado pago: Todos</option>
-                  <option value="pending_transfer">Pendiente transferencia</option>
+                  <option value="pending_transfer">
+                    Pendiente transferencia
+                  </option>
                   <option value="paid_transfer">Pagado (transferencia)</option>
                   <option value="expired_transfer">Vencida</option>
                 </select>
@@ -1388,31 +1568,45 @@ const Admin: React.FC<AdminProps> = ({
                     {app.paymentStatus === "pending_transfer" && (
                       <div className="mt-3 space-y-2">
                         {transferFeedback?.id === app.id && (
-                          <p className={`text-[10px] font-bold text-center ${transferFeedback.ok ? "text-emerald-600" : "text-red-500"}`}>
+                          <p
+                            className={`text-[10px] font-bold text-center ${transferFeedback.ok ? "text-emerald-600" : "text-red-500"}`}
+                          >
                             {transferFeedback.msg}
                           </p>
                         )}
                         <div className="flex gap-2">
                           <button
                             disabled={!!isValidatingTransfer}
-                            onClick={() => handleValidateTransfer(app.id, "confirm")}
+                            onClick={() =>
+                              handleValidateTransfer(app.id, "confirm")
+                            }
                             className="flex-1 py-2.5 rounded-2xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider disabled:opacity-50"
                           >
-                            {isValidatingTransfer === app.id + "confirm" ? "..." : "✓ Confirmar pago"}
+                            {isValidatingTransfer === app.id + "confirm"
+                              ? "..."
+                              : "✓ Confirmar pago"}
                           </button>
                           <button
                             disabled={!!isValidatingTransfer}
-                            onClick={() => handleValidateTransfer(app.id, "expire")}
+                            onClick={() =>
+                              handleValidateTransfer(app.id, "expire")
+                            }
                             className="flex-1 py-2.5 rounded-2xl bg-gray-100 text-gray-600 text-[10px] font-black uppercase tracking-wider disabled:opacity-50"
                           >
-                            {isValidatingTransfer === app.id + "expire" ? "..." : "Vencer"}
+                            {isValidatingTransfer === app.id + "expire"
+                              ? "..."
+                              : "Vencer"}
                           </button>
                           <button
                             disabled={!!isValidatingTransfer}
-                            onClick={() => handleValidateTransfer(app.id, "cancel")}
+                            onClick={() =>
+                              handleValidateTransfer(app.id, "cancel")
+                            }
                             className="flex-1 py-2.5 rounded-2xl bg-red-50 text-red-500 text-[10px] font-black uppercase tracking-wider disabled:opacity-50"
                           >
-                            {isValidatingTransfer === app.id + "cancel" ? "..." : "Cancelar"}
+                            {isValidatingTransfer === app.id + "cancel"
+                              ? "..."
+                              : "Cancelar"}
                           </button>
                         </div>
                       </div>
@@ -1627,6 +1821,95 @@ const Admin: React.FC<AdminProps> = ({
                 {blockFeedback}
               </div>
             )}
+            {bulkBlockError && (
+              <div className="rounded-3xl bg-red-50 border border-red-100 p-4 text-red-600 text-sm">
+                {bulkBlockError}
+              </div>
+            )}
+            {bulkBlockFeedback && (
+              <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 text-sm">
+                {bulkBlockFeedback}
+              </div>
+            )}
+
+            <form
+              onSubmit={handleBulkBlock}
+              className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-5"
+            >
+              <div>
+                <h4 className="text-lg font-bold text-gray-800">
+                  Bloqueo por rango (vacaciones, eventos, etc.)
+                </h4>
+                <p className="text-gray-400 text-[11px]">
+                  Bloquea automáticamente múltiples horarios en un período. Sólo
+                  se bloquean días de trabajo.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Desde
+                  <input
+                    type="date"
+                    min={today}
+                    value={bulkFrom}
+                    onChange={(e) => setBulkFrom(e.target.value)}
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Hasta
+                  <input
+                    type="date"
+                    min={today}
+                    value={bulkTo}
+                    onChange={(e) => setBulkTo(e.target.value)}
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                  />
+                </label>
+              </div>
+
+              <label className="flex items-center gap-3 text-sm font-medium text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={bulkAllDay}
+                  onChange={(e) => setBulkAllDay(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-200"
+                />
+                Todo el horario
+              </label>
+
+              {!bulkAllDay && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Desde hora
+                    <input
+                      type="time"
+                      value={bulkTimeFrom}
+                      onChange={(e) => setBulkTimeFrom(e.target.value)}
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                    />
+                  </label>
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Hasta hora
+                    <input
+                      type="time"
+                      value={bulkTimeTo}
+                      onChange={(e) => setBulkTimeTo(e.target.value)}
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                    />
+                  </label>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isBulkBlocking}
+                className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all disabled:opacity-40"
+              >
+                {isBulkBlocking ? "BLOQUEANDO..." : "BLOQUEAR RANGO"}
+              </button>
+            </form>
 
             <form
               onSubmit={handleBlockSlot}
@@ -1721,6 +2004,196 @@ const Admin: React.FC<AdminProps> = ({
                 ))
               )}
             </div>
+          </div>
+        )}
+
+        {activeTab === "schedule" && (
+          <div className="space-y-6">
+            {scheduleError && (
+              <div className="rounded-3xl bg-red-50 border border-red-100 p-4 text-red-600 text-sm">
+                {scheduleError}
+              </div>
+            )}
+            {scheduleFeedback && (
+              <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 text-sm">
+                {scheduleFeedback}
+              </div>
+            )}
+
+            <form
+              onSubmit={handleScheduleSave}
+              className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-5"
+            >
+              <div>
+                <h4 className="text-lg font-bold text-gray-800">
+                  Configuración de horario de atención
+                </h4>
+                <p className="text-gray-400 text-[11px]">
+                  Define los días y horas de trabajo, descansos y duración de
+                  los slots.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-3">
+                  Días de trabajo
+                </label>
+                <div className="grid grid-cols-7 gap-2">
+                  {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map(
+                    (day, idx) => (
+                      <label
+                        key={idx}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={scheduleForm.workDays.includes(idx)}
+                          onChange={(e) => {
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              workDays: e.target.checked
+                                ? [...prev.workDays, idx].sort()
+                                : prev.workDays.filter((d) => d !== idx),
+                            }));
+                          }}
+                          className="w-4 h-4 rounded border-gray-200"
+                        />
+                        {day}
+                      </label>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Hora de inicio
+                  <input
+                    type="time"
+                    value={scheduleForm.startTime}
+                    onChange={(e) =>
+                      setScheduleForm((prev) => ({
+                        ...prev,
+                        startTime: e.target.value,
+                      }))
+                    }
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Hora de fin
+                  <input
+                    type="time"
+                    value={scheduleForm.endTime}
+                    onChange={(e) =>
+                      setScheduleForm((prev) => ({
+                        ...prev,
+                        endTime: e.target.value,
+                      }))
+                    }
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Intervalo de slots (min)
+                  <input
+                    type="number"
+                    min="15"
+                    max="120"
+                    step="15"
+                    value={scheduleForm.slotIntervalMinutes}
+                    onChange={(e) =>
+                      setScheduleForm((prev) => ({
+                        ...prev,
+                        slotIntervalMinutes: parseInt(e.target.value) || 60,
+                      }))
+                    }
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                  />
+                </label>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium text-gray-600">
+                    Descansos
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScheduleForm((prev) => ({
+                        ...prev,
+                        breaks: [
+                          ...prev.breaks,
+                          { start: "12:00", end: "13:00" },
+                        ],
+                      }));
+                    }}
+                    className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-lg hover:bg-gray-200"
+                  >
+                    + Agregar descanso
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {scheduleForm.breaks.map((brk, idx) => (
+                    <div key={idx} className="flex gap-3 items-end">
+                      <label className="space-y-2 text-sm font-medium text-gray-600 flex-1">
+                        Desde
+                        <input
+                          type="time"
+                          value={brk.start}
+                          onChange={(e) => {
+                            const updated = [...scheduleForm.breaks];
+                            updated[idx].start = e.target.value;
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              breaks: updated,
+                            }));
+                          }}
+                          className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                        />
+                      </label>
+                      <label className="space-y-2 text-sm font-medium text-gray-600 flex-1">
+                        Hasta
+                        <input
+                          type="time"
+                          value={brk.end}
+                          onChange={(e) => {
+                            const updated = [...scheduleForm.breaks];
+                            updated[idx].end = e.target.value;
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              breaks: updated,
+                            }));
+                          }}
+                          className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setScheduleForm((prev) => ({
+                            ...prev,
+                            breaks: prev.breaks.filter((_, i) => i !== idx),
+                          }));
+                        }}
+                        className="px-3 py-2 text-red-600 text-xs font-bold bg-red-50 rounded-lg hover:bg-red-100"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isScheduleSaving}
+                className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all disabled:opacity-40"
+              >
+                {isScheduleSaving ? "GUARDANDO..." : "GUARDAR CONFIGURACIÓN"}
+              </button>
+            </form>
           </div>
         )}
 

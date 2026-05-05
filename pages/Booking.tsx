@@ -1,20 +1,34 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Service, Appointment, Promotion, BlockedSlot } from "../types";
+import {
+  Service,
+  Appointment,
+  Promotion,
+  BlockedSlot,
+  OccupiedSlot,
+  Schedule,
+} from "../types";
 import {
   CONTACT_INFO,
   BACKEND_URL,
   MP_SURCHARGE_PERCENT,
   TRANSFER_BANK_INFO,
   TRANSFER_DUE_HOURS,
+  DEFAULT_SCHEDULE,
 } from "../constants";
 import { getServicePricing } from "../utils/promotionPricing";
+import {
+  generateTimeSlots,
+  slotOverlapsOccupied,
+  slotOverlapsBlocked,
+} from "../utils/scheduleUtils";
 import PhoneInput from "../components/PhoneInput";
 
 interface BookingProps {
   service: Service;
+  schedule?: Schedule;
   promotions: Promotion[];
   promotionsLoading: boolean;
-  occupiedSlots: { date: string; time: string }[];
+  occupiedSlots: OccupiedSlot[];
   blockedSlots: BlockedSlot[];
   currentUserId: string | null;
   initialData: { name: string; phone: string; email: string };
@@ -25,6 +39,7 @@ interface BookingProps {
 
 const Booking: React.FC<BookingProps> = ({
   service,
+  schedule: scheduleProp,
   promotions,
   promotionsLoading,
   occupiedSlots,
@@ -48,7 +63,9 @@ const Booking: React.FC<BookingProps> = ({
     if (digits.length < 2) return digits;
     return digits.slice(0, -1) + "-" + digits.slice(-1);
   };
-  const [paymentMethod, setPaymentMethod] = useState<"mp" | "transfer" | "">("mp");
+  const [paymentMethod, setPaymentMethod] = useState<"mp" | "transfer" | "">(
+    "mp",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   // Transfer pending state
@@ -61,9 +78,12 @@ const Booking: React.FC<BookingProps> = ({
   const pricing = getServicePricing(service, promotions);
 
   // Surcharge calculation (always computed in frontend for display, backend recalculates authoritatively)
-  const mpSurcharge = Math.round(pricing.finalPrice * (MP_SURCHARGE_PERCENT / 100));
+  const mpSurcharge = Math.round(
+    pricing.finalPrice * (MP_SURCHARGE_PERCENT / 100),
+  );
   const totalWithSurcharge = pricing.finalPrice + mpSurcharge;
-  const displayTotal = paymentMethod === "mp" ? totalWithSurcharge : pricing.finalPrice;
+  const displayTotal =
+    paymentMethod === "mp" ? totalWithSurcharge : pricing.finalPrice;
 
   useEffect(() => {
     setUserName((currentName) => currentName || initialData.name);
@@ -87,26 +107,30 @@ const Booking: React.FC<BookingProps> = ({
     });
   }, [selectedDate, step]);
 
-  const dates = Array.from({ length: 14 }, (_, i) => {
+  const schedule: Schedule = scheduleProp ?? DEFAULT_SCHEDULE;
+  const serviceDuration = service.duration ?? 60;
+
+  const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+  const months = [
+    "Ene",
+    "Feb",
+    "Mar",
+    "Abr",
+    "May",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dic",
+  ];
+
+  const dates = Array.from({ length: 28 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i + 1);
-    const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-    const months = [
-      "Ene",
-      "Feb",
-      "Mar",
-      "Abr",
-      "May",
-      "Jun",
-      "Jul",
-      "Ago",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dic",
-    ];
+    if (!schedule.workDays.includes(d.getDay())) return null;
 
-    // Convertir a fecha local sin UTC offset
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
@@ -119,28 +143,27 @@ const Booking: React.FC<BookingProps> = ({
       month: months[d.getMonth()],
       full: `${d.getDate()} de ${months[d.getMonth()]}, ${d.getFullYear()}`,
     };
-  });
+  }).filter(Boolean) as {
+    iso: string;
+    day: string;
+    num: number;
+    month: string;
+    full: string;
+  }[];
 
-  const timeSlots = [
-    "09:00",
-    "10:00",
-    "11:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-    "18:00",
-  ];
+  const timeSlots = generateTimeSlots(schedule, serviceDuration);
 
   const isSlotOccupied = (date: string, time: string) => {
-    return occupiedSlots.some(
-      (slot) => slot.date === date && slot.time === time,
-    );
+    return slotOverlapsOccupied(date, time, serviceDuration, occupiedSlots);
   };
 
   const isSlotBlocked = (date: string, time: string) => {
-    return blockedSlots.some(
-      (slot) => slot.date === date && slot.time === time,
+    return slotOverlapsBlocked(
+      date,
+      time,
+      serviceDuration,
+      blockedSlots,
+      schedule,
     );
   };
 
@@ -264,60 +287,102 @@ const Booking: React.FC<BookingProps> = ({
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-300 to-yellow-400"></div>
 
           <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <circle cx="12" cy="12" r="10" />
               <line x1="12" x2="12" y1="8" y2="12" />
               <line x1="12" x2="12.01" y1="16" y2="16" />
             </svg>
           </div>
 
-          <h2 className="mb-1 text-center text-2xl font-black text-ink-strong">Reserva recibida</h2>
-          <p className="mb-6 text-center text-[11px] font-medium text-ink-subtle">Pendiente de confirmación de pago</p>
+          <h2 className="mb-1 text-center text-2xl font-black text-ink-strong">
+            Reserva recibida
+          </h2>
+          <p className="mb-6 text-center text-[11px] font-medium text-ink-subtle">
+            Pendiente de confirmación de pago
+          </p>
 
           {/* Turno resumen */}
           <div className="mb-6 rounded-2xl border border-line-subtle bg-shell-subtle p-5 space-y-2 text-xs">
             <div className="flex justify-between">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Servicio</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
+                Servicio
+              </span>
               <span className="font-bold text-ink-strong">{service.name}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Fecha</span>
-              <span className="font-bold text-ink-strong">{getSelectedDateDisplay()}</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
+                Fecha
+              </span>
+              <span className="font-bold text-ink-strong">
+                {getSelectedDateDisplay()}
+              </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Hora</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
+                Hora
+              </span>
               <span className="font-bold text-action">{selectedTime} HS</span>
             </div>
             <div className="flex justify-between border-t border-line/50 pt-2">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Total a transferir</span>
-              <span className="font-black text-lg text-ink-strong">${transferPending.totalAmount.toLocaleString("es-UY")} UYU</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
+                Total a transferir
+              </span>
+              <span className="font-black text-lg text-ink-strong">
+                ${transferPending.totalAmount.toLocaleString("es-UY")} UYU
+              </span>
             </div>
           </div>
 
           {/* Datos bancarios */}
           <div className="mb-5 rounded-2xl bg-amber-50 border border-amber-100 p-5">
-            <p className="mb-3 text-[9px] font-black uppercase tracking-widest text-amber-700">Datos para la transferencia</p>
+            <p className="mb-3 text-[9px] font-black uppercase tracking-widest text-amber-700">
+              Datos para la transferencia
+            </p>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between">
                 <span className="text-ink-subtle">Banco</span>
-                <span className="font-bold text-ink-strong">{TRANSFER_BANK_INFO.bank}</span>
+                <span className="font-bold text-ink-strong">
+                  {TRANSFER_BANK_INFO.bank}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-ink-subtle">{TRANSFER_BANK_INFO.accountType}</span>
-                <span className="font-bold text-ink-strong">{TRANSFER_BANK_INFO.accountNumber}</span>
+                <span className="text-ink-subtle">
+                  {TRANSFER_BANK_INFO.accountType}
+                </span>
+                <span className="font-bold text-ink-strong">
+                  {TRANSFER_BANK_INFO.accountNumber}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-ink-subtle">Titular</span>
-                <span className="font-bold text-ink-strong">{TRANSFER_BANK_INFO.holder}</span>
+                <span className="font-bold text-ink-strong">
+                  {TRANSFER_BANK_INFO.holder}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Vencimiento */}
           <div className="mb-6 rounded-2xl bg-red-50 border border-red-100 p-4 text-center">
-            <p className="text-[9px] font-black uppercase tracking-widest text-red-500 mb-1">Vencimiento del pago</p>
-            <p className="text-sm font-bold text-red-700">{dueDateStr} a las {dueTimeStr}</p>
-            <p className="mt-1 text-[10px] text-red-400">Pasado ese horario el turno se libera</p>
+            <p className="text-[9px] font-black uppercase tracking-widest text-red-500 mb-1">
+              Vencimiento del pago
+            </p>
+            <p className="text-sm font-bold text-red-700">
+              {dueDateStr} a las {dueTimeStr}
+            </p>
+            <p className="mt-1 text-[10px] text-red-400">
+              Pasado ese horario el turno se libera
+            </p>
           </div>
 
           {/* WhatsApp */}
@@ -327,7 +392,17 @@ const Booking: React.FC<BookingProps> = ({
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-3 w-full py-4 bg-[#25D366] text-white rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all mb-3"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7l.8.1" />
               <path d="m22 2-7.5 7.5" />
               <path d="M10 14.7 9 22l11-11-4.7-1" />
@@ -580,15 +655,34 @@ const Booking: React.FC<BookingProps> = ({
                     : "border-line-subtle bg-shell-subtle"
                 }`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={paymentMethod === "mp" ? "text-action" : "text-ink-subtle"}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={
+                    paymentMethod === "mp" ? "text-action" : "text-ink-subtle"
+                  }
+                >
                   <rect width="20" height="14" x="2" y="5" rx="2" />
                   <line x1="2" x2="22" y1="10" y2="10" />
                 </svg>
-                <span className={`text-[10px] font-black uppercase tracking-wider ${
-                  paymentMethod === "mp" ? "text-action" : "text-ink-subtle"
-                }`}>Mercado Pago</span>
+                <span
+                  className={`text-[10px] font-black uppercase tracking-wider ${
+                    paymentMethod === "mp" ? "text-action" : "text-ink-subtle"
+                  }`}
+                >
+                  Mercado Pago
+                </span>
                 {paymentMethod === "mp" && (
-                  <span className="text-[9px] text-ink-muted leading-tight">Recargo {MP_SURCHARGE_PERCENT}%</span>
+                  <span className="text-[9px] text-ink-muted leading-tight">
+                    Recargo {MP_SURCHARGE_PERCENT}%
+                  </span>
                 )}
               </button>
 
@@ -602,15 +696,38 @@ const Booking: React.FC<BookingProps> = ({
                     : "border-line-subtle bg-shell-subtle"
                 }`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={paymentMethod === "transfer" ? "text-emerald-600" : "text-ink-subtle"}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={
+                    paymentMethod === "transfer"
+                      ? "text-emerald-600"
+                      : "text-ink-subtle"
+                  }
+                >
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                   <polyline points="9 22 9 12 15 12 15 22" />
                 </svg>
-                <span className={`text-[10px] font-black uppercase tracking-wider ${
-                  paymentMethod === "transfer" ? "text-emerald-700" : "text-ink-subtle"
-                }`}>Transferencia</span>
+                <span
+                  className={`text-[10px] font-black uppercase tracking-wider ${
+                    paymentMethod === "transfer"
+                      ? "text-emerald-700"
+                      : "text-ink-subtle"
+                  }`}
+                >
+                  Transferencia
+                </span>
                 {paymentMethod === "transfer" && (
-                  <span className="text-[9px] text-emerald-600 font-bold leading-tight">Sin recargo</span>
+                  <span className="text-[9px] text-emerald-600 font-bold leading-tight">
+                    Sin recargo
+                  </span>
                 )}
               </button>
             </div>
@@ -618,29 +735,53 @@ const Booking: React.FC<BookingProps> = ({
             {/* Price breakdown */}
             <div className="rounded-2xl border border-line-subtle bg-shell-subtle p-5 space-y-2">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Servicio</span>
-                <span className="font-bold text-ink-strong text-right">{service.name}</span>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
+                  Servicio
+                </span>
+                <span className="font-bold text-ink-strong text-right">
+                  {service.name}
+                </span>
               </div>
               <div className="flex justify-between items-center text-xs">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Fecha / Hora</span>
-                <span className="font-bold text-ink-strong">{getSelectedDateDisplay()} – {selectedTime} hs</span>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
+                  Fecha / Hora
+                </span>
+                <span className="font-bold text-ink-strong">
+                  {getSelectedDateDisplay()} – {selectedTime} hs
+                </span>
               </div>
               <div className="border-t border-line/50 pt-2 space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Subtotal</span>
-                  <span className="font-bold text-ink">${pricing.finalPrice.toLocaleString("es-UY")}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
+                    Subtotal
+                  </span>
+                  <span className="font-bold text-ink">
+                    ${pricing.finalPrice.toLocaleString("es-UY")}
+                  </span>
                 </div>
                 {paymentMethod === "mp" && (
                   <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Recargo MP ({MP_SURCHARGE_PERCENT}%)</span>
-                    <span className="font-bold text-amber-600">+${mpSurcharge.toLocaleString("es-UY")}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
+                      Recargo MP ({MP_SURCHARGE_PERCENT}%)
+                    </span>
+                    <span className="font-bold text-amber-600">
+                      +${mpSurcharge.toLocaleString("es-UY")}
+                    </span>
                   </div>
                 )}
                 <div className="flex justify-between items-center border-t border-line/70 pt-1.5">
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">Total</span>
-                  <span className={`font-black text-lg ${
-                    paymentMethod === "transfer" ? "text-emerald-600" : "text-ink-strong"
-                  }`}>${displayTotal.toLocaleString("es-UY")} UYU</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
+                    Total
+                  </span>
+                  <span
+                    className={`font-black text-lg ${
+                      paymentMethod === "transfer"
+                        ? "text-emerald-600"
+                        : "text-ink-strong"
+                    }`}
+                  >
+                    ${displayTotal.toLocaleString("es-UY")} UYU
+                  </span>
                 </div>
               </div>
             </div>
@@ -648,14 +789,25 @@ const Booking: React.FC<BookingProps> = ({
             {/* Info banner per method */}
             {paymentMethod === "mp" && (
               <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4">
-                <p className="text-blue-800 font-bold text-[11px] mb-0.5">Pago con Mercado Pago</p>
-                <p className="text-blue-600 text-[10px] leading-relaxed">Serás redirigido a Mercado Pago. Tu turno se confirma automáticamente al aprobarse el pago.</p>
+                <p className="text-blue-800 font-bold text-[11px] mb-0.5">
+                  Pago con Mercado Pago
+                </p>
+                <p className="text-blue-600 text-[10px] leading-relaxed">
+                  Serás redirigido a Mercado Pago. Tu turno se confirma
+                  automáticamente al aprobarse el pago.
+                </p>
               </div>
             )}
             {paymentMethod === "transfer" && (
               <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4">
-                <p className="text-emerald-800 font-bold text-[11px] mb-0.5">Pago por transferencia</p>
-                <p className="text-emerald-700 text-[10px] leading-relaxed">Recibirás los datos bancarios para transferir. Tendrás {TRANSFER_DUE_HOURS} horas para enviar el comprobante por WhatsApp.</p>
+                <p className="text-emerald-800 font-bold text-[11px] mb-0.5">
+                  Pago por transferencia
+                </p>
+                <p className="text-emerald-700 text-[10px] leading-relaxed">
+                  Recibirás los datos bancarios para transferir. Tendrás{" "}
+                  {TRANSFER_DUE_HOURS} horas para enviar el comprobante por
+                  WhatsApp.
+                </p>
               </div>
             )}
           </div>
