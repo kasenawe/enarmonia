@@ -70,7 +70,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 8.  **Perfil de Contacto Reutilizable**: El nombre, documento y teléfono del usuario se autocompletan en la reserva desde su perfil, y siguen siendo editables por turno.
 9.  **Distinción Cuenta / Invitado en Admin**: Cada tarjeta de turno en el panel admin muestra un badge: "Cuenta" (verde) para usuarios registrados o "Invitado" (ámbar) para reservas sin cuenta, usando el campo `bookingMode`.
 10. **Bloqueo Manual de Horarios**: La administradora puede bloquear y desbloquear horarios manualmente desde el panel, con validación contra turnos ya agendados.
-11. **Bloqueo Masivo por Rango**: En admin, la dueña puede bloquear períodos completos (por ejemplo vacaciones) por rango de fechas y opcionalmente por rango horario, evitando el bloqueo uno a uno.
+11. **Bloqueo y Desbloqueo Masivo por Rango**: En admin, la dueña puede bloquear y también eliminar bloqueos en períodos completos (por ejemplo vacaciones) por rango de fechas y opcionalmente por rango horario, evitando la gestión uno a uno.
 12. **Horario Configurable por la Dueña**: El horario de atención se define en `settings/schedule` (días laborales, hora de inicio/fin, intervalo de slots y descansos), y Booking se adapta en tiempo real.
 13. **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
 14. **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.

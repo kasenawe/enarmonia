@@ -309,6 +309,22 @@ Resultado:
 
 Ese horario volverá a quedar disponible, siempre que no esté ya ocupado por un turno.
 
+### Desbloqueo masivo por rango
+
+Si bloqueaste muchos días por error, puedes eliminarlos todos juntos.
+
+1. Entra en \`Bloqueos\`.
+2. Ve a \`Desbloqueo por rango\`.
+3. Marca la fecha \`Desde\` y \`Hasta\`.
+4. Elige si quieres desbloquear \`Todo el horario\` o solo una franja de horas.
+5. Pulsa \`Desbloquear rango\` y confirma.
+
+Resultado:
+
+- Se eliminan en lote los bloqueos existentes dentro de ese rango.
+- Si en una fecha/hora no había bloqueo, se omite sin error.
+- Verás cuántos bloqueos fueron eliminados.
+
 ## 6. Sección Horario
 
 En \`Horario\` defines cómo funciona tu agenda de reservas.
