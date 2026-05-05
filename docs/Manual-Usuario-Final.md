@@ -40,6 +40,7 @@ Dentro del panel verás estas secciones:
 
 - \`Turnos\`
 - \`Bloqueos\`
+- \`Horario\`
 - \`Servicios\`
 - \`Promociones\`
 - \`Usuarios\`
@@ -217,16 +218,19 @@ Cuando una persona elije pagar por transferencia, su turno aparece en la lista c
 Cuando recibás el comprobante (por WhatsApp u otro medio), tenés tres acciones disponibles en la tarjeta del turno:
 
 **Confirmar pago (botón verde “✓ Confirmar pago”)**
+
 1. Verificá que el comprobante es correcto y el monto coincide.
 2. Pulsá el botón.
 3. El badge pasa a **"Pagado (transferencia)"**.
 
 **Vencer (botón gris “Vencer”)**
+
 1. Usalo si querés liberar el horario antes de que se cumplan las 4 horas.
 2. El turno queda como **"Vencida"** y el horario se libera automáticamente para que otra persona pueda reservar.
 3. Si las 4 horas ya pasaron sin pago, el sistema lo vence automáticamente (ya sea al instante cuando alguien más intenta reservar ese horario, o durante la limpieza nocturna) — no necesitás hacer nada.
 
 **Cancelar (botón rojo “Cancelar”)**
+
 1. Usalo si la persona te avisa que desiste.
 2. El turno pasa a **“Cancelada”** y el horario se libera.
 
@@ -280,6 +284,22 @@ Resultado:
 
 Ese horario dejará de mostrarse como disponible cuando alguien quiera reservar.
 
+### Bloqueo masivo por rango (ideal para vacaciones)
+
+Si necesitas bloquear muchos días seguidos, no hace falta hacerlo uno por uno.
+
+1. Entra en \`Bloqueos\`.
+2. Ve a \`Bloqueo por rango\`.
+3. Marca la fecha \`Desde\` y \`Hasta\`.
+4. Elige si quieres bloquear \`Todo el horario\` o solo una franja de horas.
+5. Pulsa \`Bloquear rango\`.
+
+Resultado:
+
+- Se bloquean de forma automática todos los horarios válidos del período.
+- El sistema evita crear bloqueos duplicados.
+- Si un horario ya tiene turno, ese horario se salta y no se bloquea.
+
 ### Cómo desbloquear un horario
 
 1. En la misma pestaña, busca el bloqueo en la lista \`Horarios bloqueados\`.
@@ -289,7 +309,32 @@ Resultado:
 
 Ese horario volverá a quedar disponible, siempre que no esté ya ocupado por un turno.
 
-## 6. Sección Servicios
+## 6. Sección Horario
+
+En \`Horario\` defines cómo funciona tu agenda de reservas.
+
+Puedes configurar:
+
+- días de atención (por ejemplo lunes a viernes)
+- hora de inicio y fin
+- intervalo de los horarios (por ejemplo cada 60 minutos)
+- descansos (por ejemplo 12:00 a 14:00)
+
+### Cómo configurar el horario
+
+1. Entra en \`Horario\`.
+2. Marca los días en los que atiendes.
+3. Ajusta hora de inicio y fin.
+4. Define el intervalo de los turnos.
+5. Agrega o quita descansos si hace falta.
+6. Pulsa \`Guardar configuración\`.
+
+Resultado:
+
+- La agenda se actualiza automáticamente.
+- En reservas solo se mostrarán días y horas compatibles con esa configuración.
+
+## 7. Sección Servicios
 
 Aquí administras el catálogo que ven las personas al entrar a la app.
 
@@ -328,7 +373,7 @@ Recomendación:
 
 Antes de eliminar un servicio, asegúrate de que realmente no lo vas a ofrecer más. Si solo quieres cambiarlo, conviene editarlo.
 
-## 7. Sección Promociones
+## 8. Sección Promociones
 
 Esta sección sirve para crear campañas especiales y descuentos.
 

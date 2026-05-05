@@ -70,13 +70,15 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 8.  **Perfil de Contacto Reutilizable**: El nombre, documento y teléfono del usuario se autocompletan en la reserva desde su perfil, y siguen siendo editables por turno.
 9.  **Distinción Cuenta / Invitado en Admin**: Cada tarjeta de turno en el panel admin muestra un badge: "Cuenta" (verde) para usuarios registrados o "Invitado" (ámbar) para reservas sin cuenta, usando el campo `bookingMode`.
 10. **Bloqueo Manual de Horarios**: La administradora puede bloquear y desbloquear horarios manualmente desde el panel, con validación contra turnos ya agendados.
-11. **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
-12. **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
-13. **Historia Clínica Digital**: Nueva pestaña en Admin para registrar la ficha de ingreso del paciente y la evolución por sesión, vinculable al usuario y opcionalmente al turno.
-14. **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
-15. **Filtros y Búsqueda en Turnos**: Admin puede buscar por nombre/teléfono/email/servicio, filtrar por estado temporal (hoy/próximos/pasados), modo de reserva (cuenta/invitado), estado de pago (pagado/sin pago), **método de pago (MP/transferencia)**, **estado de pago de transferencia (pendiente/pagada/vencida)** y rango de fechas. Carga incremental de 20 turnos para mejor rendimiento.
-16. **Ficha de Contacto Expandible en Turnos**: Cada turno tiene acceso a un modal con información de contacto de la paciente (teléfono, email y documento cuando fue proporcionado), sin sobrecargar visualmente la tarjeta principal.
-17. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
+11. **Bloqueo Masivo por Rango**: En admin, la dueña puede bloquear períodos completos (por ejemplo vacaciones) por rango de fechas y opcionalmente por rango horario, evitando el bloqueo uno a uno.
+12. **Horario Configurable por la Dueña**: El horario de atención se define en `settings/schedule` (días laborales, hora de inicio/fin, intervalo de slots y descansos), y Booking se adapta en tiempo real.
+13. **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
+14. **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
+15. **Historia Clínica Digital**: Nueva pestaña en Admin para registrar la ficha de ingreso del paciente y la evolución por sesión, vinculable al usuario y opcionalmente al turno.
+16. **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
+17. **Filtros y Búsqueda en Turnos**: Admin puede buscar por nombre/teléfono/email/servicio, filtrar por estado temporal (hoy/próximos/pasados), modo de reserva (cuenta/invitado), estado de pago (pagado/sin pago), **método de pago (MP/transferencia)**, **estado de pago de transferencia (pendiente/pagada/vencida)** y rango de fechas. Carga incremental de 20 turnos para mejor rendimiento.
+18. **Ficha de Contacto Expandible en Turnos**: Cada turno tiene acceso a un modal con información de contacto de la paciente (teléfono, email y documento cuando fue proporcionado), sin sobrecargar visualmente la tarjeta principal.
+19. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
 
 ---
 
@@ -136,6 +138,7 @@ La app utiliza reglas basadas en rol almacenado en `users/{uid}`.
 - `blocked_slots`: lectura pública para deshabilitar horarios en reservas; escritura solo admin.
 - `occupied_slots`: lectura pública para deshabilitar horarios ocupados sin exponer datos sensibles; escritura solo admin/backend.
 - `appointments`: lectura del dueño o admin; creación/actualización/eliminación solo admin o backend autorizado según el flujo.
+- `settings`: lectura pública para consumir configuración operativa (por ejemplo `settings/schedule`); escritura solo admin.
 - `clinical_profiles`: ficha de ingreso y antecedentes clínicos por paciente (`patientId` como ID de documento), acceso solo admin.
 - `clinical_sessions`: evolución clínica por sesión con vínculo opcional a `appointmentId`, acceso solo admin.
 
@@ -159,11 +162,12 @@ La aplicación estará disponible en `http://localhost:3000`.
 
 ## 📝 Notas para Desarrolladores
 
-- **Base de Datos**: La app usa tres colecciones principales en Firestore:
+- **Base de Datos**: La app usa colecciones principales en Firestore:
   - `users`: `uid`, `fullName`, `documentId` (formato CI uruguaya `XXXXXXX-X`), `email`, `role`, `userPhone` (formato E.164, ej: `+59899123456`), `createdAt`.
   - `appointments`: `userId` (opcional), `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `userEmail`, `userDocumentId` (opcional, formato `XXXXXXX-X`), `bookingMode` (`"account"` | `"guest"`), `createdAt`, `price`, `paid`, `basePrice`, `discountAmount`, `appliedPromotion`, `paymentMethod` (`"mp"` | `"transfer"`), `paymentStatus` (`"paid_mp"` | `"pending_transfer"` | `"paid_transfer"` | `"expired_transfer"` | `"cancelled"`), `subtotalAmount`, `mpSurchargeAmount`, `totalAmount`, `mpFeePercent`, `paymentDueAt` (solo transferencia), `paymentValidatedAt`, `paymentValidatedBy`.
-  - `occupied_slots`: `appointmentId`, `serviceId`, `date`, `time`, `createdAt`, `expiresAt` (solo en slots de transferencia; el frontend lo usa para ignorar slots vencidos sin esperar al cron).
+  - `occupied_slots`: `appointmentId`, `serviceId`, `date`, `time`, `duration` (minutos), `createdAt`, `expiresAt` (solo en slots de transferencia; el frontend lo usa para ignorar slots vencidos sin esperar al cron).
   - `blocked_slots`: `date`, `time`, `createdAt`.
+  - `settings/schedule`: `workDays`, `startTime`, `endTime`, `slotIntervalMinutes`, `breaks` (`[{ start, end }]`) para configurar agenda dinámica.
   - `services`: `name`, `description`, `duration`, `price`, `image`.
   - `promotions`: `title`, `description`, `badgeText`, `discountType`, `discountValue`, `featured`, `isActive`, `appliesToAllServices`, `serviceIds`, `startDate`, `endDate`, `priority`, `image`.
   - `clinical_profiles`: `patientId`, `intakeDate`, datos de identificación y contacto, motivo de consulta, zonas de dolor, antecedentes de salud, `initialDiagnosis`, `treatmentStartDate`, `createdAt/updatedAt`, `createdBy/updatedBy`.
