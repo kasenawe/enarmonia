@@ -74,131 +74,40 @@ export function getScheduleSegmentForDay(
 export function normalizeSchedule(raw: unknown): Schedule {
   const source = (raw || {}) as any;
 
-  // New shape: { weekdays, saturday, sunday }
-  if (source.weekdays && source.saturday && source.sunday) {
-    return {
-      weekdays: {
-        enabled: source.weekdays.enabled !== false,
-        startTime:
-          source.weekdays.startTime || DEFAULT_SCHEDULE.weekdays.startTime,
-        endTime: source.weekdays.endTime || DEFAULT_SCHEDULE.weekdays.endTime,
-        slotIntervalMinutes:
-          Number(source.weekdays.slotIntervalMinutes) ||
-          DEFAULT_SCHEDULE.weekdays.slotIntervalMinutes,
-        breaks: Array.isArray(source.weekdays.breaks)
-          ? source.weekdays.breaks
-          : DEFAULT_SCHEDULE.weekdays.breaks,
-      },
-      saturday: {
-        enabled: source.saturday.enabled === true,
-        startTime:
-          source.saturday.startTime || DEFAULT_SCHEDULE.saturday.startTime,
-        endTime: source.saturday.endTime || DEFAULT_SCHEDULE.saturday.endTime,
-        slotIntervalMinutes:
-          Number(source.saturday.slotIntervalMinutes) ||
-          DEFAULT_SCHEDULE.saturday.slotIntervalMinutes,
-        breaks: Array.isArray(source.saturday.breaks)
-          ? source.saturday.breaks
-          : DEFAULT_SCHEDULE.saturday.breaks,
-      },
-      sunday: {
-        enabled: source.sunday.enabled === true,
-        startTime: source.sunday.startTime || DEFAULT_SCHEDULE.sunday.startTime,
-        endTime: source.sunday.endTime || DEFAULT_SCHEDULE.sunday.endTime,
-        slotIntervalMinutes:
-          Number(source.sunday.slotIntervalMinutes) ||
-          DEFAULT_SCHEDULE.sunday.slotIntervalMinutes,
-        breaks: Array.isArray(source.sunday.breaks)
-          ? source.sunday.breaks
-          : DEFAULT_SCHEDULE.sunday.breaks,
-      },
-    };
-  }
-
-  // Transitional shape fallback: { weekdays, weekend }
-  if (source.weekdays && source.weekend) {
-    const weekendEnabled = source.weekend.enabled === true;
-    const weekendStart =
-      source.weekend.startTime || DEFAULT_SCHEDULE.saturday.startTime;
-    const weekendEnd =
-      source.weekend.endTime || DEFAULT_SCHEDULE.saturday.endTime;
-    const weekendInterval =
-      Number(source.weekend.slotIntervalMinutes) ||
-      DEFAULT_SCHEDULE.saturday.slotIntervalMinutes;
-    const weekendBreaks = Array.isArray(source.weekend.breaks)
-      ? source.weekend.breaks
-      : DEFAULT_SCHEDULE.saturday.breaks;
-
-    return {
-      weekdays: {
-        enabled: source.weekdays.enabled !== false,
-        startTime:
-          source.weekdays.startTime || DEFAULT_SCHEDULE.weekdays.startTime,
-        endTime: source.weekdays.endTime || DEFAULT_SCHEDULE.weekdays.endTime,
-        slotIntervalMinutes:
-          Number(source.weekdays.slotIntervalMinutes) ||
-          DEFAULT_SCHEDULE.weekdays.slotIntervalMinutes,
-        breaks: Array.isArray(source.weekdays.breaks)
-          ? source.weekdays.breaks
-          : DEFAULT_SCHEDULE.weekdays.breaks,
-      },
-      saturday: {
-        enabled: weekendEnabled,
-        startTime: weekendStart,
-        endTime: weekendEnd,
-        slotIntervalMinutes: weekendInterval,
-        breaks: weekendBreaks,
-      },
-      sunday: {
-        enabled: weekendEnabled,
-        startTime: weekendStart,
-        endTime: weekendEnd,
-        slotIntervalMinutes: weekendInterval,
-        breaks: weekendBreaks,
-      },
-    };
-  }
-
-  // Legacy shape fallback: { workDays, startTime, endTime, slotIntervalMinutes, breaks }
-  const workDays: number[] = Array.isArray(source.workDays)
-    ? source.workDays
-    : [];
-  const hasSaturday = workDays.includes(6);
-  const hasSunday = workDays.includes(0);
-  const hasWeekdays = workDays.some((d) => d >= 1 && d <= 5);
-
   return {
     weekdays: {
-      enabled: hasWeekdays,
-      startTime: source.startTime || DEFAULT_SCHEDULE.weekdays.startTime,
-      endTime: source.endTime || DEFAULT_SCHEDULE.weekdays.endTime,
+      enabled: source.weekdays?.enabled !== false,
+      startTime:
+        source.weekdays?.startTime || DEFAULT_SCHEDULE.weekdays.startTime,
+      endTime: source.weekdays?.endTime || DEFAULT_SCHEDULE.weekdays.endTime,
       slotIntervalMinutes:
-        Number(source.slotIntervalMinutes) ||
+        Number(source.weekdays?.slotIntervalMinutes) ||
         DEFAULT_SCHEDULE.weekdays.slotIntervalMinutes,
-      breaks: Array.isArray(source.breaks)
-        ? source.breaks
+      breaks: Array.isArray(source.weekdays?.breaks)
+        ? source.weekdays.breaks
         : DEFAULT_SCHEDULE.weekdays.breaks,
     },
     saturday: {
-      enabled: hasSaturday,
-      startTime: source.startTime || DEFAULT_SCHEDULE.saturday.startTime,
-      endTime: source.endTime || DEFAULT_SCHEDULE.saturday.endTime,
+      enabled: source.saturday?.enabled === true,
+      startTime:
+        source.saturday?.startTime || DEFAULT_SCHEDULE.saturday.startTime,
+      endTime: source.saturday?.endTime || DEFAULT_SCHEDULE.saturday.endTime,
       slotIntervalMinutes:
-        Number(source.slotIntervalMinutes) ||
+        Number(source.saturday?.slotIntervalMinutes) ||
         DEFAULT_SCHEDULE.saturday.slotIntervalMinutes,
-      breaks: Array.isArray(source.breaks)
-        ? source.breaks
+      breaks: Array.isArray(source.saturday?.breaks)
+        ? source.saturday.breaks
         : DEFAULT_SCHEDULE.saturday.breaks,
     },
     sunday: {
-      enabled: hasSunday,
-      startTime: source.startTime || DEFAULT_SCHEDULE.sunday.startTime,
-      endTime: source.endTime || DEFAULT_SCHEDULE.sunday.endTime,
+      enabled: source.sunday?.enabled === true,
+      startTime: source.sunday?.startTime || DEFAULT_SCHEDULE.sunday.startTime,
+      endTime: source.sunday?.endTime || DEFAULT_SCHEDULE.sunday.endTime,
       slotIntervalMinutes:
-        Number(source.slotIntervalMinutes) ||
+        Number(source.sunday?.slotIntervalMinutes) ||
         DEFAULT_SCHEDULE.sunday.slotIntervalMinutes,
-      breaks: Array.isArray(source.breaks)
-        ? source.breaks
+      breaks: Array.isArray(source.sunday?.breaks)
+        ? source.sunday.breaks
         : DEFAULT_SCHEDULE.sunday.breaks,
     },
   };
