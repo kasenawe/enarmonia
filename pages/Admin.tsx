@@ -1087,7 +1087,11 @@ const Admin: React.FC<AdminProps> = ({
     setScheduleError(null);
     setScheduleFeedback(null);
 
-    if (!scheduleForm.weekdays.enabled && !scheduleForm.weekend.enabled) {
+    if (
+      !scheduleForm.weekdays.enabled &&
+      !scheduleForm.saturday.enabled &&
+      !scheduleForm.sunday.enabled
+    ) {
       setScheduleError("Debes habilitar al menos un bloque de agenda.");
       return;
     }
@@ -1101,9 +1105,15 @@ const Admin: React.FC<AdminProps> = ({
       return;
     }
 
-    const weekendError = validateSegment("fin de semana", scheduleForm.weekend);
-    if (weekendError) {
-      setScheduleError(weekendError);
+    const saturdayError = validateSegment("sábado", scheduleForm.saturday);
+    if (saturdayError) {
+      setScheduleError(saturdayError);
+      return;
+    }
+
+    const sundayError = validateSegment("domingo", scheduleForm.sunday);
+    if (sundayError) {
+      setScheduleError(sundayError);
       return;
     }
 
@@ -1111,7 +1121,8 @@ const Admin: React.FC<AdminProps> = ({
     try {
       await setDoc(doc(db, "settings", "schedule"), {
         weekdays: scheduleForm.weekdays,
-        weekend: scheduleForm.weekend,
+        saturday: scheduleForm.saturday,
+        sunday: scheduleForm.sunday,
       });
       setScheduleFeedback("Horario guardado correctamente.");
     } catch (err) {
@@ -1953,17 +1964,11 @@ const Admin: React.FC<AdminProps> = ({
               )}
           </div>
         )}
-
         {activeTab === "blockedSlots" && (
           <div className="space-y-6">
             {blockError && (
               <div className="rounded-3xl bg-red-50 border border-red-100 p-4 text-red-600 text-sm">
                 {blockError}
-              </div>
-            )}
-            {blockFeedback && (
-              <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 text-sm">
-                {blockFeedback}
               </div>
             )}
             {bulkBlockError && (
@@ -2261,8 +2266,8 @@ const Admin: React.FC<AdminProps> = ({
                   Configuración de horario de atención
                 </h4>
                 <p className="text-gray-400 text-[11px]">
-                  Define un horario para lunes a viernes y otro distinto para
-                  fin de semana.
+                  Define un horario para lunes a viernes y horarios separados
+                  para sábado y domingo.
                 </p>
               </div>
 
@@ -2276,10 +2281,15 @@ const Admin: React.FC<AdminProps> = ({
                         "Configura horario y descansos para días hábiles.",
                     },
                     {
-                      key: "weekend",
-                      title: "Sábado y domingo",
+                      key: "saturday",
+                      title: "Sábado",
+                      description: "Configura horario y descansos para sábado.",
+                    },
+                    {
+                      key: "sunday",
+                      title: "Domingo",
                       description:
-                        "Configura horario y descansos para fin de semana.",
+                        "Configura horario y descansos para domingo.",
                     },
                   ] as const
                 ).map((section) => {

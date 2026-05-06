@@ -114,7 +114,8 @@ export interface ScheduleSegment {
 
 export interface Schedule {
   weekdays: ScheduleSegment; // lunes-viernes
-  weekend: ScheduleSegment; // sabado-domingo
+  saturday: ScheduleSegment; // sabado
+  sunday: ScheduleSegment; // domingo
 }
 
 export interface ClinicalSession {

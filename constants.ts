@@ -111,7 +111,14 @@ export const DEFAULT_SCHEDULE = {
     slotIntervalMinutes: 60,
     breaks: [{ start: "12:00", end: "14:00" }],
   },
-  weekend: {
+  saturday: {
+    enabled: false,
+    startTime: "09:00",
+    endTime: "13:00",
+    slotIntervalMinutes: 60,
+    breaks: [],
+  },
+  sunday: {
     enabled: false,
     startTime: "09:00",
     endTime: "13:00",
