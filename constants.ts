@@ -104,11 +104,20 @@ export const MP_SURCHARGE_PERCENT = 8.73;
 export const TRANSFER_DUE_HOURS = 4;
 
 export const DEFAULT_SCHEDULE = {
-  workDays: [1, 2, 3, 4, 5],
-  startTime: "09:00",
-  endTime: "19:00",
-  slotIntervalMinutes: 60,
-  breaks: [{ start: "12:00", end: "14:00" }],
+  weekdays: {
+    enabled: true,
+    startTime: "09:00",
+    endTime: "19:00",
+    slotIntervalMinutes: 60,
+    breaks: [{ start: "12:00", end: "14:00" }],
+  },
+  weekend: {
+    enabled: false,
+    startTime: "09:00",
+    endTime: "13:00",
+    slotIntervalMinutes: 60,
+    breaks: [],
+  },
 };
 
 export const TRANSFER_BANK_INFO = {

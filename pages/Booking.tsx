@@ -20,6 +20,8 @@ import {
   generateTimeSlots,
   slotOverlapsOccupied,
   slotOverlapsBlocked,
+  getScheduleSegmentForDay,
+  normalizeSchedule,
 } from "../utils/scheduleUtils";
 import PhoneInput from "../components/PhoneInput";
 
@@ -107,7 +109,9 @@ const Booking: React.FC<BookingProps> = ({
     });
   }, [selectedDate, step]);
 
-  const schedule: Schedule = scheduleProp ?? DEFAULT_SCHEDULE;
+  const schedule: Schedule = normalizeSchedule(
+    scheduleProp ?? DEFAULT_SCHEDULE,
+  );
   const serviceDuration = service.duration ?? 60;
 
   const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -129,7 +133,9 @@ const Booking: React.FC<BookingProps> = ({
   const dates = Array.from({ length: 28 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i + 1);
-    if (!schedule.workDays.includes(d.getDay())) return null;
+
+    const segment = getScheduleSegmentForDay(schedule, d.getDay());
+    if (!segment.enabled) return null;
 
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -138,6 +144,7 @@ const Booking: React.FC<BookingProps> = ({
 
     return {
       iso,
+      dayIndex: d.getDay(),
       day: days[d.getDay()],
       num: d.getDate(),
       month: months[d.getMonth()],
@@ -145,25 +152,33 @@ const Booking: React.FC<BookingProps> = ({
     };
   }).filter(Boolean) as {
     iso: string;
+    dayIndex: number;
     day: string;
     num: number;
     month: string;
     full: string;
   }[];
 
-  const timeSlots = generateTimeSlots(schedule, serviceDuration);
+  const getTimeSlotsForDate = (date: string) => {
+    const dateObj = new Date(`${date}T12:00:00`);
+    const segment = getScheduleSegmentForDay(schedule, dateObj.getDay());
+    return generateTimeSlots(segment, serviceDuration);
+  };
 
   const isSlotOccupied = (date: string, time: string) => {
     return slotOverlapsOccupied(date, time, serviceDuration, occupiedSlots);
   };
 
   const isSlotBlocked = (date: string, time: string) => {
+    const dateObj = new Date(`${date}T12:00:00`);
+    const segment = getScheduleSegmentForDay(schedule, dateObj.getDay());
+
     return slotOverlapsBlocked(
       date,
       time,
       serviceDuration,
       blockedSlots,
-      schedule,
+      segment.slotIntervalMinutes,
     );
   };
 
@@ -176,13 +191,18 @@ const Booking: React.FC<BookingProps> = ({
     return dateObj ? dateObj.full : selectedDate;
   };
 
+  const selectedDateSlots = selectedDate
+    ? getTimeSlotsForDate(selectedDate)
+    : [];
+
   const availableSlotsForSelectedDate = selectedDate
-    ? timeSlots.filter((time) => !isSlotUnavailable(selectedDate, time)).length
+    ? selectedDateSlots.filter((time) => !isSlotUnavailable(selectedDate, time))
+        .length
     : 0;
 
   const firstAvailableSlot = dates
     .flatMap((dateOption) =>
-      timeSlots.map((timeOption) => ({
+      getTimeSlotsForDate(dateOption.iso).map((timeOption) => ({
         date: dateOption.iso,
         time: timeOption,
       })),
@@ -550,7 +570,7 @@ const Booking: React.FC<BookingProps> = ({
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
-                  {timeSlots.map((t) => {
+                  {selectedDateSlots.map((t) => {
                     const unavailable = isSlotUnavailable(selectedDate, t);
                     return (
                       <button

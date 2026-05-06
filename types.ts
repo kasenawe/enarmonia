@@ -104,12 +104,17 @@ export interface ScheduleBreak {
   end: string; // "HH:MM"
 }
 
-export interface Schedule {
-  workDays: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
+export interface ScheduleSegment {
+  enabled: boolean;
   startTime: string; // "HH:MM"
   endTime: string; // "HH:MM"
   slotIntervalMinutes: number;
   breaks: ScheduleBreak[];
+}
+
+export interface Schedule {
+  weekdays: ScheduleSegment; // lunes-viernes
+  weekend: ScheduleSegment; // sabado-domingo
 }
 
 export interface ClinicalSession {

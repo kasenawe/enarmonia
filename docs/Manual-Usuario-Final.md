@@ -331,19 +331,19 @@ En \`Horario\` defines cómo funciona tu agenda de reservas.
 
 Puedes configurar:
 
-- días de atención (por ejemplo lunes a viernes)
-- hora de inicio y fin
-- intervalo de los horarios (por ejemplo cada 60 minutos)
-- descansos (por ejemplo 12:00 a 14:00)
+- un bloque para lunes a viernes
+- un bloque distinto para sábado y domingo
+- para cada bloque: hora de inicio y fin
+- para cada bloque: intervalo de horarios (por ejemplo cada 60 minutos)
+- para cada bloque: descansos (por ejemplo 12:00 a 14:00)
 
 ### Cómo configurar el horario
 
 1. Entra en \`Horario\`.
-2. Marca los días en los que atiendes.
-3. Ajusta hora de inicio y fin.
-4. Define el intervalo de los turnos.
-5. Agrega o quita descansos si hace falta.
-6. Pulsa \`Guardar configuración\`.
+2. Configura el bloque \`Lunes a viernes\` (puedes habilitarlo o deshabilitarlo).
+3. Configura el bloque \`Sábado y domingo\` (puedes habilitarlo o deshabilitarlo).
+4. En cada bloque ajusta hora de inicio/fin, intervalo y descansos.
+5. Pulsa \`Guardar configuración\`.
 
 Resultado:
 

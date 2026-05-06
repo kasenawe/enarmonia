@@ -71,7 +71,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 9.  **Distinción Cuenta / Invitado en Admin**: Cada tarjeta de turno en el panel admin muestra un badge: "Cuenta" (verde) para usuarios registrados o "Invitado" (ámbar) para reservas sin cuenta, usando el campo `bookingMode`.
 10. **Bloqueo Manual de Horarios**: La administradora puede bloquear y desbloquear horarios manualmente desde el panel, con validación contra turnos ya agendados.
 11. **Bloqueo y Desbloqueo Masivo por Rango**: En admin, la dueña puede bloquear y también eliminar bloqueos en períodos completos (por ejemplo vacaciones) por rango de fechas y opcionalmente por rango horario, evitando la gestión uno a uno.
-12. **Horario Configurable por la Dueña**: El horario de atención se define en `settings/schedule` (días laborales, hora de inicio/fin, intervalo de slots y descansos), y Booking se adapta en tiempo real.
+12. **Horario Configurable por la Dueña**: El horario de atención se define en `settings/schedule` con dos bloques independientes (`weekdays` para lunes-viernes y `weekend` para sábado-domingo), cada uno con su hora de inicio/fin, intervalo de slots y descansos. Booking se adapta en tiempo real.
 13. **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
 14. **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
 15. **Historia Clínica Digital**: Nueva pestaña en Admin para registrar la ficha de ingreso del paciente y la evolución por sesión, vinculable al usuario y opcionalmente al turno.
@@ -167,7 +167,7 @@ La aplicación estará disponible en `http://localhost:3000`.
   - `appointments`: `userId` (opcional), `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `userEmail`, `userDocumentId` (opcional, formato `XXXXXXX-X`), `bookingMode` (`"account"` | `"guest"`), `createdAt`, `price`, `paid`, `basePrice`, `discountAmount`, `appliedPromotion`, `paymentMethod` (`"mp"` | `"transfer"`), `paymentStatus` (`"paid_mp"` | `"pending_transfer"` | `"paid_transfer"` | `"expired_transfer"` | `"cancelled"`), `subtotalAmount`, `mpSurchargeAmount`, `totalAmount`, `mpFeePercent`, `paymentDueAt` (solo transferencia), `paymentValidatedAt`, `paymentValidatedBy`.
   - `occupied_slots`: `appointmentId`, `serviceId`, `date`, `time`, `duration` (minutos), `createdAt`, `expiresAt` (solo en slots de transferencia; el frontend lo usa para ignorar slots vencidos sin esperar al cron).
   - `blocked_slots`: `date`, `time`, `createdAt`.
-  - `settings/schedule`: `workDays`, `startTime`, `endTime`, `slotIntervalMinutes`, `breaks` (`[{ start, end }]`) para configurar agenda dinámica.
+  - `settings/schedule`: `weekdays` y `weekend` (cada bloque con `enabled`, `startTime`, `endTime`, `slotIntervalMinutes`, `breaks`) para configurar agenda dinámica separada entre semana y fin de semana.
   - `services`: `name`, `description`, `duration`, `price`, `image`.
   - `promotions`: `title`, `description`, `badgeText`, `discountType`, `discountValue`, `featured`, `isActive`, `appliesToAllServices`, `serviceIds`, `startDate`, `endDate`, `priority`, `image`.
   - `clinical_profiles`: `patientId`, `intakeDate`, datos de identificación y contacto, motivo de consulta, zonas de dolor, antecedentes de salud, `initialDiagnosis`, `treatmentStartDate`, `createdAt/updatedAt`, `createdBy/updatedBy`.

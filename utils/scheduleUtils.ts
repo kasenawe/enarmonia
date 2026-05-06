@@ -1,4 +1,11 @@
-import { Schedule, ScheduleBreak, OccupiedSlot, BlockedSlot } from "../types";
+import {
+  Schedule,
+  ScheduleBreak,
+  ScheduleSegment,
+  OccupiedSlot,
+  BlockedSlot,
+} from "../types";
+import { DEFAULT_SCHEDULE } from "../constants";
 
 export function timeToMinutes(time: string): number {
   const [h, m] = time.split(":").map(Number);
@@ -33,23 +40,99 @@ export function overlapsBreak(
   });
 }
 
-/** Generate all valid start times for the given schedule and service duration */
+/** Generate all valid start times for one schedule segment and service duration */
 export function generateTimeSlots(
-  schedule: Schedule,
+  segment: ScheduleSegment,
   serviceDurationMinutes = 60,
 ): string[] {
-  const start = timeToMinutes(schedule.startTime);
-  const end = timeToMinutes(schedule.endTime);
-  const interval = schedule.slotIntervalMinutes;
+  if (!segment.enabled) return [];
+
+  const start = timeToMinutes(segment.startTime);
+  const end = timeToMinutes(segment.endTime);
+  const interval = segment.slotIntervalMinutes;
   const slots: string[] = [];
 
   for (let t = start; t + serviceDurationMinutes <= end; t += interval) {
-    if (!overlapsBreak(t, serviceDurationMinutes, schedule.breaks)) {
+    if (!overlapsBreak(t, serviceDurationMinutes, segment.breaks)) {
       slots.push(minutesToTime(t));
     }
   }
 
   return slots;
+}
+
+export function getScheduleSegmentForDay(
+  schedule: Schedule,
+  day: number,
+): ScheduleSegment {
+  // 0 = Sunday, 6 = Saturday
+  return day === 0 || day === 6 ? schedule.weekend : schedule.weekdays;
+}
+
+export function normalizeSchedule(raw: unknown): Schedule {
+  const source = (raw || {}) as any;
+
+  // New shape: { weekdays, weekend }
+  if (source.weekdays && source.weekend) {
+    return {
+      weekdays: {
+        enabled: source.weekdays.enabled !== false,
+        startTime:
+          source.weekdays.startTime || DEFAULT_SCHEDULE.weekdays.startTime,
+        endTime: source.weekdays.endTime || DEFAULT_SCHEDULE.weekdays.endTime,
+        slotIntervalMinutes:
+          Number(source.weekdays.slotIntervalMinutes) ||
+          DEFAULT_SCHEDULE.weekdays.slotIntervalMinutes,
+        breaks: Array.isArray(source.weekdays.breaks)
+          ? source.weekdays.breaks
+          : DEFAULT_SCHEDULE.weekdays.breaks,
+      },
+      weekend: {
+        enabled: source.weekend.enabled === true,
+        startTime:
+          source.weekend.startTime || DEFAULT_SCHEDULE.weekend.startTime,
+        endTime: source.weekend.endTime || DEFAULT_SCHEDULE.weekend.endTime,
+        slotIntervalMinutes:
+          Number(source.weekend.slotIntervalMinutes) ||
+          DEFAULT_SCHEDULE.weekend.slotIntervalMinutes,
+        breaks: Array.isArray(source.weekend.breaks)
+          ? source.weekend.breaks
+          : DEFAULT_SCHEDULE.weekend.breaks,
+      },
+    };
+  }
+
+  // Legacy shape fallback: { workDays, startTime, endTime, slotIntervalMinutes, breaks }
+  const workDays: number[] = Array.isArray(source.workDays)
+    ? source.workDays
+    : [];
+  const hasWeekendDays = workDays.includes(0) || workDays.includes(6);
+  const hasWeekdays = workDays.some((d) => d >= 1 && d <= 5);
+
+  return {
+    weekdays: {
+      enabled: hasWeekdays,
+      startTime: source.startTime || DEFAULT_SCHEDULE.weekdays.startTime,
+      endTime: source.endTime || DEFAULT_SCHEDULE.weekdays.endTime,
+      slotIntervalMinutes:
+        Number(source.slotIntervalMinutes) ||
+        DEFAULT_SCHEDULE.weekdays.slotIntervalMinutes,
+      breaks: Array.isArray(source.breaks)
+        ? source.breaks
+        : DEFAULT_SCHEDULE.weekdays.breaks,
+    },
+    weekend: {
+      enabled: hasWeekendDays,
+      startTime: source.startTime || DEFAULT_SCHEDULE.weekend.startTime,
+      endTime: source.endTime || DEFAULT_SCHEDULE.weekend.endTime,
+      slotIntervalMinutes:
+        Number(source.slotIntervalMinutes) ||
+        DEFAULT_SCHEDULE.weekend.slotIntervalMinutes,
+      breaks: Array.isArray(source.breaks)
+        ? source.breaks
+        : DEFAULT_SCHEDULE.weekend.breaks,
+    },
+  };
 }
 
 /** Check if a proposed slot [slotTime, slotTime+serviceDuration) overlaps an occupied slot */
@@ -76,17 +159,16 @@ export function slotOverlapsBlocked(
   slotTime: string,
   serviceDurationMinutes: number,
   blockedSlots: BlockedSlot[],
-  schedule: Schedule,
+  intervalMinutes: number,
 ): boolean {
   const slotStart = timeToMinutes(slotTime);
   const slotEnd = slotStart + serviceDurationMinutes;
-  const interval = schedule.slotIntervalMinutes;
 
   return blockedSlots.some((b) => {
     if (b.date !== date) return false;
     // A blocked time occupies [blockStart, blockStart+interval)
     const bStart = timeToMinutes(b.time);
-    const bEnd = bStart + interval;
+    const bEnd = bStart + intervalMinutes;
     return slotStart < bEnd && slotEnd > bStart;
   });
 }

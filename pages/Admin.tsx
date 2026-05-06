@@ -24,7 +24,11 @@ import {
   writeBatch,
 } from "../firebase";
 import { BACKEND_URL, DEFAULT_SCHEDULE } from "../constants";
-import { generateTimeSlots } from "../utils/scheduleUtils";
+import {
+  generateTimeSlots,
+  getScheduleSegmentForDay,
+  normalizeSchedule,
+} from "../utils/scheduleUtils";
 import { getServicePricing } from "../utils/promotionPricing";
 import { useAuth } from "../contexts/AuthContext";
 import ClinicalRecordsPanel from "../components/ClinicalRecordsPanel";
@@ -107,7 +111,9 @@ const Admin: React.FC<AdminProps> = ({
   );
 
   // Schedule editor state
-  const [scheduleForm, setScheduleForm] = useState<Schedule>(schedule);
+  const [scheduleForm, setScheduleForm] = useState<Schedule>(
+    normalizeSchedule(schedule),
+  );
   const [isScheduleSaving, setIsScheduleSaving] = useState(false);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [scheduleFeedback, setScheduleFeedback] = useState<string | null>(null);
@@ -186,11 +192,28 @@ const Admin: React.FC<AdminProps> = ({
   const [selectedContactApp, setSelectedContactApp] =
     useState<Appointment | null>(null);
 
-  const blockTimeOptions = generateTimeSlots(schedule, 60);
+  const normalizedSchedule = normalizeSchedule(schedule);
+  const blockDateDay = new Date(`${blockDate}T12:00:00`).getDay();
+  const blockDateSegment = getScheduleSegmentForDay(
+    normalizedSchedule,
+    blockDateDay,
+  );
+  const blockTimeOptions = generateTimeSlots(blockDateSegment, 60);
+
+  // Keep selected manual block time valid for the selected date segment.
+  useEffect(() => {
+    if (blockTimeOptions.length === 0) {
+      setBlockTime("");
+      return;
+    }
+    if (!blockTimeOptions.includes(blockTime)) {
+      setBlockTime(blockTimeOptions[0]);
+    }
+  }, [blockDate, blockTime, blockTimeOptions]);
 
   // Keep scheduleForm in sync with prop (updated by Firestore listener in App)
   useEffect(() => {
-    setScheduleForm(schedule);
+    setScheduleForm(normalizeSchedule(schedule));
   }, [schedule]);
 
   useEffect(() => {
@@ -875,16 +898,6 @@ const Admin: React.FC<AdminProps> = ({
       return;
     }
 
-    const allSlots = generateTimeSlots(schedule, 60);
-    const timeRange = bulkAllDay
-      ? allSlots
-      : allSlots.filter((t) => t >= bulkTimeFrom && t <= bulkTimeTo);
-
-    if (timeRange.length === 0) {
-      setBulkBlockError("El rango de horas no contiene horarios válidos.");
-      return;
-    }
-
     setIsBulkBlocking(true);
     try {
       const slotsToAdd: { date: string; time: string }[] = [];
@@ -892,8 +905,17 @@ const Admin: React.FC<AdminProps> = ({
       const end = new Date(bulkTo + "T12:00:00");
 
       while (cursor <= end) {
-        if (schedule.workDays.includes(cursor.getDay())) {
+        const segment = getScheduleSegmentForDay(
+          normalizedSchedule,
+          cursor.getDay(),
+        );
+        if (segment.enabled) {
           const iso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
+          const dateSlots = generateTimeSlots(segment, 60);
+          const timeRange = bulkAllDay
+            ? dateSlots
+            : dateSlots.filter((t) => t >= bulkTimeFrom && t <= bulkTimeTo);
+
           for (const time of timeRange) {
             const alreadyBlocked = blockedSlots.some(
               (b) => b.date === iso && b.time === time,
@@ -963,25 +985,43 @@ const Admin: React.FC<AdminProps> = ({
       return;
     }
 
-    const allSlots = generateTimeSlots(schedule, 60);
-    const timeRange = bulkUnblockAllDay
-      ? allSlots
-      : allSlots.filter(
-          (t) => t >= bulkUnblockTimeFrom && t <= bulkUnblockTimeTo,
-        );
-
-    if (timeRange.length === 0) {
-      setBulkUnblockError("El rango de horas no contiene horarios válidos.");
-      return;
-    }
-
     setIsBulkUnblocking(true);
     try {
-      const slotsToDelete = blockedSlots.filter(
-        (slot) =>
-          slot.date >= bulkUnblockFrom &&
-          slot.date <= bulkUnblockTo &&
-          timeRange.includes(slot.time),
+      const selectedKeys = new Set<string>();
+      const cursor = new Date(bulkUnblockFrom + "T12:00:00");
+      const end = new Date(bulkUnblockTo + "T12:00:00");
+
+      while (cursor <= end) {
+        const segment = getScheduleSegmentForDay(
+          normalizedSchedule,
+          cursor.getDay(),
+        );
+        if (segment.enabled) {
+          const iso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
+          const dateSlots = generateTimeSlots(segment, 60);
+          const timeRange = bulkUnblockAllDay
+            ? dateSlots
+            : dateSlots.filter(
+                (t) => t >= bulkUnblockTimeFrom && t <= bulkUnblockTimeTo,
+              );
+
+          for (const time of timeRange) {
+            selectedKeys.add(`${iso}__${time}`);
+          }
+        }
+        cursor.setDate(cursor.getDate() + 1);
+      }
+
+      if (selectedKeys.size === 0) {
+        setBulkUnblockError(
+          "El rango seleccionado no contiene horarios válidos.",
+        );
+        setIsBulkUnblocking(false);
+        return;
+      }
+
+      const slotsToDelete = blockedSlots.filter((slot) =>
+        selectedKeys.has(`${slot.date}__${slot.time}`),
       );
 
       if (slotsToDelete.length === 0) {
@@ -1022,36 +1062,56 @@ const Admin: React.FC<AdminProps> = ({
     }
   };
 
+  const validateSegment = (label: string, segment: Schedule["weekdays"]) => {
+    if (!segment.enabled) return null;
+
+    if (segment.startTime >= segment.endTime) {
+      return `La hora de inicio de ${label} debe ser anterior a la hora de fin.`;
+    }
+
+    if (segment.slotIntervalMinutes < 15 || segment.slotIntervalMinutes > 120) {
+      return `El intervalo de ${label} debe estar entre 15 y 120 minutos.`;
+    }
+
+    for (const b of segment.breaks) {
+      if (b.start >= b.end) {
+        return `En ${label}, el inicio de cada descanso debe ser anterior al fin.`;
+      }
+    }
+
+    return null;
+  };
+
   const handleScheduleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setScheduleError(null);
     setScheduleFeedback(null);
 
-    if (scheduleForm.workDays.length === 0) {
-      setScheduleError("Seleccioná al menos un día de trabajo.");
+    if (!scheduleForm.weekdays.enabled && !scheduleForm.weekend.enabled) {
+      setScheduleError("Debes habilitar al menos un bloque de agenda.");
       return;
     }
-    if (scheduleForm.startTime >= scheduleForm.endTime) {
-      setScheduleError("La hora de inicio debe ser anterior a la hora de fin.");
+
+    const weekdaysError = validateSegment(
+      "lunes a viernes",
+      scheduleForm.weekdays,
+    );
+    if (weekdaysError) {
+      setScheduleError(weekdaysError);
       return;
     }
-    for (const b of scheduleForm.breaks) {
-      if (b.start >= b.end) {
-        setScheduleError(
-          "El inicio de cada descanso debe ser anterior al fin.",
-        );
-        return;
-      }
+
+    const weekendError = validateSegment("fin de semana", scheduleForm.weekend);
+    if (weekendError) {
+      setScheduleError(weekendError);
+      return;
     }
 
     setIsScheduleSaving(true);
     try {
       await setDoc(doc(db, "settings", "schedule"), {
-        workDays: scheduleForm.workDays,
-        startTime: scheduleForm.startTime,
-        endTime: scheduleForm.endTime,
-        slotIntervalMinutes: scheduleForm.slotIntervalMinutes,
-        breaks: scheduleForm.breaks,
+        weekdays: scheduleForm.weekdays,
+        weekend: scheduleForm.weekend,
       });
       setScheduleFeedback("Horario guardado correctamente.");
     } catch (err) {
@@ -2201,161 +2261,224 @@ const Admin: React.FC<AdminProps> = ({
                   Configuración de horario de atención
                 </h4>
                 <p className="text-gray-400 text-[11px]">
-                  Define los días y horas de trabajo, descansos y duración de
-                  los slots.
+                  Define un horario para lunes a viernes y otro distinto para
+                  fin de semana.
                 </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-3">
-                  Días de trabajo
-                </label>
-                <div className="grid grid-cols-7 gap-2">
-                  {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map(
-                    (day, idx) => (
-                      <label
-                        key={idx}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={scheduleForm.workDays.includes(idx)}
-                          onChange={(e) => {
-                            setScheduleForm((prev) => ({
-                              ...prev,
-                              workDays: e.target.checked
-                                ? [...prev.workDays, idx].sort()
-                                : prev.workDays.filter((d) => d !== idx),
-                            }));
-                          }}
-                          className="w-4 h-4 rounded border-gray-200"
-                        />
-                        {day}
-                      </label>
-                    ),
-                  )}
-                </div>
-              </div>
+              <div className="space-y-6">
+                {(
+                  [
+                    {
+                      key: "weekdays",
+                      title: "Lunes a viernes",
+                      description:
+                        "Configura horario y descansos para días hábiles.",
+                    },
+                    {
+                      key: "weekend",
+                      title: "Sábado y domingo",
+                      description:
+                        "Configura horario y descansos para fin de semana.",
+                    },
+                  ] as const
+                ).map((section) => {
+                  const segment = scheduleForm[section.key];
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  Hora de inicio
-                  <input
-                    type="time"
-                    value={scheduleForm.startTime}
-                    onChange={(e) =>
-                      setScheduleForm((prev) => ({
-                        ...prev,
-                        startTime: e.target.value,
-                      }))
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  Hora de fin
-                  <input
-                    type="time"
-                    value={scheduleForm.endTime}
-                    onChange={(e) =>
-                      setScheduleForm((prev) => ({
-                        ...prev,
-                        endTime: e.target.value,
-                      }))
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  Intervalo de slots (min)
-                  <input
-                    type="number"
-                    min="15"
-                    max="120"
-                    step="15"
-                    value={scheduleForm.slotIntervalMinutes}
-                    onChange={(e) =>
-                      setScheduleForm((prev) => ({
-                        ...prev,
-                        slotIntervalMinutes: parseInt(e.target.value) || 60,
-                      }))
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                  />
-                </label>
-              </div>
+                  return (
+                    <div
+                      key={section.key}
+                      className="rounded-3xl border border-gray-100 bg-gray-50 p-5 space-y-4"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <h5 className="text-base font-bold text-gray-800">
+                            {section.title}
+                          </h5>
+                          <p className="text-[11px] text-gray-500">
+                            {section.description}
+                          </p>
+                        </div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={segment.enabled}
+                            onChange={(e) =>
+                              setScheduleForm((prev) => ({
+                                ...prev,
+                                [section.key]: {
+                                  ...prev[section.key],
+                                  enabled: e.target.checked,
+                                },
+                              }))
+                            }
+                            className="w-4 h-4 rounded border-gray-200"
+                          />
+                          Habilitado
+                        </label>
+                      </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-medium text-gray-600">
-                    Descansos
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setScheduleForm((prev) => ({
-                        ...prev,
-                        breaks: [
-                          ...prev.breaks,
-                          { start: "12:00", end: "13:00" },
-                        ],
-                      }));
-                    }}
-                    className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-lg hover:bg-gray-200"
-                  >
-                    + Agregar descanso
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {scheduleForm.breaks.map((brk, idx) => (
-                    <div key={idx} className="flex gap-3 items-end">
-                      <label className="space-y-2 text-sm font-medium text-gray-600 flex-1">
-                        Desde
-                        <input
-                          type="time"
-                          value={brk.start}
-                          onChange={(e) => {
-                            const updated = [...scheduleForm.breaks];
-                            updated[idx].start = e.target.value;
-                            setScheduleForm((prev) => ({
-                              ...prev,
-                              breaks: updated,
-                            }));
-                          }}
-                          className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                        />
-                      </label>
-                      <label className="space-y-2 text-sm font-medium text-gray-600 flex-1">
-                        Hasta
-                        <input
-                          type="time"
-                          value={brk.end}
-                          onChange={(e) => {
-                            const updated = [...scheduleForm.breaks];
-                            updated[idx].end = e.target.value;
-                            setScheduleForm((prev) => ({
-                              ...prev,
-                              breaks: updated,
-                            }));
-                          }}
-                          className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setScheduleForm((prev) => ({
-                            ...prev,
-                            breaks: prev.breaks.filter((_, i) => i !== idx),
-                          }));
-                        }}
-                        className="px-3 py-2 text-red-600 text-xs font-bold bg-red-50 rounded-lg hover:bg-red-100"
-                      >
-                        Quitar
-                      </button>
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <label className="space-y-2 text-sm font-medium text-gray-600">
+                          Hora de inicio
+                          <input
+                            type="time"
+                            value={segment.startTime}
+                            disabled={!segment.enabled}
+                            onChange={(e) =>
+                              setScheduleForm((prev) => ({
+                                ...prev,
+                                [section.key]: {
+                                  ...prev[section.key],
+                                  startTime: e.target.value,
+                                },
+                              }))
+                            }
+                            className="w-full p-4 rounded-3xl border border-gray-200 bg-white text-sm outline-none focus:border-gray-900 disabled:opacity-50"
+                          />
+                        </label>
+                        <label className="space-y-2 text-sm font-medium text-gray-600">
+                          Hora de fin
+                          <input
+                            type="time"
+                            value={segment.endTime}
+                            disabled={!segment.enabled}
+                            onChange={(e) =>
+                              setScheduleForm((prev) => ({
+                                ...prev,
+                                [section.key]: {
+                                  ...prev[section.key],
+                                  endTime: e.target.value,
+                                },
+                              }))
+                            }
+                            className="w-full p-4 rounded-3xl border border-gray-200 bg-white text-sm outline-none focus:border-gray-900 disabled:opacity-50"
+                          />
+                        </label>
+                        <label className="space-y-2 text-sm font-medium text-gray-600">
+                          Intervalo de slots (min)
+                          <input
+                            type="number"
+                            min="15"
+                            max="120"
+                            step="15"
+                            value={segment.slotIntervalMinutes}
+                            disabled={!segment.enabled}
+                            onChange={(e) =>
+                              setScheduleForm((prev) => ({
+                                ...prev,
+                                [section.key]: {
+                                  ...prev[section.key],
+                                  slotIntervalMinutes:
+                                    parseInt(e.target.value) || 60,
+                                },
+                              }))
+                            }
+                            className="w-full p-4 rounded-3xl border border-gray-200 bg-white text-sm outline-none focus:border-gray-900 disabled:opacity-50"
+                          />
+                        </label>
+                      </div>
+
+                      <div>
+                        <div className="mb-3 flex items-center justify-between">
+                          <label className="block text-sm font-medium text-gray-600">
+                            Descansos
+                          </label>
+                          <button
+                            type="button"
+                            disabled={!segment.enabled}
+                            onClick={() => {
+                              setScheduleForm((prev) => ({
+                                ...prev,
+                                [section.key]: {
+                                  ...prev[section.key],
+                                  breaks: [
+                                    ...prev[section.key].breaks,
+                                    { start: "12:00", end: "13:00" },
+                                  ],
+                                },
+                              }));
+                            }}
+                            className="rounded-lg bg-gray-200 px-3 py-1 text-xs font-bold text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                          >
+                            + Agregar descanso
+                          </button>
+                        </div>
+
+                        <div className="space-y-3">
+                          {segment.breaks.map((brk, idx) => (
+                            <div key={idx} className="flex items-end gap-3">
+                              <label className="flex-1 space-y-2 text-sm font-medium text-gray-600">
+                                Desde
+                                <input
+                                  type="time"
+                                  value={brk.start}
+                                  disabled={!segment.enabled}
+                                  onChange={(e) => {
+                                    const updated = [...segment.breaks];
+                                    updated[idx] = {
+                                      ...updated[idx],
+                                      start: e.target.value,
+                                    };
+                                    setScheduleForm((prev) => ({
+                                      ...prev,
+                                      [section.key]: {
+                                        ...prev[section.key],
+                                        breaks: updated,
+                                      },
+                                    }));
+                                  }}
+                                  className="w-full rounded-2xl border border-gray-200 bg-white p-3 text-sm outline-none focus:border-gray-900 disabled:opacity-50"
+                                />
+                              </label>
+                              <label className="flex-1 space-y-2 text-sm font-medium text-gray-600">
+                                Hasta
+                                <input
+                                  type="time"
+                                  value={brk.end}
+                                  disabled={!segment.enabled}
+                                  onChange={(e) => {
+                                    const updated = [...segment.breaks];
+                                    updated[idx] = {
+                                      ...updated[idx],
+                                      end: e.target.value,
+                                    };
+                                    setScheduleForm((prev) => ({
+                                      ...prev,
+                                      [section.key]: {
+                                        ...prev[section.key],
+                                        breaks: updated,
+                                      },
+                                    }));
+                                  }}
+                                  className="w-full rounded-2xl border border-gray-200 bg-white p-3 text-sm outline-none focus:border-gray-900 disabled:opacity-50"
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                disabled={!segment.enabled}
+                                onClick={() => {
+                                  setScheduleForm((prev) => ({
+                                    ...prev,
+                                    [section.key]: {
+                                      ...prev[section.key],
+                                      breaks: prev[section.key].breaks.filter(
+                                        (_, i) => i !== idx,
+                                      ),
+                                    },
+                                  }));
+                                }}
+                                className="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50"
+                              >
+                                Quitar
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
 
               <button

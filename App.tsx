@@ -9,6 +9,7 @@ import {
   Schedule,
 } from "./types";
 import { DEFAULT_SCHEDULE } from "./constants";
+import { normalizeSchedule } from "./utils/scheduleUtils";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
 import Booking from "./pages/Booking";
@@ -59,7 +60,9 @@ const App: React.FC = () => {
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [myAppointments, setMyAppointments] = useState<Appointment[]>([]);
   const [isSyncing, setIsSyncing] = useState(true);
-  const [schedule, setSchedule] = useState<Schedule>(DEFAULT_SCHEDULE);
+  const [schedule, setSchedule] = useState<Schedule>(
+    normalizeSchedule(DEFAULT_SCHEDULE),
+  );
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [loginPrefillEmail, setLoginPrefillEmail] = useState("");
   const [loginNotice, setLoginNotice] = useState<string | null>(null);
@@ -317,8 +320,10 @@ const App: React.FC = () => {
       scheduleDoc,
       (snapshot) => {
         if (snapshot.exists()) {
-          setSchedule(snapshot.data() as Schedule);
+          setSchedule(normalizeSchedule(snapshot.data()));
+          return;
         }
+        setSchedule(normalizeSchedule(DEFAULT_SCHEDULE));
       },
       (error) => {
         console.error("Error al cargar configuración de horario:", error);
