@@ -903,8 +903,8 @@ const Admin: React.FC<AdminProps> = ({
     } else if (usersSortBy === "role") {
       filtered.sort((a, b) => {
         const roleOrder = { admin: 0, client: 1 };
-        const aRole = roleOrder[a.role as keyof typeof roleOrder] || 2;
-        const bRole = roleOrder[b.role as keyof typeof roleOrder] || 2;
+        const aRole = roleOrder[a.role as keyof typeof roleOrder] ?? 2;
+        const bRole = roleOrder[b.role as keyof typeof roleOrder] ?? 2;
         if (aRole !== bRole) return aRole - bRole;
         return (a.fullName || "").localeCompare(b.fullName || "");
       });
