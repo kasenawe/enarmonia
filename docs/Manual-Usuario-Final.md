@@ -370,14 +370,16 @@ Aquí administras el catálogo que ven las personas al entrar a la app.
 ### Crear un servicio nuevo
 
 1. Entra en \`Servicios\`.
-2. Baja hasta el formulario \`Nuevo servicio\`.
-3. Completa:
+2. Pulsa el botón **`+ Nuevo servicio`** (arriba a la derecha de la lista).
+3. Se abre un panel flotante. Completa:
    - nombre del servicio
    - precio
    - duración en minutos
    - imagen opcional
    - descripción
-4. Pulsa \`Crear servicio\`.
+4. Pulsa `Crear servicio`.
+
+El panel se cierra solo al guardar. También podés cerrarlo con el botón **✕** o haciendo clic fuera del recuadro.
 
 Consejos para que se vea bien:
 
@@ -389,8 +391,8 @@ Consejos para que se vea bien:
 ### Editar un servicio
 
 1. Busca el servicio en la lista.
-2. Pulsa \`Editar\`.
-3. Cambia lo que necesites.
+2. Pulsa `Editar` en la tarjeta correspondiente.
+3. Se abre el mismo panel flotante con los datos ya cargados. Cambia lo que necesites.
 4. Pulsa \`Actualizar servicio\`.
 
 ### Eliminar un servicio
@@ -420,22 +422,26 @@ Cada promoción puede tener:
 ### Crear una promoción
 
 1. Entra en \`Promociones\`.
-2. Completa el formulario \`Nueva promoción\`.
-3. Define si el descuento será:
-   - en porcentaje, por ejemplo \`20%\`
-   - en importe fijo, por ejemplo \`$ 500\`
-4. Indica desde cuándo y hasta cuándo estará vigente.
-5. Decide si estará:
-   - \`Publicada\`, para que se use
-   - \`Destacada en Home\`, para mostrarla como principal
-6. Elige si aplica a todos los servicios o solo a algunos.
-7. Pulsa \`Crear promoción\`.
+2. Pulsa el botón **`+ Nueva promoción`** (arriba a la derecha de la lista).
+3. Se abre un panel flotante. Completá:
+   - título y etiqueta
+   - tipo de descuento: porcentaje (ej. `20%`) o importe fijo (ej. `$ 500`)
+   - fechas de vigencia
+   - imagen opcional
+   - descripción
+4. Decide si estará:
+   - `Publicada`, para que se use
+   - `Destacada en Home`, para mostrarla como principal
+5. Elige si aplica a todos los servicios o solo a algunos.
+6. Pulsa `Crear promoción`.
+
+El panel se cierra solo al guardar. También podés cerrarlo con el botón **✕** o haciendo clic fuera del recuadro.
 
 ### Editar una promoción
 
 1. Busca la promoción en la lista.
-2. Pulsa \`Editar\`.
-3. Ajusta lo necesario.
+2. Pulsa `Editar` en la tarjeta correspondiente.
+3. Se abre el panel flotante con los datos ya cargados. Ajusta lo necesario.
 4. Pulsa \`Actualizar promoción\`.
 
 ### Pausar una promoción sin borrarla
