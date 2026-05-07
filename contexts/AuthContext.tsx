@@ -13,14 +13,13 @@ import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   reauthenticateWithCredential,
-  sendEmailVerification,
-  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
   updatePassword as firebaseUpdatePassword,
   verifyBeforeUpdateEmail,
 } from "firebase/auth";
 import { auth, db, doc, onSnapshot, setDoc } from "../firebase";
+import { BACKEND_URL } from "../constants";
 
 interface AuthContextValue {
   currentUser: User | null;
@@ -160,13 +159,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const resendVerificationEmail = async (email: string, password: string) => {
+    // Sign in briefly to check verification status, then delegate sending to backend
     const credentials = await signInWithEmailAndPassword(auth, email, password);
+    await signOut(auth);
 
     if (!credentials.user.emailVerified) {
-      await sendEmailVerification(credentials.user);
+      await fetch(`${BACKEND_URL}/api/send-auth-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "verify-email", email }),
+      });
     }
-
-    await signOut(auth);
   };
 
   const register = async ({
@@ -198,8 +201,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       createdAt: new Date().toISOString(),
     });
 
-    await sendEmailVerification(credentials.user);
     await signOut(auth);
+
+    // Send branded verification email via backend
+    await fetch(`${BACKEND_URL}/api/send-auth-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "verify-email", email }),
+    });
 
     return credentials;
   };
@@ -280,7 +289,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const resetPassword = async (email: string) => {
-    await sendPasswordResetEmail(auth, email);
+    await fetch(`${BACKEND_URL}/api/send-auth-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "reset-password", email }),
+    });
   };
 
   const logout = () => {
