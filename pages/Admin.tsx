@@ -126,6 +126,10 @@ const Admin: React.FC<AdminProps> = ({
   const [usersSortBy, setUsersSortBy] = useState<"name" | "role">("name");
   const USERS_PER_PAGE = 25;
 
+  // Service and promotion modal visibility
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [showPromotionModal, setShowPromotionModal] = useState(false);
+
   // Schedule editor state
   const [scheduleForm, setScheduleForm] = useState<Schedule>(
     normalizeSchedule(schedule),
@@ -345,6 +349,7 @@ const Admin: React.FC<AdminProps> = ({
     });
     setServiceFormError("");
     setServiceFeedback(null);
+    setShowServiceModal(false);
   };
 
   const resetPromotionForm = () => {
@@ -367,6 +372,7 @@ const Admin: React.FC<AdminProps> = ({
     });
     setPromotionFormError("");
     setPromotionFeedback(null);
+    setShowPromotionModal(false);
   };
 
   const uploadServiceImage = async (file: File, serviceId: string) => {
@@ -444,6 +450,7 @@ const Admin: React.FC<AdminProps> = ({
     });
     setServiceFormError("");
     setServiceFeedback(null);
+    setShowServiceModal(true);
   };
 
   const handleEditPromotion = (promotion: Promotion) => {
@@ -467,6 +474,7 @@ const Admin: React.FC<AdminProps> = ({
     });
     setPromotionFormError("");
     setPromotionFeedback(null);
+    setShowPromotionModal(true);
   };
 
   const togglePromotionService = (serviceId: string) => {
@@ -2965,16 +2973,18 @@ const Admin: React.FC<AdminProps> = ({
                 {serviceError}
               </div>
             )}
-            {serviceFormError && (
-              <div className="rounded-3xl bg-red-50 border border-red-100 p-4 text-red-600 text-sm">
-                {serviceFormError}
-              </div>
-            )}
-            {serviceFeedback && (
-              <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 text-sm">
-                {serviceFeedback}
-              </div>
-            )}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  resetServiceForm();
+                  setShowServiceModal(true);
+                }}
+                className="px-5 py-3 rounded-2xl bg-gray-900 text-white text-sm font-bold"
+              >
+                + Nuevo servicio
+              </button>
+            </div>
 
             <div className="grid gap-4">
               {servicesLoading ? (
@@ -3064,130 +3074,6 @@ const Admin: React.FC<AdminProps> = ({
                 })
               )}
             </div>
-
-            <form
-              onSubmit={handleServiceSubmit}
-              className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-5"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h4 className="text-lg font-bold text-gray-800">
-                    {editingService ? "Editar servicio" : "Nuevo servicio"}
-                  </h4>
-                  <p className="text-gray-400 text-[11px]">
-                    Carga los datos y la imagen del servicio. El catálogo se
-                    guardará en Firestore.
-                  </p>
-                </div>
-                {editingService && (
-                  <button
-                    type="button"
-                    onClick={resetServiceForm}
-                    className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500"
-                  >
-                    Cancelar edición
-                  </button>
-                )}
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  Nombre del servicio
-                  <input
-                    value={serviceForm.name}
-                    onChange={(e) =>
-                      setServiceForm({ ...serviceForm, name: e.target.value })
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                    placeholder="Ej: Ajuste quiropráctico inicial"
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  Precio (UYU)
-                  <input
-                    type="number"
-                    value={serviceForm.price}
-                    onChange={(e) =>
-                      setServiceForm({ ...serviceForm, price: e.target.value })
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                    placeholder="2500"
-                  />
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  Duración (minutos)
-                  <input
-                    type="number"
-                    value={serviceForm.duration}
-                    onChange={(e) =>
-                      setServiceForm({
-                        ...serviceForm,
-                        duration: e.target.value,
-                      })
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                    placeholder="45"
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  URL de imagen
-                  <input
-                    value={serviceForm.imageUrl}
-                    onChange={(e) =>
-                      setServiceForm({
-                        ...serviceForm,
-                        imageUrl: e.target.value,
-                      })
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                    placeholder="https://..."
-                  />
-                </label>
-              </div>
-
-              <label className="space-y-2 text-sm font-medium text-gray-600">
-                Subir imagen
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                  className="w-full text-sm text-gray-600"
-                />
-                <p className="text-[11px] text-gray-400">
-                  Si subes una imagen, esta reemplazará la URL anterior.
-                </p>
-              </label>
-
-              <label className="space-y-2 text-sm font-medium text-gray-600">
-                Descripción
-                <textarea
-                  value={serviceForm.description}
-                  onChange={(e) =>
-                    setServiceForm({
-                      ...serviceForm,
-                      description: e.target.value,
-                    })
-                  }
-                  className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900 min-h-[120px] resize-none"
-                  placeholder="Descripción detallada del servicio"
-                />
-              </label>
-
-              <button
-                type="submit"
-                disabled={isServiceSaving}
-                className={`w-full py-4 rounded-3xl text-white font-bold transition ${isServiceSaving ? "bg-gray-400 cursor-not-allowed" : "bg-gray-900 hover:bg-black"}`}
-              >
-                {isServiceSaving
-                  ? "Guardando servicio..."
-                  : editingService
-                    ? "Actualizar servicio"
-                    : "Crear servicio"}
-              </button>
-            </form>
           </div>
         )}
 
@@ -3198,16 +3084,18 @@ const Admin: React.FC<AdminProps> = ({
                 {promotionError}
               </div>
             )}
-            {promotionFormError && (
-              <div className="rounded-3xl bg-red-50 border border-red-100 p-4 text-red-600 text-sm">
-                {promotionFormError}
-              </div>
-            )}
-            {promotionFeedback && (
-              <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 text-sm">
-                {promotionFeedback}
-              </div>
-            )}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  resetPromotionForm();
+                  setShowPromotionModal(true);
+                }}
+                className="px-5 py-3 rounded-2xl bg-gray-900 text-white text-sm font-bold"
+              >
+                + Nueva promoción
+              </button>
+            </div>
 
             <div className="grid gap-4">
               {promotionsLoading ? (
@@ -3320,158 +3208,112 @@ const Admin: React.FC<AdminProps> = ({
                 ))
               )}
             </div>
+          </div>
+        )}
+      </section>
 
-            <form
-              onSubmit={handlePromotionSubmit}
-              className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-5"
+      {/* ── Service modal ──────────────────────────────────────────────── */}
+      {showServiceModal &&
+        createPortal(
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={resetServiceForm}
+          >
+            <div
+              className="bg-white rounded-[2.5rem] w-full max-w-xl max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h4 className="text-lg font-bold text-gray-800">
-                    {editingPromotion ? "Editar promoción" : "Nueva promoción"}
-                  </h4>
-                  <p className="text-gray-400 text-[11px]">
-                    Configura campañas destacadas, vigencia y servicios
-                    incluidos.
-                  </p>
-                </div>
-                {editingPromotion && (
+              <form onSubmit={handleServiceSubmit} className="p-6 space-y-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-lg font-bold text-gray-800">
+                      {editingService ? "Editar servicio" : "Nuevo servicio"}
+                    </h4>
+                    <p className="text-gray-400 text-[11px]">
+                      Carga los datos y la imagen del servicio.
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    onClick={resetPromotionForm}
-                    className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500"
+                    onClick={resetServiceForm}
+                    className="text-gray-400 hover:text-gray-700 text-xl font-bold leading-none"
+                    aria-label="Cerrar"
                   >
-                    Cancelar edición
+                    ✕
                   </button>
+                </div>
+
+                {serviceFormError && (
+                  <div className="rounded-3xl bg-red-50 border border-red-100 p-4 text-red-600 text-sm">
+                    {serviceFormError}
+                  </div>
                 )}
-              </div>
+                {serviceFeedback && (
+                  <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 text-sm">
+                    {serviceFeedback}
+                  </div>
+                )}
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  Título
-                  <input
-                    value={promotionForm.title}
-                    onChange={(e) =>
-                      setPromotionForm({
-                        ...promotionForm,
-                        title: e.target.value,
-                      })
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                    placeholder="Ej: Semana de primera consulta"
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  Badge / Etiqueta
-                  <input
-                    value={promotionForm.badgeText}
-                    onChange={(e) =>
-                      setPromotionForm({
-                        ...promotionForm,
-                        badgeText: e.target.value,
-                      })
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                    placeholder="Ej: 20% OFF"
-                  />
-                </label>
-              </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Nombre del servicio
+                    <input
+                      value={serviceForm.name}
+                      onChange={(e) =>
+                        setServiceForm({ ...serviceForm, name: e.target.value })
+                      }
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                      placeholder="Ej: Ajuste quiropráctico inicial"
+                    />
+                  </label>
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Precio (UYU)
+                    <input
+                      type="number"
+                      value={serviceForm.price}
+                      onChange={(e) =>
+                        setServiceForm({
+                          ...serviceForm,
+                          price: e.target.value,
+                        })
+                      }
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                      placeholder="2500"
+                    />
+                  </label>
+                </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  Tipo de descuento
-                  <select
-                    value={promotionForm.discountType}
-                    onChange={(e) =>
-                      setPromotionForm({
-                        ...promotionForm,
-                        discountType: e.target.value as PromotionDiscountType,
-                      })
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                  >
-                    <option value="percentage">Porcentaje</option>
-                    <option value="fixed">Monto fijo</option>
-                  </select>
-                </label>
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  Valor del descuento
-                  <input
-                    type="number"
-                    value={promotionForm.discountValue}
-                    onChange={(e) =>
-                      setPromotionForm({
-                        ...promotionForm,
-                        discountValue: e.target.value,
-                      })
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                    placeholder="15"
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  Prioridad
-                  <input
-                    type="number"
-                    value={promotionForm.priority}
-                    onChange={(e) =>
-                      setPromotionForm({
-                        ...promotionForm,
-                        priority: e.target.value,
-                      })
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                    placeholder="100"
-                  />
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  Inicio de vigencia
-                  <input
-                    type="date"
-                    value={promotionForm.startDate}
-                    onChange={(e) =>
-                      setPromotionForm({
-                        ...promotionForm,
-                        startDate: e.target.value,
-                      })
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  Fin de vigencia
-                  <input
-                    type="date"
-                    value={promotionForm.endDate}
-                    onChange={(e) =>
-                      setPromotionForm({
-                        ...promotionForm,
-                        endDate: e.target.value,
-                      })
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                  />
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2 text-sm font-medium text-gray-600">
-                  URL de imagen
-                  <input
-                    value={promotionForm.imageUrl}
-                    onChange={(e) =>
-                      setPromotionForm({
-                        ...promotionForm,
-                        imageUrl: e.target.value,
-                      })
-                    }
-                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-                    placeholder="https://..."
-                  />
-                </label>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Duración (minutos)
+                    <input
+                      type="number"
+                      value={serviceForm.duration}
+                      onChange={(e) =>
+                        setServiceForm({
+                          ...serviceForm,
+                          duration: e.target.value,
+                        })
+                      }
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                      placeholder="45"
+                    />
+                  </label>
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    URL de imagen
+                    <input
+                      value={serviceForm.imageUrl}
+                      onChange={(e) =>
+                        setServiceForm({
+                          ...serviceForm,
+                          imageUrl: e.target.value,
+                        })
+                      }
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                      placeholder="https://..."
+                    />
+                  </label>
+                </div>
 
                 <label className="space-y-2 text-sm font-medium text-gray-600">
                   Subir imagen
@@ -3479,7 +3321,7 @@ const Admin: React.FC<AdminProps> = ({
                     type="file"
                     accept="image/*"
                     onChange={(e) =>
-                      setSelectedPromotionFile(e.target.files?.[0] || null)
+                      setSelectedFile(e.target.files?.[0] || null)
                     }
                     className="w-full text-sm text-gray-600"
                   />
@@ -3487,113 +3329,332 @@ const Admin: React.FC<AdminProps> = ({
                     Si subes una imagen, esta reemplazará la URL anterior.
                   </p>
                 </label>
-              </div>
 
-              <label className="space-y-2 text-sm font-medium text-gray-600">
-                Descripción
-                <textarea
-                  value={promotionForm.description}
-                  onChange={(e) =>
-                    setPromotionForm({
-                      ...promotionForm,
-                      description: e.target.value,
-                    })
-                  }
-                  className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900 min-h-[120px] resize-none"
-                  placeholder="Mensaje comercial o detalle de la campaña"
-                />
-              </label>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <label className="flex items-center gap-3 rounded-3xl border border-gray-200 bg-gray-50 p-4 text-sm font-medium text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={promotionForm.isActive}
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Descripción
+                  <textarea
+                    value={serviceForm.description}
                     onChange={(e) =>
-                      setPromotionForm({
-                        ...promotionForm,
-                        isActive: e.target.checked,
+                      setServiceForm({
+                        ...serviceForm,
+                        description: e.target.value,
                       })
                     }
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900 min-h-[120px] resize-none"
+                    placeholder="Descripción detallada del servicio"
                   />
-                  Publicada
                 </label>
-                <label className="flex items-center gap-3 rounded-3xl border border-gray-200 bg-gray-50 p-4 text-sm font-medium text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={promotionForm.featured}
-                    onChange={(e) =>
-                      setPromotionForm({
-                        ...promotionForm,
-                        featured: e.target.checked,
-                      })
-                    }
-                  />
-                  Destacada en Home
-                </label>
-                <label className="flex items-center gap-3 rounded-3xl border border-gray-200 bg-gray-50 p-4 text-sm font-medium text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={promotionForm.appliesToAllServices}
-                    onChange={(e) =>
-                      setPromotionForm({
-                        ...promotionForm,
-                        appliesToAllServices: e.target.checked,
-                        serviceIds: e.target.checked
-                          ? []
-                          : promotionForm.serviceIds,
-                      })
-                    }
-                  />
-                  Aplica a todos los servicios
-                </label>
-              </div>
 
-              {!promotionForm.appliesToAllServices && (
-                <div className="space-y-3 rounded-[2rem] border border-gray-100 bg-gray-50 p-5">
+                <button
+                  type="submit"
+                  disabled={isServiceSaving}
+                  className={`w-full py-4 rounded-3xl text-white font-bold transition ${isServiceSaving ? "bg-gray-400 cursor-not-allowed" : "bg-gray-900 hover:bg-black"}`}
+                >
+                  {isServiceSaving
+                    ? "Guardando servicio..."
+                    : editingService
+                      ? "Actualizar servicio"
+                      : "Crear servicio"}
+                </button>
+              </form>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* ── Promotion modal ────────────────────────────────────────────── */}
+      {showPromotionModal &&
+        createPortal(
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={resetPromotionForm}
+          >
+            <div
+              className="bg-white rounded-[2.5rem] w-full max-w-xl max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <form onSubmit={handlePromotionSubmit} className="p-6 space-y-5">
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h5 className="text-sm font-bold text-gray-800">
-                      Servicios incluidos
-                    </h5>
-                    <p className="text-[11px] text-gray-400">
-                      Selecciona los servicios afectados por esta promoción.
+                    <h4 className="text-lg font-bold text-gray-800">
+                      {editingPromotion
+                        ? "Editar promoción"
+                        : "Nueva promoción"}
+                    </h4>
+                    <p className="text-gray-400 text-[11px]">
+                      Configura campañas destacadas, vigencia y servicios
+                      incluidos.
                     </p>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {services.map((service) => (
-                      <label
-                        key={service.id}
-                        className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 text-sm font-medium text-gray-700"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={promotionForm.serviceIds.includes(
-                            service.id,
-                          )}
-                          onChange={() => togglePromotionService(service.id)}
-                        />
-                        <span>{service.name}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={resetPromotionForm}
+                    className="text-gray-400 hover:text-gray-700 text-xl font-bold leading-none"
+                    aria-label="Cerrar"
+                  >
+                    ✕
+                  </button>
                 </div>
-              )}
 
-              <button
-                type="submit"
-                disabled={isPromotionSaving}
-                className={`w-full py-4 rounded-3xl text-white font-bold transition ${isPromotionSaving ? "bg-gray-400 cursor-not-allowed" : "bg-gray-900 hover:bg-black"}`}
-              >
-                {isPromotionSaving
-                  ? "Guardando promoción..."
-                  : editingPromotion
-                    ? "Actualizar promoción"
-                    : "Crear promoción"}
-              </button>
-            </form>
-          </div>
+                {promotionFormError && (
+                  <div className="rounded-3xl bg-red-50 border border-red-100 p-4 text-red-600 text-sm">
+                    {promotionFormError}
+                  </div>
+                )}
+                {promotionFeedback && (
+                  <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 text-sm">
+                    {promotionFeedback}
+                  </div>
+                )}
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Título
+                    <input
+                      value={promotionForm.title}
+                      onChange={(e) =>
+                        setPromotionForm({
+                          ...promotionForm,
+                          title: e.target.value,
+                        })
+                      }
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                      placeholder="Ej: Semana de primera consulta"
+                    />
+                  </label>
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Badge / Etiqueta
+                    <input
+                      value={promotionForm.badgeText}
+                      onChange={(e) =>
+                        setPromotionForm({
+                          ...promotionForm,
+                          badgeText: e.target.value,
+                        })
+                      }
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                      placeholder="Ej: 20% OFF"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Tipo de descuento
+                    <select
+                      value={promotionForm.discountType}
+                      onChange={(e) =>
+                        setPromotionForm({
+                          ...promotionForm,
+                          discountType: e.target.value as PromotionDiscountType,
+                        })
+                      }
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                    >
+                      <option value="percentage">Porcentaje</option>
+                      <option value="fixed">Monto fijo</option>
+                    </select>
+                  </label>
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Valor del descuento
+                    <input
+                      type="number"
+                      value={promotionForm.discountValue}
+                      onChange={(e) =>
+                        setPromotionForm({
+                          ...promotionForm,
+                          discountValue: e.target.value,
+                        })
+                      }
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                      placeholder="15"
+                    />
+                  </label>
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Prioridad
+                    <input
+                      type="number"
+                      value={promotionForm.priority}
+                      onChange={(e) =>
+                        setPromotionForm({
+                          ...promotionForm,
+                          priority: e.target.value,
+                        })
+                      }
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                      placeholder="100"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Inicio de vigencia
+                    <input
+                      type="date"
+                      value={promotionForm.startDate}
+                      onChange={(e) =>
+                        setPromotionForm({
+                          ...promotionForm,
+                          startDate: e.target.value,
+                        })
+                      }
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                    />
+                  </label>
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Fin de vigencia
+                    <input
+                      type="date"
+                      value={promotionForm.endDate}
+                      onChange={(e) =>
+                        setPromotionForm({
+                          ...promotionForm,
+                          endDate: e.target.value,
+                        })
+                      }
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    URL de imagen
+                    <input
+                      value={promotionForm.imageUrl}
+                      onChange={(e) =>
+                        setPromotionForm({
+                          ...promotionForm,
+                          imageUrl: e.target.value,
+                        })
+                      }
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                      placeholder="https://..."
+                    />
+                  </label>
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Subir imagen
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        setSelectedPromotionFile(e.target.files?.[0] || null)
+                      }
+                      className="w-full text-sm text-gray-600"
+                    />
+                    <p className="text-[11px] text-gray-400">
+                      Si subes una imagen, esta reemplazará la URL anterior.
+                    </p>
+                  </label>
+                </div>
+
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Descripción
+                  <textarea
+                    value={promotionForm.description}
+                    onChange={(e) =>
+                      setPromotionForm({
+                        ...promotionForm,
+                        description: e.target.value,
+                      })
+                    }
+                    className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900 min-h-[120px] resize-none"
+                    placeholder="Mensaje comercial o detalle de la campaña"
+                  />
+                </label>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <label className="flex items-center gap-3 rounded-3xl border border-gray-200 bg-gray-50 p-4 text-sm font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={promotionForm.isActive}
+                      onChange={(e) =>
+                        setPromotionForm({
+                          ...promotionForm,
+                          isActive: e.target.checked,
+                        })
+                      }
+                    />
+                    Publicada
+                  </label>
+                  <label className="flex items-center gap-3 rounded-3xl border border-gray-200 bg-gray-50 p-4 text-sm font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={promotionForm.featured}
+                      onChange={(e) =>
+                        setPromotionForm({
+                          ...promotionForm,
+                          featured: e.target.checked,
+                        })
+                      }
+                    />
+                    Destacada en Home
+                  </label>
+                  <label className="flex items-center gap-3 rounded-3xl border border-gray-200 bg-gray-50 p-4 text-sm font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={promotionForm.appliesToAllServices}
+                      onChange={(e) =>
+                        setPromotionForm({
+                          ...promotionForm,
+                          appliesToAllServices: e.target.checked,
+                          serviceIds: e.target.checked
+                            ? []
+                            : promotionForm.serviceIds,
+                        })
+                      }
+                    />
+                    Aplica a todos los servicios
+                  </label>
+                </div>
+
+                {!promotionForm.appliesToAllServices && (
+                  <div className="space-y-3 rounded-[2rem] border border-gray-100 bg-gray-50 p-5">
+                    <div>
+                      <h5 className="text-sm font-bold text-gray-800">
+                        Servicios incluidos
+                      </h5>
+                      <p className="text-[11px] text-gray-400">
+                        Selecciona los servicios afectados por esta promoción.
+                      </p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {services.map((service) => (
+                        <label
+                          key={service.id}
+                          className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 text-sm font-medium text-gray-700"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={promotionForm.serviceIds.includes(
+                              service.id,
+                            )}
+                            onChange={() => togglePromotionService(service.id)}
+                          />
+                          <span>{service.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isPromotionSaving}
+                  className={`w-full py-4 rounded-3xl text-white font-bold transition ${isPromotionSaving ? "bg-gray-400 cursor-not-allowed" : "bg-gray-900 hover:bg-black"}`}
+                >
+                  {isPromotionSaving
+                    ? "Guardando promoción..."
+                    : editingPromotion
+                      ? "Actualizar promoción"
+                      : "Crear promoción"}
+                </button>
+              </form>
+            </div>
+          </div>,
+          document.body,
         )}
-      </section>
 
       <footer className="mt-12 text-center opacity-20">
         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
