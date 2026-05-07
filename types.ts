@@ -50,6 +50,7 @@ export interface ClinicalHealthHistory {
   diabetes: boolean;
   heartProblems: boolean;
   osteoporosis: boolean;
+  pathologies: string;
   surgeries: string;
   accidents: string;
   currentMedication: string;

@@ -46,6 +46,7 @@ interface ProfileFormState {
   diabetes: boolean;
   heartProblems: boolean;
   osteoporosis: boolean;
+  pathologies: string;
   surgeries: string;
   accidents: string;
   currentMedication: string;
@@ -95,6 +96,7 @@ const defaultProfileForm = (): ProfileFormState => ({
   diabetes: false,
   heartProblems: false,
   osteoporosis: false,
+  pathologies: "",
   surgeries: "",
   accidents: "",
   currentMedication: "",
@@ -224,6 +226,7 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
           diabetes: data.healthHistory?.diabetes || false,
           heartProblems: data.healthHistory?.heartProblems || false,
           osteoporosis: data.healthHistory?.osteoporosis || false,
+          pathologies: data.healthHistory?.pathologies || "",
           surgeries: data.healthHistory?.surgeries || "",
           accidents: data.healthHistory?.accidents || "",
           currentMedication: data.healthHistory?.currentMedication || "",
@@ -362,6 +365,7 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
             diabetes: profileForm.diabetes,
             heartProblems: profileForm.heartProblems,
             osteoporosis: profileForm.osteoporosis,
+            pathologies: profileForm.pathologies.trim(),
             surgeries: profileForm.surgeries.trim(),
             accidents: profileForm.accidents.trim(),
             currentMedication: profileForm.currentMedication.trim(),
@@ -861,6 +865,20 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
                       Osteoporosis
                     </label>
                   </div>
+
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Patologías
+                    <textarea
+                      value={profileForm.pathologies}
+                      onChange={(e) =>
+                        setProfileForm({
+                          ...profileForm,
+                          pathologies: e.target.value,
+                        })
+                      }
+                      className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900 min-h-[90px] resize-none"
+                    />
+                  </label>
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-2 text-sm font-medium text-gray-600">
