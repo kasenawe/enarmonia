@@ -117,6 +117,15 @@ const Admin: React.FC<AdminProps> = ({
   const [blockedSlotsSearchDate, setBlockedSlotsSearchDate] = useState("");
   const BLOCKED_SLOTS_PER_PAGE = 20;
 
+  // Users filtering and pagination
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersSearch, setUsersSearch] = useState("");
+  const [usersRoleFilter, setUsersRoleFilter] = useState<
+    "all" | "admin" | "client"
+  >("all");
+  const [usersSortBy, setUsersSortBy] = useState<"name" | "role">("name");
+  const USERS_PER_PAGE = 25;
+
   // Schedule editor state
   const [scheduleForm, setScheduleForm] = useState<Schedule>(
     normalizeSchedule(schedule),
@@ -824,7 +833,9 @@ const Admin: React.FC<AdminProps> = ({
 
     // Apply search by exact date
     if (blockedSlotsSearchDate) {
-      filtered = filtered.filter((slot) => slot.date === blockedSlotsSearchDate);
+      filtered = filtered.filter(
+        (slot) => slot.date === blockedSlotsSearchDate,
+      );
     }
 
     // Apply date range filter
@@ -841,7 +852,12 @@ const Admin: React.FC<AdminProps> = ({
       if (dateComp !== 0) return dateComp;
       return b.time.localeCompare(a.time);
     });
-  }, [blockedSlots, blockedSlotsFilterFrom, blockedSlotsFilterTo, blockedSlotsSearchDate]);
+  }, [
+    blockedSlots,
+    blockedSlotsFilterFrom,
+    blockedSlotsFilterTo,
+    blockedSlotsSearchDate,
+  ]);
 
   const sortedBlockedSlots = filteredBlockedSlots;
   const totalBlockedSlotsPages = Math.ceil(
@@ -850,6 +866,57 @@ const Admin: React.FC<AdminProps> = ({
   const paginatedBlockedSlots = sortedBlockedSlots.slice(
     (blockedSlotsPage - 1) * BLOCKED_SLOTS_PER_PAGE,
     blockedSlotsPage * BLOCKED_SLOTS_PER_PAGE,
+  );
+
+  const filteredUsers = useMemo(() => {
+    let filtered = [...users];
+
+    // Apply role filter
+    if (usersRoleFilter === "admin") {
+      filtered = filtered.filter((user) => user.role === "admin");
+    } else if (usersRoleFilter === "client") {
+      filtered = filtered.filter((user) => user.role === "client");
+    }
+
+    // Apply search (case-insensitive across name, email, document)
+    if (usersSearch.trim()) {
+      const searchLower = usersSearch.toLowerCase().trim();
+      filtered = filtered.filter((user) => {
+        const nameMatch = (user.fullName || "")
+          .toLowerCase()
+          .includes(searchLower);
+        const emailMatch = (user.email || "")
+          .toLowerCase()
+          .includes(searchLower);
+        const docMatch = (user.documentId || "")
+          .toLowerCase()
+          .includes(searchLower);
+        return nameMatch || emailMatch || docMatch;
+      });
+    }
+
+    // Apply sorting
+    if (usersSortBy === "name") {
+      filtered.sort((a, b) =>
+        (a.fullName || "").localeCompare(b.fullName || ""),
+      );
+    } else if (usersSortBy === "role") {
+      filtered.sort((a, b) => {
+        const roleOrder = { admin: 0, client: 1 };
+        const aRole = roleOrder[a.role as keyof typeof roleOrder] || 2;
+        const bRole = roleOrder[b.role as keyof typeof roleOrder] || 2;
+        if (aRole !== bRole) return aRole - bRole;
+        return (a.fullName || "").localeCompare(b.fullName || "");
+      });
+    }
+
+    return filtered;
+  }, [users, usersSearch, usersRoleFilter, usersSortBy]);
+
+  const totalUsersPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
+  const paginatedUsers = filteredUsers.slice(
+    (usersPage - 1) * USERS_PER_PAGE,
+    usersPage * USERS_PER_PAGE,
   );
 
   const isBlockedSlot = (date: string, time: string) => {
@@ -2334,7 +2401,9 @@ const Admin: React.FC<AdminProps> = ({
                   {totalBlockedSlotsPages > 1 && (
                     <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
                       <button
-                        onClick={() => setBlockedSlotsPage(Math.max(1, blockedSlotsPage - 1))}
+                        onClick={() =>
+                          setBlockedSlotsPage(Math.max(1, blockedSlotsPage - 1))
+                        }
                         disabled={blockedSlotsPage === 1}
                         className="px-3 py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                       >
@@ -2348,7 +2417,10 @@ const Admin: React.FC<AdminProps> = ({
                       <button
                         onClick={() =>
                           setBlockedSlotsPage(
-                            Math.min(totalBlockedSlotsPages, blockedSlotsPage + 1),
+                            Math.min(
+                              totalBlockedSlotsPages,
+                              blockedSlotsPage + 1,
+                            ),
                           )
                         }
                         disabled={blockedSlotsPage === totalBlockedSlotsPages}
@@ -2635,15 +2707,19 @@ const Admin: React.FC<AdminProps> = ({
               </div>
             )}
 
-            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-4">
-              <div>
-                <h4 className="text-lg font-bold text-gray-800">
-                  Usuarios administradores
-                </h4>
-                <p className="text-gray-400 text-[11px]">
-                  Promueve usuarios existentes a admin usando el endpoint
-                  protegido del backend.
-                </p>
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-lg font-bold text-gray-800">
+                    Usuarios administradores
+                  </h4>
+                  <p className="text-gray-400 text-[11px]">
+                    Gestión de usuarios con búsqueda, filtros y paginación.
+                  </p>
+                </div>
+                <span className="rounded-full bg-gray-100 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                  {filteredUsers.length} resultados
+                </span>
               </div>
 
               {!currentUser ? (
@@ -2660,86 +2736,193 @@ const Admin: React.FC<AdminProps> = ({
                   No hay usuarios disponibles.
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {users.map((user) => {
-                    const isUserAdmin = user.role === "admin";
-                    const isCurrentUser = currentUser?.uid === user.uid;
-                    const displayName = user.fullName?.trim() || "Sin nombre";
-                    const displayDocument =
-                      user.documentId?.trim() || "Sin documento";
-                    const displayEmail = user.email?.trim() || user.uid;
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <label className="space-y-2 text-sm font-medium text-gray-600">
+                      Buscar usuario
+                      <input
+                        type="text"
+                        placeholder="Nombre, email o documento..."
+                        value={usersSearch}
+                        onChange={(e) => {
+                          setUsersSearch(e.target.value);
+                          setUsersPage(1);
+                        }}
+                        className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                      />
+                    </label>
 
-                    return (
-                      <div
-                        key={user.uid}
-                        className="flex items-center justify-between gap-4 rounded-3xl border border-gray-100 bg-gray-50 px-5 py-4"
+                    <label className="space-y-2 text-sm font-medium text-gray-600">
+                      Filtrar por rol
+                      <select
+                        value={usersRoleFilter}
+                        onChange={(e) => {
+                          setUsersRoleFilter(
+                            e.target.value as "all" | "admin" | "client",
+                          );
+                          setUsersPage(1);
+                        }}
+                        className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
                       >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-gray-800">
-                            {displayName}
-                          </p>
-                          <p className="mt-1 truncate text-xs text-gray-500">
-                            Doc: {displayDocument}
-                          </p>
-                          <p className="mt-1 truncate text-xs text-gray-500">
-                            {displayEmail}
-                          </p>
-                          <div className="mt-1 flex flex-wrap items-center gap-2">
-                            <span
-                              className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest ${isUserAdmin ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"}`}
-                            >
-                              {user.role}
-                            </span>
-                            <span className="truncate text-[10px] font-medium text-gray-400">
-                              {user.uid}
-                            </span>
-                          </div>
-                        </div>
+                        <option value="all">Todos los roles</option>
+                        <option value="admin">Administradores</option>
+                        <option value="client">Clientes</option>
+                      </select>
+                    </label>
 
-                        <div className="flex flex-wrap gap-2 justify-end">
-                          {isUserAdmin ? (
-                            <button
-                              onClick={() => handleDemoteUser(user.uid)}
-                              disabled={
-                                isCurrentUser || demotingUserId === user.uid
-                              }
-                              className={`rounded-2xl border px-4 py-2 text-xs font-bold transition-all ${isCurrentUser ? "cursor-not-allowed border-emerald-100 bg-emerald-50 text-emerald-700 opacity-70" : "border-red-100 bg-red-50 text-red-600 active:scale-95 disabled:opacity-40"}`}
+                    <label className="space-y-2 text-sm font-medium text-gray-600">
+                      Ordenar por
+                      <select
+                        value={usersSortBy}
+                        onChange={(e) => {
+                          setUsersSortBy(e.target.value as "name" | "role");
+                          setUsersPage(1);
+                        }}
+                        className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                      >
+                        <option value="name">Nombre</option>
+                        <option value="role">Rol (admin primero)</option>
+                      </select>
+                    </label>
+
+                    <div className="flex items-end">
+                      <button
+                        onClick={() => {
+                          setUsersSearch("");
+                          setUsersRoleFilter("all");
+                          setUsersSortBy("name");
+                          setUsersPage(1);
+                        }}
+                        className="w-full px-4 py-3 rounded-2xl bg-gray-100 text-gray-600 text-xs font-bold hover:bg-gray-200 transition"
+                      >
+                        Limpiar filtros
+                      </button>
+                    </div>
+                  </div>
+
+                  {filteredUsers.length === 0 ? (
+                    <div className="rounded-[2rem] border-2 border-dashed border-gray-100 bg-gray-50 py-12 text-center text-sm font-bold text-gray-300">
+                      {users.length === 0
+                        ? "No hay usuarios disponibles."
+                        : "No hay usuarios que coincidan con los filtros."}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-3">
+                        {paginatedUsers.map((user) => {
+                          const isUserAdmin = user.role === "admin";
+                          const isCurrentUser = currentUser?.uid === user.uid;
+                          const displayName =
+                            user.fullName?.trim() || "Sin nombre";
+                          const displayDocument =
+                            user.documentId?.trim() || "Sin documento";
+                          const displayEmail = user.email?.trim() || user.uid;
+
+                          return (
+                            <div
+                              key={user.uid}
+                              className="flex items-center justify-between gap-4 rounded-3xl border border-gray-100 bg-gray-50 px-5 py-4"
                             >
-                              {isCurrentUser
-                                ? "Tu cuenta admin"
-                                : demotingUserId === user.uid
-                                  ? "Quitando..."
-                                  : "Quitar admin"}
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handlePromoteUser(user.uid)}
-                              disabled={promotingUserId === user.uid}
-                              className="rounded-2xl border border-gray-900 bg-gray-900 px-4 py-2 text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-40"
-                            >
-                              {promotingUserId === user.uid
-                                ? "Promoviendo..."
-                                : "Hacer admin"}
-                            </button>
-                          )}
-                          {!isCurrentUser && (
-                            <button
-                              onClick={() =>
-                                handleDeleteUser(user.uid, user.email)
-                              }
-                              disabled={deletingUserId === user.uid}
-                              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-600 transition-all active:scale-95 disabled:opacity-40"
-                            >
-                              {deletingUserId === user.uid
-                                ? "Eliminando..."
-                                : "Dar de baja"}
-                            </button>
-                          )}
-                        </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-bold text-gray-800">
+                                  {displayName}
+                                </p>
+                                <p className="mt-1 truncate text-xs text-gray-500">
+                                  Doc: {displayDocument}
+                                </p>
+                                <p className="mt-1 truncate text-xs text-gray-500">
+                                  {displayEmail}
+                                </p>
+                                <div className="mt-1 flex flex-wrap items-center gap-2">
+                                  <span
+                                    className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest ${isUserAdmin ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"}`}
+                                  >
+                                    {user.role}
+                                  </span>
+                                  <span className="truncate text-[10px] font-medium text-gray-400">
+                                    {user.uid}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 justify-end">
+                                {isUserAdmin ? (
+                                  <button
+                                    onClick={() => handleDemoteUser(user.uid)}
+                                    disabled={
+                                      isCurrentUser ||
+                                      demotingUserId === user.uid
+                                    }
+                                    className={`rounded-2xl border px-4 py-2 text-xs font-bold transition-all ${isCurrentUser ? "cursor-not-allowed border-emerald-100 bg-emerald-50 text-emerald-700 opacity-70" : "border-red-100 bg-red-50 text-red-600 active:scale-95 disabled:opacity-40"}`}
+                                  >
+                                    {isCurrentUser
+                                      ? "Tu cuenta admin"
+                                      : demotingUserId === user.uid
+                                        ? "Quitando..."
+                                        : "Quitar admin"}
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handlePromoteUser(user.uid)}
+                                    disabled={promotingUserId === user.uid}
+                                    className="rounded-2xl border border-gray-900 bg-gray-900 px-4 py-2 text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-40"
+                                  >
+                                    {promotingUserId === user.uid
+                                      ? "Promoviendo..."
+                                      : "Hacer admin"}
+                                  </button>
+                                )}
+                                {!isCurrentUser && (
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteUser(user.uid, user.email)
+                                    }
+                                    disabled={deletingUserId === user.uid}
+                                    className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-600 transition-all active:scale-95 disabled:opacity-40"
+                                  >
+                                    {deletingUserId === user.uid
+                                      ? "Eliminando..."
+                                      : "Dar de baja"}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
-                </div>
+
+                      {totalUsersPages > 1 && (
+                        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                          <button
+                            onClick={() =>
+                              setUsersPage(Math.max(1, usersPage - 1))
+                            }
+                            disabled={usersPage === 1}
+                            className="px-3 py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                          >
+                            ← Anterior
+                          </button>
+
+                          <div className="text-xs font-bold text-gray-600">
+                            Página {usersPage} de {totalUsersPages}
+                          </div>
+
+                          <button
+                            onClick={() =>
+                              setUsersPage(
+                                Math.min(totalUsersPages, usersPage + 1),
+                              )
+                            }
+                            disabled={usersPage === totalUsersPages}
+                            className="px-3 py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                          >
+                            Siguiente →
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
               )}
             </div>
           </div>
