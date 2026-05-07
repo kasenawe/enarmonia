@@ -303,11 +303,22 @@ Resultado:
 ### Cómo desbloquear un horario
 
 1. En la misma pestaña, busca el bloqueo en la lista \`Horarios bloqueados\`.
-2. Pulsa \`Desbloquear\`.
+2. Podés filtrar por rango de fechas o buscar una fecha exacta para encontrarlo más rápido.
+3. Pulsa `Desbloquear`.
 
 Resultado:
 
 Ese horario volverá a quedar disponible, siempre que no esté ya ocupado por un turno.
+
+### Buscar y filtrar bloqueos
+
+La lista de `Horarios bloqueados` incluye filtros para cuando haya muchos bloqueos acumulados:
+
+- **Desde fecha / Hasta fecha**: muestra solo los bloqueos dentro de un período.
+- **Buscar fecha exacta**: muestra los bloqueos de un día específico.
+- **Limpiar filtros**: vuelve a mostrar todos.
+- Los bloqueos más recientes aparecen primero.
+- Si hay más de 20 bloqueos visibles, se pagina automáticamente.
 
 ### Desbloqueo masivo por rango
 
@@ -468,17 +479,27 @@ Importante:
 - esa persona también debe confirmar su correo para poder ingresar
 - luego aparecerá en la lista de usuarios
 
+### Buscar y filtrar usuarios
+
+Cuando la lista crezca, podés usar los filtros para encontrar rápido a alguien:
+
+- **Buscar usuario**: escribí nombre, email o número de documento.
+- **Filtrar por rol**: mostrá solo administradores, solo clientes, o todos.
+- **Ordenar por**: nombre (A-Z) o rol (administradoras primero).
+- **Limpiar filtros**: vuelve a mostrar todos.
+- Si hay más de 25 usuarios, se pagina automáticamente.
+
 ### Dar permiso de administradora
 
 1. Pide a la persona que se registre en la app con su email.
-2. Entra en \`Usuarios\`.
-3. Busca su email en la lista.
-4. Pulsa \`Hacer admin\`.
+2. Entra en `Usuarios`.
+3. Buscá su nombre o email en el campo de búsqueda.
+4. Pulsa `Hacer admin`.
 
 ### Quitar permiso de administradora
 
-1. Entra en \`Usuarios\`.
-2. Busca a la persona en la lista.
+1. Entra en `Usuarios`.
+2. Buscá a la persona.
 3. Pulsa \`Quitar admin\`.
 
 Ten en cuenta:
