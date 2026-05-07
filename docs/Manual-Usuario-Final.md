@@ -510,6 +510,7 @@ En la ficha puedes guardar, entre otros datos:
 - intensidad del dolor
 - factores que empeoran o alivian
 - antecedentes de salud
+- patologías
 - diagnóstico inicial
 - fecha de inicio del tratamiento
 
