@@ -203,7 +203,8 @@ const Admin: React.FC<AdminProps> = ({
   } | null>(null);
   const [dateFromFilter, setDateFromFilter] = useState("");
   const [dateToFilter, setDateToFilter] = useState("");
-  const [visibleAppointments, setVisibleAppointments] = useState(20);
+  const [appointmentsPage, setAppointmentsPage] = useState(1);
+  const APPOINTMENTS_PER_PAGE = 20;
   const [showContactModal, setShowContactModal] = useState(false);
   const [selectedContactApp, setSelectedContactApp] =
     useState<Appointment | null>(null);
@@ -1324,15 +1325,16 @@ const Admin: React.FC<AdminProps> = ({
     today,
   ]);
 
-  const paginatedAppointments = filteredAppointments.slice(
-    0,
-    visibleAppointments,
+  const totalAppointmentsPages = Math.ceil(
+    filteredAppointments.length / APPOINTMENTS_PER_PAGE,
   );
-  const hasMoreAppointments =
-    paginatedAppointments.length < filteredAppointments.length;
+  const paginatedAppointments = filteredAppointments.slice(
+    (appointmentsPage - 1) * APPOINTMENTS_PER_PAGE,
+    appointmentsPage * APPOINTMENTS_PER_PAGE,
+  );
 
   useEffect(() => {
-    setVisibleAppointments(20);
+    setAppointmentsPage(1);
   }, [
     activeTab,
     appointmentSearch,
@@ -1873,14 +1875,34 @@ const Admin: React.FC<AdminProps> = ({
               })
             )}
 
-            {hasMoreAppointments && (
-              <button
-                type="button"
-                onClick={() => setVisibleAppointments((prev) => prev + 20)}
-                className="w-full rounded-2xl border border-gray-200 bg-white py-4 text-sm font-bold text-gray-700"
-              >
-                Cargar 20 más
-              </button>
+            {totalAppointmentsPages > 1 && (
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                <button
+                  onClick={() =>
+                    setAppointmentsPage(Math.max(1, appointmentsPage - 1))
+                  }
+                  disabled={appointmentsPage === 1}
+                  className="px-3 py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  ← Anterior
+                </button>
+
+                <div className="text-xs font-bold text-gray-600">
+                  Página {appointmentsPage} de {totalAppointmentsPages}
+                </div>
+
+                <button
+                  onClick={() =>
+                    setAppointmentsPage(
+                      Math.min(totalAppointmentsPages, appointmentsPage + 1),
+                    )
+                  }
+                  disabled={appointmentsPage === totalAppointmentsPages}
+                  className="px-3 py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Siguiente →
+                </button>
+              </div>
             )}
 
             {/* Contact Details Modal */}
