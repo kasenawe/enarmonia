@@ -158,29 +158,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return credentials;
   };
 
-  const sendAuthEmail = async (payload: {
-    type: "reset-password" | "verify-email";
-    email: string;
-  }) => {
-    const response = await fetch(`${BACKEND_URL}/api/send-auth-email`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const bodyText = await response.text();
-      throw new Error(bodyText || "AUTH_EMAIL_SEND_FAILED");
-    }
-  };
-
   const resendVerificationEmail = async (email: string, password: string) => {
     // Sign in briefly to check verification status, then delegate sending to backend
     const credentials = await signInWithEmailAndPassword(auth, email, password);
     await signOut(auth);
 
     if (!credentials.user.emailVerified) {
-      await sendAuthEmail({ type: "verify-email", email });
+      await fetch(`${BACKEND_URL}/api/send-auth-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "verify-email", email }),
+      });
     }
   };
 
@@ -216,7 +204,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await signOut(auth);
 
     // Send branded verification email via backend
-    await sendAuthEmail({ type: "verify-email", email });
+    await fetch(`${BACKEND_URL}/api/send-auth-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "verify-email", email }),
+    });
 
     return credentials;
   };
@@ -297,7 +289,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const resetPassword = async (email: string) => {
-    await sendAuthEmail({ type: "reset-password", email });
+    await fetch(`${BACKEND_URL}/api/send-auth-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "reset-password", email }),
+    });
   };
 
   const logout = () => {
