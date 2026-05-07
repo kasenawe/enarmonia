@@ -110,6 +110,13 @@ const Admin: React.FC<AdminProps> = ({
     null,
   );
 
+  // Blocked slots filtering and pagination
+  const [blockedSlotsPage, setBlockedSlotsPage] = useState(1);
+  const [blockedSlotsFilterFrom, setBlockedSlotsFilterFrom] = useState("");
+  const [blockedSlotsFilterTo, setBlockedSlotsFilterTo] = useState("");
+  const [blockedSlotsSearchDate, setBlockedSlotsSearchDate] = useState("");
+  const BLOCKED_SLOTS_PER_PAGE = 20;
+
   // Schedule editor state
   const [scheduleForm, setScheduleForm] = useState<Schedule>(
     normalizeSchedule(schedule),
@@ -812,11 +819,38 @@ const Admin: React.FC<AdminProps> = ({
     }
   };
 
-  const sortedBlockedSlots = [...blockedSlots].sort((a, b) => {
-    const dateComp = a.date.localeCompare(b.date);
-    if (dateComp !== 0) return dateComp;
-    return a.time.localeCompare(b.time);
-  });
+  const filteredBlockedSlots = useMemo(() => {
+    let filtered = [...blockedSlots];
+
+    // Apply search by exact date
+    if (blockedSlotsSearchDate) {
+      filtered = filtered.filter((slot) => slot.date === blockedSlotsSearchDate);
+    }
+
+    // Apply date range filter
+    if (blockedSlotsFilterFrom) {
+      filtered = filtered.filter((slot) => slot.date >= blockedSlotsFilterFrom);
+    }
+    if (blockedSlotsFilterTo) {
+      filtered = filtered.filter((slot) => slot.date <= blockedSlotsFilterTo);
+    }
+
+    // Sort descending (most recent first), then by time
+    return filtered.sort((a, b) => {
+      const dateComp = b.date.localeCompare(a.date);
+      if (dateComp !== 0) return dateComp;
+      return b.time.localeCompare(a.time);
+    });
+  }, [blockedSlots, blockedSlotsFilterFrom, blockedSlotsFilterTo, blockedSlotsSearchDate]);
+
+  const sortedBlockedSlots = filteredBlockedSlots;
+  const totalBlockedSlotsPages = Math.ceil(
+    sortedBlockedSlots.length / BLOCKED_SLOTS_PER_PAGE,
+  );
+  const paginatedBlockedSlots = sortedBlockedSlots.slice(
+    (blockedSlotsPage - 1) * BLOCKED_SLOTS_PER_PAGE,
+    blockedSlotsPage * BLOCKED_SLOTS_PER_PAGE,
+  );
 
   const isBlockedSlot = (date: string, time: string) => {
     return blockedSlots.some(
@@ -2198,14 +2232,14 @@ const Admin: React.FC<AdminProps> = ({
               </button>
             </form>
 
-            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-4">
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h4 className="text-lg font-bold text-gray-800">
                     Horarios bloqueados
                   </h4>
                   <p className="text-gray-400 text-[11px]">
-                    Lista simple de bloqueos manuales activos.
+                    Lista de bloqueos manuales activos con filtros.
                   </p>
                 </div>
                 <span className="rounded-full bg-gray-100 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gray-500">
@@ -2213,32 +2247,118 @@ const Admin: React.FC<AdminProps> = ({
                 </span>
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Desde fecha
+                  <input
+                    type="date"
+                    value={blockedSlotsFilterFrom}
+                    onChange={(e) => {
+                      setBlockedSlotsFilterFrom(e.target.value);
+                      setBlockedSlotsPage(1);
+                    }}
+                    className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Hasta fecha
+                  <input
+                    type="date"
+                    value={blockedSlotsFilterTo}
+                    onChange={(e) => {
+                      setBlockedSlotsFilterTo(e.target.value);
+                      setBlockedSlotsPage(1);
+                    }}
+                    className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-gray-600">
+                  Buscar fecha exacta
+                  <input
+                    type="date"
+                    value={blockedSlotsSearchDate}
+                    onChange={(e) => {
+                      setBlockedSlotsSearchDate(e.target.value);
+                      setBlockedSlotsPage(1);
+                    }}
+                    className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                  />
+                </label>
+                <div className="flex items-end">
+                  <button
+                    onClick={() => {
+                      setBlockedSlotsFilterFrom("");
+                      setBlockedSlotsFilterTo("");
+                      setBlockedSlotsSearchDate("");
+                      setBlockedSlotsPage(1);
+                    }}
+                    className="w-full px-4 py-3 rounded-2xl bg-gray-100 text-gray-600 text-xs font-bold hover:bg-gray-200 transition"
+                  >
+                    Limpiar filtros
+                  </button>
+                </div>
+              </div>
+
               {sortedBlockedSlots.length === 0 ? (
                 <div className="rounded-[2rem] border-2 border-dashed border-gray-100 bg-gray-50 py-12 text-center text-sm font-bold text-gray-300">
-                  No hay bloqueos cargados.
+                  {blockedSlots.length === 0
+                    ? "No hay bloqueos cargados."
+                    : "No hay bloqueos que coincidan con los filtros."}
                 </div>
               ) : (
-                sortedBlockedSlots.map((slot) => (
-                  <div
-                    key={slot.id}
-                    className="flex items-center justify-between gap-4 rounded-3xl border border-gray-100 bg-gray-50 px-5 py-4"
-                  >
-                    <div>
-                      <p className="text-sm font-bold text-gray-800">
-                        {slot.date}
-                      </p>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                        {slot.time} hs
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleUnblockSlot(slot.id)}
-                      className="px-4 py-2 rounded-2xl bg-red-50 text-red-600 text-xs font-bold border border-red-100"
-                    >
-                      Desbloquear
-                    </button>
+                <>
+                  <div className="space-y-3">
+                    {paginatedBlockedSlots.map((slot) => (
+                      <div
+                        key={slot.id}
+                        className="flex items-center justify-between gap-4 rounded-3xl border border-gray-100 bg-gray-50 px-5 py-4"
+                      >
+                        <div>
+                          <p className="text-sm font-bold text-gray-800">
+                            {slot.date}
+                          </p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                            {slot.time} hs
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleUnblockSlot(slot.id)}
+                          className="px-4 py-2 rounded-2xl bg-red-50 text-red-600 text-xs font-bold border border-red-100 hover:bg-red-100 transition"
+                        >
+                          Desbloquear
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))
+
+                  {totalBlockedSlotsPages > 1 && (
+                    <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                      <button
+                        onClick={() => setBlockedSlotsPage(Math.max(1, blockedSlotsPage - 1))}
+                        disabled={blockedSlotsPage === 1}
+                        className="px-3 py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                      >
+                        ← Anterior
+                      </button>
+
+                      <div className="text-xs font-bold text-gray-600">
+                        Página {blockedSlotsPage} de {totalBlockedSlotsPages}
+                      </div>
+
+                      <button
+                        onClick={() =>
+                          setBlockedSlotsPage(
+                            Math.min(totalBlockedSlotsPages, blockedSlotsPage + 1),
+                          )
+                        }
+                        disabled={blockedSlotsPage === totalBlockedSlotsPages}
+                        className="px-3 py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                      >
+                        Siguiente →
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
