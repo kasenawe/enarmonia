@@ -23,7 +23,6 @@ import Success from "./pages/Success"; // ✨ NUEVO
 import Failure from "./pages/Failure"; // ✨ NUEVO
 import AuthAction from "./pages/AuthAction";
 import Navbar from "./components/Navbar";
-import AIAssistant from "./components/AIAssistant";
 import { useAuth } from "./contexts/AuthContext";
 import {
   db,
@@ -64,7 +63,6 @@ const App: React.FC = () => {
   const [schedule, setSchedule] = useState<Schedule>(
     normalizeSchedule(DEFAULT_SCHEDULE),
   );
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [loginPrefillEmail, setLoginPrefillEmail] = useState("");
   const [loginNotice, setLoginNotice] = useState<string | null>(null);
 
@@ -611,45 +609,11 @@ const App: React.FC = () => {
         {renderPage()}
       </div>
 
-      {currentRoute !== AppRoute.BOOKING && currentRoute !== AppRoute.ADMIN && (
-        <button
-          onClick={() => setIsAIModalOpen(true)}
-          className="fixed bottom-24 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-2xl bg-action text-white shadow-2xl transition-transform active:scale-90"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
-            <path d="M12 12L2.1 12.1" />
-            <path d="m4.5 9.1 7.5 2.9" />
-          </svg>
-        </button>
-      )}
-
       {currentRoute !== AppRoute.ADMIN &&
         currentRoute !== AppRoute.LOGIN &&
         currentRoute !== AppRoute.REGISTER && (
           <Navbar currentRoute={currentRoute} onNavigate={navigate} />
         )}
-
-      <AIAssistant
-        services={services}
-        isOpen={isAIModalOpen}
-        onClose={() => setIsAIModalOpen(false)}
-        onSelectService={(s) => {
-          setSelectedService(s);
-          navigate(AppRoute.BOOKING);
-          setIsAIModalOpen(false);
-        }}
-      />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { GoogleGenAI } from "@google/genai";
 import { Service } from "../types";
+import { BACKEND_URL } from "../constants";
 
 interface AIAssistantProps {
   services: Service[];
@@ -36,28 +36,31 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const servicesContext =
         services.length > 0
           ? services.map((s) => `- ${s.name}: ${s.description}`).join("\n")
           : "No hay servicios cargados en este momento.";
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: userMsg,
-        config: {
-          systemInstruction: `Eres la asistente virtual de "Soledad Cedres Quiropráctica". 
-          Tu objetivo es recomendar uno de nuestros servicios basándote en las molestias, necesidades u objetivos del cliente.
-          Nuestros servicios son:
-          ${servicesContext}
-          
-          Responde de forma amable, elegante y breve (máximo 3 frases). Si recomiendas un servicio, menciona su nombre exacto.
-          Al final, invita cordialmente a agendarlo.`,
-        },
+      const response = await fetch(`${BACKEND_URL}/api/ai-chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMsg, servicesContext }),
       });
 
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        const error = new Error(
+          data.error || "Error al contactar el backend",
+        ) as Error & {
+          status?: number;
+        };
+        error.status = response.status;
+        throw error;
+      }
+
+      const data = await response.json();
       const modelResponse =
-        response.text || "Lo siento, no pude procesar tu consulta.";
+        data.response || "Lo siento, no pude procesar tu consulta.";
       setMessages((prev) => [...prev, { role: "model", text: modelResponse }]);
 
       const mentionedService = services.find((s) =>
@@ -73,11 +76,17 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
         ]);
       }
     } catch (error) {
+      const maybeError = error as Error & { status?: number };
+      const quotaMessage =
+        "El asistente está con alta demanda en este momento. Intenta de nuevo en unos minutos.";
+      const fallbackMessage =
+        "Ups, tengo problemas técnicos. Por favor intenta más tarde.";
+
       setMessages((prev) => [
         ...prev,
         {
           role: "model",
-          text: "Ups, tengo problemas técnicos. Por favor intenta más tarde.",
+          text: maybeError.status === 429 ? quotaMessage : fallbackMessage,
         },
       ]);
     } finally {

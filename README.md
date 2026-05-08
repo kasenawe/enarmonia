@@ -4,7 +4,7 @@
 
 Si necesitas una guía pensada para la dueña del negocio, sin lenguaje técnico, consulta [docs/Manual-Usuario-Final.md](docs/Manual-Usuario-Final.md).
 
-Esta es una aplicación web para la gestión de turnos y servicios de Soledad Cedres Quiropráctica. La plataforma permite explorar prestaciones, agendar citas en tiempo real y recibir orientación inicial mediante un asistente con Inteligencia Artificial.
+Esta es una aplicación web para la gestión de turnos y servicios de Soledad Cedres Quiropráctica. La plataforma permite explorar prestaciones y agendar citas en tiempo real.
 
 ## 🚀 Tecnologías Utilizadas
 
@@ -25,9 +25,10 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 - **Vercel Functions**: Backend serverless para integración de pagos.
 - **Mercado Pago**: Procesamiento seguro de pagos online.
 
-### Inteligencia Artificial
+### Inteligencia Artificial (estado actual)
 
-- **Google Gemini API (@google/genai)**: Utilizado para el asistente virtual que orienta al cliente según sus molestias, necesidades u objetivos.
+- **Asistente IA temporalmente inhabilitado**: la UI del asistente está oculta hasta nueva activación.
+- **Integración preparada en backend**: existe un endpoint `/api/ai-chat` para retomar el asistente en el futuro con Gemini desde servidor.
 
 ---
 
@@ -75,7 +76,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 13. **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
 14. **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
 15. **Historia Clínica Digital**: Nueva pestaña en Admin para registrar la ficha de ingreso del paciente y la evolución por sesión, vinculable al usuario y opcionalmente al turno.
-16. **Asistente IA**: Chatbot integrado que utiliza el modelo **Gemini 3 Flash** para orientar a los clientes sobre qué servicio les conviene más.
+16. **Asistente IA (temporalmente inhabilitado)**: la funcionalidad quedó pausada por decisión operativa y se reactivará cuando el negocio lo requiera.
 17. **Filtros y Búsqueda en Turnos**: Admin puede buscar por nombre/teléfono/email/servicio, filtrar por estado temporal (hoy/próximos/pasados), modo de reserva (cuenta/invitado), estado de pago (pagado/sin pago), **método de pago (MP/transferencia)**, **estado de pago de transferencia (pendiente/pagada/vencida)** y rango de fechas. Carga incremental de 20 turnos para mejor rendimiento.
 18. **Ficha de Contacto Expandible en Turnos**: Cada turno tiene acceso a un modal con información de contacto de la paciente (teléfono, email y documento cuando fue proporcionado), sin sobrecargar visualmente la tarjeta principal.
 19. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
@@ -89,7 +90,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 - Node.js (v18 o superior)
 - Una cuenta de Firebase con un proyecto creado.
 - Firebase Auth habilitado con proveedor Email/Password.
-- Una API Key de Google AI Studio (Gemini).
+- (Opcional) API Key de Google AI Studio (Gemini), solo si se reactiva el asistente IA.
 
 ### Instalación
 
@@ -101,14 +102,23 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 
 ### Variables de Entorno
 
-Crea un archivo `.env.local` en la raíz del proyecto y añade tu clave de Gemini:
+Crea un archivo `.env.local` en la raíz del proyecto:
 
 ```env
-GEMINI_API_KEY=tu_clave_aqui
 VITE_CLOUDINARY_CLOUD_NAME=tu_cloud_name
 VITE_CLOUDINARY_UPLOAD_PRESET=tu_unsigned_upload_preset
 VITE_BACKEND_URL=https://tu-backend.vercel.app
 ```
+
+Nota: la API key de Gemini (si se usa) se configura en el backend, no en el frontend.
+
+### Emails de autenticacion
+
+Los correos de verificacion y recuperacion de contrasena se envian desde backend con marca propia.
+
+- Endpoint backend: `/api/send-auth-email`
+- Remitente configurado por `NOTIFY_FROM_EMAIL` (backend)
+- Link de accion: apunta al frontend en `/auth/action` (handler propio, UI en espanol)
 
 ### Subida de Imágenes (Cloudinary)
 
@@ -177,7 +187,7 @@ La aplicación estará disponible en `http://localhost:3000`.
 - **Disponibilidad**: Booking consume `occupied_slots` + `blocked_slots`; `appointments` completas quedan restringidas por reglas para proteger datos personales.
 - **Migración inicial de disponibilidad**: tras desplegar backend/rules por primera vez, ejecutar una vez `/api/backfill-occupied-slots` (admin) para sincronizar turnos históricos en `occupied_slots`.
 - **Estilos**: Se utiliza una configuración de Tailwind personalizada en `index.html` y `index.css`. El color primario ya se gestiona desde tokens semánticos definidos en `constants.ts`.
-- **IA**: El asistente está configurado en `components/AIAssistant.tsx`. Puedes ajustar las `systemInstruction` para cambiar su personalidad o conocimientos.
+- **IA**: El componente `components/AIAssistant.tsx` existe pero la funcionalidad esta deshabilitada en `App.tsx` por el momento.
 
 ---
 

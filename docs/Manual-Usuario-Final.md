@@ -30,6 +30,11 @@ Si no ves esa opción, significa que tu usuario todavía no tiene permiso de adm
 
 Si es la primera vez que usas una cuenta recién creada y no te deja entrar, revisa tu correo y confirma la cuenta desde el mensaje recibido. Si no lo ves, revisa también la carpeta de correo no deseado.
 
+Nota sobre los correos de acceso:
+
+- el remitente de verificacion y recuperacion suele llegar como **Reservas Soledad Cedres** (`reservas@mail.soledadcedres.com.uy`)
+- al abrir el enlace, la pantalla de confirmacion se muestra en espanol dentro de la propia app
+
 ## 2. Cómo entrar al panel de gestión
 
 1. En la barra de navegación entra en \`Cuenta\`.
