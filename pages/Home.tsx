@@ -322,9 +322,20 @@ const Home: React.FC<HomeProps> = ({
       </section>
 
       {/* Footer */}
-      <footer className="mt-16 text-center pb-12 opacity-30">
+      <footer className="mt-16 text-center pb-12 opacity-30 space-y-1">
         <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-ink-muted">
           Soledad Cedres Quiropráctica
+        </p>
+        <p className="text-[9px] uppercase tracking-[0.2em] text-ink-muted">
+          Desarrollado por{" "}
+          <a
+            href="https://github.com/kasenawe"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            Maximiliano Quintana
+          </a>
         </p>
       </footer>
     </div>

@@ -194,3 +194,7 @@ La aplicación estará disponible en `http://localhost:3000`.
 ---
 
 Desarrollado para **Soledad Cedres Quiropráctica**.
+
+## Autor
+
+Desarrollado por [Maximiliano Quintana](https://github.com/kasenawe)

@@ -3947,9 +3947,20 @@ const Admin: React.FC<AdminProps> = ({
           document.body,
         )}
 
-      <footer className="mt-12 text-center opacity-20">
+      <footer className="mt-12 text-center opacity-20 space-y-1">
         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
           Gestión Interna Soledad Cedres Quiropráctica
+        </p>
+        <p className="text-[9px] text-gray-500 uppercase tracking-[0.2em]">
+          Desarrollado por{" "}
+          <a
+            href="https://github.com/kasenawe"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            Maximiliano Quintana
+          </a>
         </p>
       </footer>
     </div>
