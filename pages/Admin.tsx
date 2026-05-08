@@ -224,6 +224,12 @@ const Admin: React.FC<AdminProps> = ({
     msg: string;
     ok: boolean;
   } | null>(null);
+  const [isRecoveringSlot, setIsRecoveringSlot] = useState<string | null>(null);
+  const [recoverSlotFeedback, setRecoverSlotFeedback] = useState<{
+    id: string;
+    msg: string;
+    ok: boolean;
+  } | null>(null);
   const [dateFromFilter, setDateFromFilter] = useState("");
   const [dateToFilter, setDateToFilter] = useState("");
   const [appointmentsPage, setAppointmentsPage] = useState(1);
@@ -373,6 +379,37 @@ const Admin: React.FC<AdminProps> = ({
       setTransferFeedback({ id: appointmentId, msg: err.message, ok: false });
     } finally {
       setIsValidatingTransfer(null);
+    }
+  };
+
+  const handleRecoverSlot = async (appointmentId: string) => {
+    if (!currentUser) return;
+    setIsRecoveringSlot(appointmentId);
+    setRecoverSlotFeedback(null);
+    try {
+      const response = await fetch(BACKEND_URL + "/api/recover-slot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appointmentId,
+          adminUserId: currentUser.uid,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Error");
+      setRecoverSlotFeedback({
+        id: appointmentId,
+        msg: "Slot recuperado correctamente",
+        ok: true,
+      });
+    } catch (err: any) {
+      setRecoverSlotFeedback({
+        id: appointmentId,
+        msg: err.message,
+        ok: false,
+      });
+    } finally {
+      setIsRecoveringSlot(null);
     }
   };
 
@@ -1997,6 +2034,30 @@ const Admin: React.FC<AdminProps> = ({
                         </div>
                       </div>
                     )}
+
+                    {/* Recover slot for paid transfer */}
+                    {app.paymentStatus === "paid_transfer" &&
+                      app.paymentMethod === "transfer" && (
+                        <div className="mt-3 space-y-2">
+                          {recoverSlotFeedback?.id === app.id && (
+                            <p
+                              className={`text-[10px] font-bold text-center ${recoverSlotFeedback.ok ? "text-emerald-600" : "text-red-500"}`}
+                            >
+                              {recoverSlotFeedback.msg}
+                            </p>
+                          )}
+                          <button
+                            disabled={!!isRecoveringSlot}
+                            onClick={() => handleRecoverSlot(app.id)}
+                            className="w-full py-2.5 rounded-2xl bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-wider disabled:opacity-50 border border-blue-200"
+                            title="Recupera el slot si fue liberado incorrectamente"
+                          >
+                            {isRecoveringSlot === app.id
+                              ? "Recuperando..."
+                              : "🔗 Recuperar slot"}
+                          </button>
+                        </div>
+                      )}
                   </div>
                 );
               })
