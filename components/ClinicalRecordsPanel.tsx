@@ -138,11 +138,24 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
   const [profileFeedback, setProfileFeedback] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [sessionFeedback, setSessionFeedback] = useState<string | null>(null);
+  const [patientSearch, setPatientSearch] = useState("");
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false);
 
   const clientUsers = useMemo(
     () => users.filter((user) => user.role === "client"),
     [users],
   );
+
+  const filteredPatients = useMemo(() => {
+    if (!patientSearch.trim()) return clientUsers;
+    const q = patientSearch.toLowerCase();
+    return clientUsers.filter(
+      (u) =>
+        u.fullName?.toLowerCase().includes(q) ||
+        u.documentId?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q),
+    );
+  }, [clientUsers, patientSearch]);
 
   const selectedPatient = useMemo(
     () => clientUsers.find((user) => user.uid === selectedPatientId) || null,
@@ -491,24 +504,72 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
           </p>
         </div>
 
-        <select
-          value={selectedPatientId}
-          onChange={(e) => {
-            setSelectedPatientId(e.target.value);
-            setProfileError(null);
-            setProfileFeedback(null);
-            setSessionError(null);
-            setSessionFeedback(null);
-          }}
-          className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
-        >
-          <option value="">Selecciona un paciente...</option>
-          {clientUsers.map((user) => (
-            <option key={user.uid} value={user.uid}>
-              {getPatientOptionLabel(user)}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <input
+            type="text"
+            value={patientSearch}
+            onChange={(e) => {
+              setPatientSearch(e.target.value);
+              setShowPatientDropdown(true);
+              if (selectedPatientId) {
+                setSelectedPatientId("");
+                setProfileError(null);
+                setProfileFeedback(null);
+                setSessionError(null);
+                setSessionFeedback(null);
+              }
+            }}
+            onFocus={() => setShowPatientDropdown(true)}
+            onBlur={() => setTimeout(() => setShowPatientDropdown(false), 150)}
+            placeholder="Buscar paciente por nombre, documento o email..."
+            className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900 pr-10"
+          />
+          {selectedPatientId && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedPatientId("");
+                setPatientSearch("");
+                setProfileError(null);
+                setProfileFeedback(null);
+                setSessionError(null);
+                setSessionFeedback(null);
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-xl leading-none"
+              aria-label="Limpiar selección"
+            >
+              ×
+            </button>
+          )}
+          {showPatientDropdown && filteredPatients.length > 0 && (
+            <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto">
+              {filteredPatients.map((user) => (
+                <li
+                  key={user.uid}
+                  onMouseDown={() => {
+                    setSelectedPatientId(user.uid);
+                    setPatientSearch(getPatientOptionLabel(user));
+                    setShowPatientDropdown(false);
+                    setProfileError(null);
+                    setProfileFeedback(null);
+                    setSessionError(null);
+                    setSessionFeedback(null);
+                  }}
+                  className="px-4 py-3 text-sm cursor-pointer hover:bg-gray-50 first:rounded-t-2xl last:rounded-b-2xl"
+                >
+                  {getPatientOptionLabel(user)}
+                </li>
+              ))}
+            </ul>
+          )}
+          {showPatientDropdown &&
+            patientSearch.trim() &&
+            filteredPatients.length === 0 && (
+              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-2xl shadow-lg px-4 py-3 text-sm text-gray-400">
+                No se encontraron pacientes
+              </div>
+            )}
+        </div>
 
         {selectedPatient && (
           <div className="rounded-3xl border border-gray-100 bg-gray-50 p-4 text-xs text-gray-600">

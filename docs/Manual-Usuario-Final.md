@@ -581,16 +581,20 @@ En cada sesión puedes anotar:
 - técnicas aplicadas
 - recomendaciones
 
+### Cómo encontrar a una paciente
+
+En lugar de una lista desplegable fija, hay un **buscador**: empieza a escribir el nombre, el documento o el email de la paciente y los resultados aparecen al instante. Hace clic en el nombre para seleccionarla. Si quieres cambiar de paciente, usa el botón **×** que aparece al lado del campo.
+
 ### Forma sugerida de trabajo
 
-1. Selecciona a la paciente.
+1. Escribe en el buscador el nombre o documento de la paciente y selecciónala.
 2. Completa o actualiza su ficha inicial.
 3. Guarda.
 4. Después de cada consulta, registra una nueva evolución.
 
 Beneficio:
 
-Tendrás el historial ordenado de cada persona en un solo lugar.
+Tendrás el historial ordenado de cada persona en un solo lugar, y encontrar a cualquier paciente es inmediato sin importar cuántas haya registradas.
 
 ## 10. Cómo revisar si una reserva quedó bien registrada
 
