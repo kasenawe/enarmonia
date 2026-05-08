@@ -46,6 +46,7 @@ Dentro del panel verás estas secciones:
 - \`Turnos\`
 - \`Bloqueos\`
 - \`Horario\`
+- \`Contacto\`
 - \`Servicios\`
 - \`Promociones\`
 - \`Usuarios\`
@@ -367,6 +368,30 @@ Resultado:
 
 - La agenda se actualiza automáticamente.
 - En reservas solo se mostrarán días y horas compatibles con esa configuración.
+
+### Sección Contacto (datos públicos)
+
+En \`Contacto\` puedes editar la información pública que ven las clientas en la pantalla de contacto.
+
+Puedes configurar:
+
+- dirección
+- WhatsApp
+- email
+- Instagram
+- visibilidad de cada dato (mostrar u ocultar)
+
+### Cómo ocultar un dato (ejemplo Instagram)
+
+1. Entra en \`Contacto\` dentro del panel.
+2. Busca la sección \`Visibilidad en la sección Contacto\`.
+3. Desmarca \`Mostrar Instagram\`.
+4. Pulsa \`Guardar contacto\`.
+
+Resultado:
+
+- Instagram deja de mostrarse en la sección de contacto pública.
+- Puedes volver a activarlo cuando tengas el perfil listo.
 
 ## 7. Sección Servicios
 

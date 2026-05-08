@@ -49,7 +49,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 │   └── Admin.tsx        # Panel de gestión para administradora
 ├── firestore-seeds/     # Ejemplos de documentos para colección users
 ├── firestore.rules      # Reglas de seguridad de Firestore
-├── constants.ts         # Datos estáticos (servicios, info de contacto, colores)
+├── constants.ts         # Valores por defecto (servicios, contacto fallback, colores)
 ├── types.ts             # Definiciones de interfaces y enums de TypeScript
 ├── firebase.ts          # Configuración e inicialización de Firebase/Auth/Firestore
 ├── App.tsx              # Lógica principal de enrutamiento y estado global
@@ -80,6 +80,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 17. **Filtros y Búsqueda en Turnos**: Admin puede buscar por nombre/teléfono/email/servicio, filtrar por estado temporal (hoy/próximos/pasados), modo de reserva (cuenta/invitado), estado de pago (pagado/sin pago), **método de pago (MP/transferencia)**, **estado de pago de transferencia (pendiente/pagada/vencida)** y rango de fechas. Carga incremental de 20 turnos para mejor rendimiento.
 18. **Ficha de Contacto Expandible en Turnos**: Cada turno tiene acceso a un modal con información de contacto de la paciente (teléfono, email y documento cuando fue proporcionado), sin sobrecargar visualmente la tarjeta principal.
 19. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
+20. **Contacto Público Editable**: La dueña puede editar dirección, WhatsApp, email e Instagram desde Admin (`settings/contact`) y decidir qué datos se muestran en la pantalla de Contacto (por ejemplo ocultar Instagram hasta su lanzamiento).
 
 ---
 
@@ -148,7 +149,7 @@ La app utiliza reglas basadas en rol almacenado en `users/{uid}`.
 - `blocked_slots`: lectura pública para deshabilitar horarios en reservas; escritura solo admin.
 - `occupied_slots`: lectura pública para deshabilitar horarios ocupados sin exponer datos sensibles; escritura solo admin/backend.
 - `appointments`: lectura del dueño o admin; creación/actualización/eliminación solo admin o backend autorizado según el flujo.
-- `settings`: lectura pública para consumir configuración operativa (por ejemplo `settings/schedule`); escritura solo admin.
+- `settings`: lectura pública para consumir configuración operativa (por ejemplo `settings/schedule` y `settings/contact`); escritura solo admin.
 - `clinical_profiles`: ficha de ingreso y antecedentes clínicos por paciente (`patientId` como ID de documento), acceso solo admin.
 - `clinical_sessions`: evolución clínica por sesión con vínculo opcional a `appointmentId`, acceso solo admin.
 
@@ -178,6 +179,7 @@ La aplicación estará disponible en `http://localhost:3000`.
   - `occupied_slots`: `appointmentId`, `serviceId`, `date`, `time`, `duration` (minutos), `createdAt`, `expiresAt` (solo en slots de transferencia; el frontend lo usa para ignorar slots vencidos sin esperar al cron).
   - `blocked_slots`: `date`, `time`, `createdAt`.
   - `settings/schedule`: `weekdays`, `saturday` y `sunday` (cada bloque con `enabled`, `startTime`, `endTime`, `slotIntervalMinutes`, `breaks`) para configurar agenda dinámica separada entre semana, sábado y domingo.
+  - `settings/contact`: `address`, `whatsapp`, `instagram`, `email` y flags de visibilidad (`showAddress`, `showWhatsapp`, `showInstagram`, `showEmail`) para controlar qué se publica en la sección Contacto.
   - `services`: `name`, `description`, `duration`, `price`, `image`.
   - `promotions`: `title`, `description`, `badgeText`, `discountType`, `discountValue`, `featured`, `isActive`, `appliesToAllServices`, `serviceIds`, `startDate`, `endDate`, `priority`, `image`.
   - `clinical_profiles`: `patientId`, `intakeDate`, datos de identificación y contacto, motivo de consulta, zonas de dolor, antecedentes de salud, `initialDiagnosis`, `treatmentStartDate`, `createdAt/updatedAt`, `createdBy/updatedBy`.

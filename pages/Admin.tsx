@@ -12,6 +12,7 @@ import {
   Schedule,
   ScheduleBreak,
   Service,
+  ContactSettings,
 } from "../types";
 import {
   db,
@@ -32,6 +33,17 @@ import {
 import { getServicePricing } from "../utils/promotionPricing";
 import { useAuth } from "../contexts/AuthContext";
 import ClinicalRecordsPanel from "../components/ClinicalRecordsPanel";
+
+const DEFAULT_CONTACT_SETTINGS: ContactSettings = {
+  address: "Almiron 5496, Montevideo, Uruguay",
+  whatsapp: "59895542465",
+  instagram: "@enarmonia_estetica_y_salud",
+  email: "enarmonia.estetica.salud@gmail.com",
+  showAddress: true,
+  showWhatsapp: true,
+  showInstagram: false,
+  showEmail: true,
+};
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -74,6 +86,7 @@ const Admin: React.FC<AdminProps> = ({
     | "users"
     | "clinical"
     | "schedule"
+    | "contact"
   >("appointments");
 
   // Función helper para obtener fecha local en formato YYYY-MM-DD
@@ -137,6 +150,12 @@ const Admin: React.FC<AdminProps> = ({
   const [isScheduleSaving, setIsScheduleSaving] = useState(false);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [scheduleFeedback, setScheduleFeedback] = useState<string | null>(null);
+  const [contactForm, setContactForm] = useState<ContactSettings>(
+    DEFAULT_CONTACT_SETTINGS,
+  );
+  const [isContactSaving, setIsContactSaving] = useState(false);
+  const [contactError, setContactError] = useState<string | null>(null);
+  const [contactFeedback, setContactFeedback] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [serviceForm, setServiceForm] = useState({
@@ -272,6 +291,50 @@ const Admin: React.FC<AdminProps> = ({
 
     return () => unsubscribe();
   }, [currentUser]);
+
+  useEffect(() => {
+    const contactDoc = doc(db, "settings", "contact");
+    const unsubscribe = onSnapshot(
+      contactDoc,
+      (snapshot) => {
+        if (!snapshot.exists()) {
+          setContactForm(DEFAULT_CONTACT_SETTINGS);
+          return;
+        }
+
+        const data = snapshot.data();
+        setContactForm({
+          address: String(data.address || DEFAULT_CONTACT_SETTINGS.address),
+          whatsapp: String(data.whatsapp || DEFAULT_CONTACT_SETTINGS.whatsapp),
+          instagram: String(
+            data.instagram || DEFAULT_CONTACT_SETTINGS.instagram,
+          ),
+          email: String(data.email || DEFAULT_CONTACT_SETTINGS.email),
+          showAddress:
+            typeof data.showAddress === "boolean"
+              ? data.showAddress
+              : DEFAULT_CONTACT_SETTINGS.showAddress,
+          showWhatsapp:
+            typeof data.showWhatsapp === "boolean"
+              ? data.showWhatsapp
+              : DEFAULT_CONTACT_SETTINGS.showWhatsapp,
+          showInstagram:
+            typeof data.showInstagram === "boolean"
+              ? data.showInstagram
+              : DEFAULT_CONTACT_SETTINGS.showInstagram,
+          showEmail:
+            typeof data.showEmail === "boolean"
+              ? data.showEmail
+              : DEFAULT_CONTACT_SETTINGS.showEmail,
+        });
+      },
+      (error) => {
+        console.error("Error al cargar contacto:", error);
+      },
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   const handleLogout = () => {
     onBack();
@@ -1243,6 +1306,56 @@ const Admin: React.FC<AdminProps> = ({
     }
   };
 
+  const handleContactSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setContactError(null);
+    setContactFeedback(null);
+
+    const normalizedWhatsApp = contactForm.whatsapp.replace(/\D/g, "");
+    if (contactForm.showWhatsapp && normalizedWhatsApp.length < 8) {
+      setContactError("El WhatsApp debe tener al menos 8 dígitos.");
+      return;
+    }
+
+    if (contactForm.showEmail && !contactForm.email.includes("@")) {
+      setContactError("Ingresa un email válido.");
+      return;
+    }
+
+    if (contactForm.showAddress && !contactForm.address.trim()) {
+      setContactError("La dirección no puede quedar vacía.");
+      return;
+    }
+
+    const rawInstagram = contactForm.instagram.trim();
+    const normalizedInstagram = rawInstagram
+      ? rawInstagram.startsWith("@")
+        ? rawInstagram
+        : `@${rawInstagram}`
+      : "";
+
+    setIsContactSaving(true);
+    try {
+      await setDoc(doc(db, "settings", "contact"), {
+        address: contactForm.address.trim(),
+        whatsapp: normalizedWhatsApp,
+        instagram: normalizedInstagram,
+        email: contactForm.email.trim(),
+        showAddress: contactForm.showAddress,
+        showWhatsapp: contactForm.showWhatsapp,
+        showInstagram: contactForm.showInstagram,
+        showEmail: contactForm.showEmail,
+        updatedAt: new Date().toISOString(),
+      });
+      setContactFeedback("Datos de contacto guardados correctamente.");
+    } catch (error) {
+      console.error(error);
+      setContactError("No se pudo guardar el contacto. Intentá nuevamente.");
+    } finally {
+      setIsContactSaving(false);
+    }
+  };
+
   // Usar fecha local, no UTC, para que coincida con como se guardan los appointments
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -1456,6 +1569,12 @@ const Admin: React.FC<AdminProps> = ({
               className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${activeTab === "schedule" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
             >
               Horario
+            </button>
+            <button
+              onClick={() => setActiveTab("contact")}
+              className={`rounded-2xl px-4 py-2 text-sm font-bold transition ${activeTab === "contact" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
+            >
+              Contacto
             </button>
             <button
               onClick={() => setActiveTab("services")}
@@ -2719,6 +2838,178 @@ const Admin: React.FC<AdminProps> = ({
                 className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all disabled:opacity-40"
               >
                 {isScheduleSaving ? "GUARDANDO..." : "GUARDAR CONFIGURACIÓN"}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {activeTab === "contact" && (
+          <div className="space-y-6">
+            {contactError && (
+              <div className="rounded-3xl bg-red-50 border border-red-100 p-4 text-red-600 text-sm">
+                {contactError}
+              </div>
+            )}
+            {contactFeedback && (
+              <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 text-sm">
+                {contactFeedback}
+              </div>
+            )}
+
+            <form
+              onSubmit={handleContactSave}
+              className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-5"
+            >
+              <div>
+                <h4 className="text-lg font-bold text-gray-800">
+                  Datos de contacto públicos
+                </h4>
+                <p className="text-gray-400 text-[11px]">
+                  Estos datos se muestran en la sección Contacto de la app.
+                </p>
+              </div>
+
+              <label className="space-y-2 text-sm font-medium text-gray-600 block">
+                Dirección
+                <input
+                  type="text"
+                  value={contactForm.address}
+                  onChange={(e) =>
+                    setContactForm((prev) => ({
+                      ...prev,
+                      address: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-3xl border border-gray-200 bg-white p-4 text-sm outline-none focus:border-gray-900"
+                  placeholder="Ej: Almiron 5496, Montevideo"
+                />
+              </label>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm font-medium text-gray-600 block">
+                  WhatsApp (solo números)
+                  <input
+                    type="text"
+                    value={contactForm.whatsapp}
+                    onChange={(e) =>
+                      setContactForm((prev) => ({
+                        ...prev,
+                        whatsapp: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-3xl border border-gray-200 bg-white p-4 text-sm outline-none focus:border-gray-900"
+                    placeholder="59895542465"
+                  />
+                </label>
+
+                <label className="space-y-2 text-sm font-medium text-gray-600 block">
+                  Email
+                  <input
+                    type="email"
+                    value={contactForm.email}
+                    onChange={(e) =>
+                      setContactForm((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-3xl border border-gray-200 bg-white p-4 text-sm outline-none focus:border-gray-900"
+                    placeholder="contacto@dominio.com"
+                  />
+                </label>
+              </div>
+
+              <label className="space-y-2 text-sm font-medium text-gray-600 block">
+                Instagram
+                <input
+                  type="text"
+                  value={contactForm.instagram}
+                  onChange={(e) =>
+                    setContactForm((prev) => ({
+                      ...prev,
+                      instagram: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-3xl border border-gray-200 bg-white p-4 text-sm outline-none focus:border-gray-900"
+                  placeholder="@mi_instagram"
+                />
+                <p className="text-[11px] text-gray-400">
+                  Si escribes sin @, se agrega automáticamente al guardar.
+                </p>
+              </label>
+
+              <div className="rounded-3xl border border-gray-100 bg-gray-50 p-4 space-y-3">
+                <h5 className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                  Visibilidad en la sección Contacto
+                </h5>
+
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={contactForm.showAddress}
+                    onChange={(e) =>
+                      setContactForm((prev) => ({
+                        ...prev,
+                        showAddress: e.target.checked,
+                      }))
+                    }
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  Mostrar dirección y mapa
+                </label>
+
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={contactForm.showWhatsapp}
+                    onChange={(e) =>
+                      setContactForm((prev) => ({
+                        ...prev,
+                        showWhatsapp: e.target.checked,
+                      }))
+                    }
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  Mostrar WhatsApp
+                </label>
+
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={contactForm.showInstagram}
+                    onChange={(e) =>
+                      setContactForm((prev) => ({
+                        ...prev,
+                        showInstagram: e.target.checked,
+                      }))
+                    }
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  Mostrar Instagram
+                </label>
+
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={contactForm.showEmail}
+                    onChange={(e) =>
+                      setContactForm((prev) => ({
+                        ...prev,
+                        showEmail: e.target.checked,
+                      }))
+                    }
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  Mostrar email
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isContactSaving}
+                className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all disabled:opacity-40"
+              >
+                {isContactSaving ? "GUARDANDO..." : "GUARDAR CONTACTO"}
               </button>
             </form>
           </div>

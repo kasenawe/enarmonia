@@ -1,3 +1,5 @@
+import type { ContactSettings } from "./types";
+
 export const COLORS = {
   primary: "#9066C1",
   primaryDark: "#7C56A9",
@@ -78,12 +80,15 @@ export const COLOR_VARIABLES = {
   "--color-outline-strong": hexToRgbChannels(COLORS.outlineStrong),
 } as const;
 
-export const CONTACT_INFO = {
+export const CONTACT_INFO: ContactSettings = {
   address: "Almiron 5496, Montevideo, Uruguay",
-  coords: { lat: -34.8876, lng: -56.1054 },
   whatsapp: "59895542465",
   instagram: "@enarmonia_estetica_y_salud",
   email: "enarmonia.estetica.salud@gmail.com",
+  showAddress: true,
+  showWhatsapp: true,
+  showInstagram: false,
+  showEmail: true,
 };
 
 export const EMAIL_CONFIG = {

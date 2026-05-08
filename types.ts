@@ -119,6 +119,17 @@ export interface Schedule {
   sunday: ScheduleSegment; // domingo
 }
 
+export interface ContactSettings {
+  address: string;
+  whatsapp: string;
+  instagram: string;
+  email: string;
+  showAddress: boolean;
+  showWhatsapp: boolean;
+  showInstagram: boolean;
+  showEmail: boolean;
+}
+
 export interface ClinicalSession {
   id: string;
   patientId: string;
