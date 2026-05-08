@@ -13,9 +13,14 @@ import {
   collection,
   deleteDoc,
   doc,
+  getCountFromServer,
+  getDocs,
+  limit,
   onSnapshot,
+  orderBy,
   query,
   setDoc,
+  startAfter,
   where,
 } from "../firebase";
 
@@ -113,6 +118,8 @@ const defaultSessionForm = (): SessionFormState => ({
   recommendations: "",
 });
 
+const SESSIONS_PAGE_SIZE = 20;
+
 const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
   users,
   appointments,
@@ -140,6 +147,15 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
   const [sessionFeedback, setSessionFeedback] = useState<string | null>(null);
   const [patientSearch, setPatientSearch] = useState("");
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
+  const [isLoadingMoreSessions, setIsLoadingMoreSessions] = useState(false);
+  const [hasMoreSessions, setHasMoreSessions] = useState(false);
+  const [lastSessionCursor, setLastSessionCursor] = useState<unknown>(null);
+  const [sessionSearch, setSessionSearch] = useState("");
+  const [sessionDateFrom, setSessionDateFrom] = useState("");
+  const [sessionDateTo, setSessionDateTo] = useState("");
+  const [sessionPainFilter, setSessionPainFilter] = useState<
+    "all" | "low" | "medium" | "high"
+  >("all");
 
   const clientUsers = useMemo(
     () => users.filter((user) => user.role === "client"),
@@ -173,6 +189,46 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
         return b.time.localeCompare(a.time);
       });
   }, [appointments, selectedPatientId]);
+
+  const visibleClinicalSessions = useMemo(() => {
+    const searchQuery = sessionSearch.trim().toLowerCase();
+
+    return clinicalSessions.filter((session) => {
+      const matchesSearch =
+        !searchQuery ||
+        session.sessionDate?.toLowerCase().includes(searchQuery) ||
+        session.clinicalObservations?.toLowerCase().includes(searchQuery) ||
+        session.techniquesApplied?.toLowerCase().includes(searchQuery) ||
+        session.recommendations?.toLowerCase().includes(searchQuery);
+
+      const pain = Number(session.painLevel);
+      const normalizedPain = Number.isFinite(pain) ? pain : -1;
+      const matchesPain =
+        sessionPainFilter === "all" ||
+        (sessionPainFilter === "low" &&
+          normalizedPain >= 0 &&
+          normalizedPain <= 3) ||
+        (sessionPainFilter === "medium" &&
+          normalizedPain >= 4 &&
+          normalizedPain <= 6) ||
+        (sessionPainFilter === "high" &&
+          normalizedPain >= 7 &&
+          normalizedPain <= 10);
+
+      const sessionDate = session.sessionDate || "";
+      const matchesDateFrom =
+        !sessionDateFrom || sessionDate >= sessionDateFrom;
+      const matchesDateTo = !sessionDateTo || sessionDate <= sessionDateTo;
+
+      return matchesSearch && matchesPain && matchesDateFrom && matchesDateTo;
+    });
+  }, [
+    clinicalSessions,
+    sessionSearch,
+    sessionPainFilter,
+    sessionDateFrom,
+    sessionDateTo,
+  ]);
 
   const getPatientOptionLabel = (user: AppUser) => {
     const name = user.fullName?.trim();
@@ -270,46 +326,100 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
     if (!selectedPatientId) {
       setClinicalSessions([]);
       setIsLoadingSessions(false);
+      setHasMoreSessions(false);
+      setLastSessionCursor(null);
+      setSessionSearch("");
+      setSessionDateFrom("");
+      setSessionDateTo("");
+      setSessionPainFilter("all");
       return;
     }
 
-    setIsLoadingSessions(true);
-    const sessionsQuery = query(
-      collection(db, "clinical_sessions"),
-      where("patientId", "==", selectedPatientId),
-    );
+    let cancelled = false;
 
-    const unsubscribe = onSnapshot(
-      sessionsQuery,
-      (snapshot) => {
-        const loadedSessions: ClinicalSession[] = [];
-        snapshot.forEach((entry) => {
-          loadedSessions.push({
+    const loadInitialSessions = async () => {
+      setIsLoadingSessions(true);
+      setSessionError(null);
+
+      try {
+        const sessionsQuery = query(
+          collection(db, "clinical_sessions"),
+          where("patientId", "==", selectedPatientId),
+          orderBy("sessionDate", "desc"),
+          orderBy("sessionNumber", "desc"),
+          limit(SESSIONS_PAGE_SIZE),
+        );
+
+        const snapshot = await getDocs(sessionsQuery);
+        if (cancelled) return;
+
+        const loadedSessions: ClinicalSession[] = snapshot.docs.map(
+          (entry) => ({
             id: entry.id,
             ...(entry.data() as Omit<ClinicalSession, "id">),
-          });
-        });
-
-        loadedSessions.sort((a, b) => {
-          const dateDiff = b.sessionDate.localeCompare(a.sessionDate);
-          if (dateDiff !== 0) return dateDiff;
-          return (b.sessionNumber || 0) - (a.sessionNumber || 0);
-        });
+          }),
+        );
 
         setClinicalSessions(loadedSessions);
-        setIsLoadingSessions(false);
-      },
-      (error) => {
+        setHasMoreSessions(snapshot.docs.length === SESSIONS_PAGE_SIZE);
+        setLastSessionCursor(snapshot.docs[snapshot.docs.length - 1] || null);
+      } catch (error) {
         console.error(error);
-        setSessionError(
-          "No se pudo cargar la evolución clínica del paciente seleccionado.",
-        );
-        setIsLoadingSessions(false);
-      },
-    );
+        if (!cancelled) {
+          setSessionError(
+            "No se pudo cargar la evolución clínica del paciente seleccionado.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingSessions(false);
+        }
+      }
+    };
 
-    return () => unsubscribe();
+    void loadInitialSessions();
+
+    return () => {
+      cancelled = true;
+    };
   }, [selectedPatientId]);
+
+  const handleLoadMoreSessions = async () => {
+    if (!selectedPatientId || !lastSessionCursor || isLoadingMoreSessions) {
+      return;
+    }
+
+    setIsLoadingMoreSessions(true);
+    setSessionError(null);
+
+    try {
+      const sessionsQuery = query(
+        collection(db, "clinical_sessions"),
+        where("patientId", "==", selectedPatientId),
+        orderBy("sessionDate", "desc"),
+        orderBy("sessionNumber", "desc"),
+        startAfter(lastSessionCursor as never),
+        limit(SESSIONS_PAGE_SIZE),
+      );
+
+      const snapshot = await getDocs(sessionsQuery);
+      const loadedSessions: ClinicalSession[] = snapshot.docs.map((entry) => ({
+        id: entry.id,
+        ...(entry.data() as Omit<ClinicalSession, "id">),
+      }));
+
+      setClinicalSessions((current) => [...current, ...loadedSessions]);
+      setHasMoreSessions(snapshot.docs.length === SESSIONS_PAGE_SIZE);
+      if (snapshot.docs.length > 0) {
+        setLastSessionCursor(snapshot.docs[snapshot.docs.length - 1]);
+      }
+    } catch (error) {
+      console.error(error);
+      setSessionError("No se pudieron cargar más sesiones.");
+    } finally {
+      setIsLoadingMoreSessions(false);
+    }
+  };
 
   const togglePainZone = (zone: PainZone) => {
     setProfileForm((current) => {
@@ -439,10 +549,18 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
 
     try {
       const nowIso = new Date().toISOString();
+      const countSnapshot = await getCountFromServer(
+        query(
+          collection(db, "clinical_sessions"),
+          where("patientId", "==", selectedPatientId),
+        ),
+      );
+      const nextSessionNumber = Number(countSnapshot.data().count) + 1;
+
       await addDoc(collection(db, "clinical_sessions"), {
         patientId: selectedPatientId,
         appointmentId: sessionForm.appointmentId || "",
-        sessionNumber: clinicalSessions.length + 1,
+        sessionNumber: nextSessionNumber,
         sessionDate: sessionForm.sessionDate,
         painLevel,
         clinicalObservations: sessionForm.clinicalObservations.trim(),
@@ -1154,9 +1272,85 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
                 Sesiones registradas
               </h4>
               <span className="rounded-full bg-gray-100 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gray-500">
-                {clinicalSessions.length} sesiones
+                {clinicalSessions.length} cargadas
               </span>
             </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="space-y-2 text-sm font-medium text-gray-600">
+                Buscar en sesiones cargadas
+                <input
+                  value={sessionSearch}
+                  onChange={(e) => setSessionSearch(e.target.value)}
+                  placeholder="Fecha, observaciones, técnicas o recomendaciones"
+                  className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                />
+              </label>
+
+              <label className="space-y-2 text-sm font-medium text-gray-600">
+                Filtro por nivel de dolor
+                <select
+                  value={sessionPainFilter}
+                  onChange={(e) =>
+                    setSessionPainFilter(
+                      e.target.value as "all" | "low" | "medium" | "high",
+                    )
+                  }
+                  className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                >
+                  <option value="all">Todos</option>
+                  <option value="low">Bajo (0-3)</option>
+                  <option value="medium">Medio (4-6)</option>
+                  <option value="high">Alto (7-10)</option>
+                </select>
+              </label>
+
+              <label className="space-y-2 text-sm font-medium text-gray-600">
+                Fecha desde
+                <input
+                  type="date"
+                  value={sessionDateFrom}
+                  onChange={(e) => setSessionDateFrom(e.target.value)}
+                  className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                />
+              </label>
+
+              <label className="space-y-2 text-sm font-medium text-gray-600">
+                Fecha hasta
+                <input
+                  type="date"
+                  value={sessionDateTo}
+                  onChange={(e) => setSessionDateTo(e.target.value)}
+                  className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
+                />
+              </label>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSessionSearch("");
+                setSessionPainFilter("all");
+                setSessionDateFrom("");
+                setSessionDateTo("");
+              }}
+              disabled={
+                !sessionSearch &&
+                sessionPainFilter === "all" &&
+                !sessionDateFrom &&
+                !sessionDateTo
+              }
+              className={`w-full py-3 rounded-3xl border text-sm font-bold transition ${
+                !sessionSearch &&
+                sessionPainFilter === "all" &&
+                !sessionDateFrom &&
+                !sessionDateTo
+                  ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
+                  : "border-gray-300 text-gray-700 hover:border-gray-900 hover:text-gray-900"
+              }`}
+            >
+              Limpiar filtros
+            </button>
 
             {isLoadingSessions ? (
               <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5 text-sm text-gray-400">
@@ -1166,9 +1360,13 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
               <div className="rounded-2xl border-2 border-dashed border-gray-100 bg-gray-50 p-8 text-center text-sm font-bold text-gray-300">
                 No hay evolución registrada todavía para este paciente.
               </div>
+            ) : visibleClinicalSessions.length === 0 ? (
+              <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5 text-center text-sm text-gray-500">
+                No hay sesiones cargadas que coincidan con los filtros.
+              </div>
             ) : (
               <div className="space-y-3">
-                {clinicalSessions.map((session) => (
+                {visibleClinicalSessions.map((session) => (
                   <div
                     key={session.id}
                     className="rounded-3xl border border-gray-100 bg-gray-50 p-4"
@@ -1221,6 +1419,23 @@ const ClinicalRecordsPanel: React.FC<ClinicalRecordsPanelProps> = ({
                   </div>
                 ))}
               </div>
+            )}
+
+            {!isLoadingSessions && hasMoreSessions && (
+              <button
+                type="button"
+                onClick={handleLoadMoreSessions}
+                disabled={isLoadingMoreSessions}
+                className={`w-full py-3 rounded-3xl border text-sm font-bold transition ${
+                  isLoadingMoreSessions
+                    ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
+                    : "border-gray-300 text-gray-700 hover:border-gray-900 hover:text-gray-900"
+                }`}
+              >
+                {isLoadingMoreSessions
+                  ? "Cargando más sesiones..."
+                  : "Cargar más sesiones"}
+              </button>
             )}
           </div>
         </>

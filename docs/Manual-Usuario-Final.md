@@ -581,6 +581,22 @@ En cada sesión puedes anotar:
 - técnicas aplicadas
 - recomendaciones
 
+### 9.3. Ver sesiones registradas (muchas sesiones)
+
+Cuando una paciente tiene muchas evoluciones, el sistema no carga todo de una vez. Funciona así:
+
+- carga inicial de 20 sesiones
+- botón **Cargar más sesiones** para traer las siguientes
+- filtros sobre las sesiones cargadas para encontrar más rápido
+
+Filtros disponibles:
+
+- búsqueda por texto (fecha, observaciones, técnicas o recomendaciones)
+- nivel de dolor: bajo, medio o alto
+- rango de fechas: **Fecha desde** y **Fecha hasta**
+
+También tienes el botón **Limpiar filtros** para volver al estado inicial de búsqueda.
+
 ### Cómo encontrar a una paciente
 
 En lugar de una lista desplegable fija, hay un **buscador**: empieza a escribir el nombre, el documento o el email de la paciente y los resultados aparecen al instante. Hace clic en el nombre para seleccionarla. Si quieres cambiar de paciente, usa el botón **×** que aparece al lado del campo.
@@ -591,6 +607,7 @@ En lugar de una lista desplegable fija, hay un **buscador**: empieza a escribir 
 2. Completa o actualiza su ficha inicial.
 3. Guarda.
 4. Después de cada consulta, registra una nueva evolución.
+5. Para revisar historial largo, usa filtros y el botón de carga incremental.
 
 Beneficio:
 
