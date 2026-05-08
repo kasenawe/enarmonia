@@ -21,6 +21,7 @@ import Contact from "./pages/Contact";
 import Admin from "./pages/Admin";
 import Success from "./pages/Success"; // ✨ NUEVO
 import Failure from "./pages/Failure"; // ✨ NUEVO
+import AuthAction from "./pages/AuthAction";
 import Navbar from "./components/Navbar";
 import AIAssistant from "./components/AIAssistant";
 import { useAuth } from "./contexts/AuthContext";
@@ -91,6 +92,8 @@ const App: React.FC = () => {
         return "/success";
       case AppRoute.FAILURE:
         return "/failure";
+      case AppRoute.AUTH_ACTION:
+        return "/auth/action";
       default:
         return "/";
     }
@@ -122,6 +125,8 @@ const App: React.FC = () => {
       case "/failure":
       case "/pending":
         return AppRoute.FAILURE;
+      case "/auth/action":
+        return AppRoute.AUTH_ACTION;
       default:
         return AppRoute.HOME;
     }
@@ -582,6 +587,8 @@ const App: React.FC = () => {
         return <Success />;
       case AppRoute.FAILURE: // ✨ NUEVO: página de pago fallido
         return <Failure />;
+      case AppRoute.AUTH_ACTION:
+        return <AuthAction />;
       default:
         return (
           <Home

@@ -204,4 +204,5 @@ export enum AppRoute {
   ADMIN = "admin",
   SUCCESS = "success", // ✨ NUEVO: página de pago exitoso
   FAILURE = "failure", // ✨ NUEVO: página de pago fallido
+  AUTH_ACTION = "auth-action",
 }

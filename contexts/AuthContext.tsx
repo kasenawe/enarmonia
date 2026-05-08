@@ -13,14 +13,13 @@ import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   reauthenticateWithCredential,
-  sendEmailVerification,
-  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
   updatePassword as firebaseUpdatePassword,
   verifyBeforeUpdateEmail,
 } from "firebase/auth";
 import { auth, db, doc, onSnapshot, setDoc } from "../firebase";
+import { BACKEND_URL } from "../constants";
 
 interface AuthContextValue {
   currentUser: User | null;
@@ -163,7 +162,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const credentials = await signInWithEmailAndPassword(auth, email, password);
 
     if (!credentials.user.emailVerified) {
-      await sendEmailVerification(credentials.user);
+      const res = await fetch(`${BACKEND_URL}/api/send-auth-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "verify-email", email }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(
+          data.message || "Error al enviar email de verificación",
+        );
+      }
     }
 
     await signOut(auth);
@@ -198,7 +207,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       createdAt: new Date().toISOString(),
     });
 
-    await sendEmailVerification(credentials.user);
+    const verifyRes = await fetch(`${BACKEND_URL}/api/send-auth-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "verify-email", email }),
+    });
+    if (!verifyRes.ok) {
+      const data = await verifyRes.json().catch(() => ({}));
+      throw new Error(data.message || "Error al enviar email de verificación");
+    }
     await signOut(auth);
 
     return credentials;
@@ -280,7 +297,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const resetPassword = async (email: string) => {
-    await sendPasswordResetEmail(auth, email);
+    const res = await fetch(`${BACKEND_URL}/api/send-auth-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "reset-password", email }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(
+        data.message || "Error al enviar email de restablecimiento",
+      );
+    }
   };
 
   const logout = () => {
