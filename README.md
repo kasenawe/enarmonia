@@ -78,9 +78,10 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 15. **Historia Clínica Digital**: Nueva pestaña en Admin para registrar la ficha de ingreso del paciente y la evolución por sesión, vinculable al usuario y opcionalmente al turno. El selector de paciente es un combobox con búsqueda en tiempo real por nombre, documento o email, apto para volúmenes altos de pacientes. La lista de sesiones usa carga incremental (20 por página), botón "Cargar más" y filtros por texto, nivel de dolor y rango de fechas.
 16. **Asistente IA (temporalmente inhabilitado)**: la funcionalidad quedó pausada por decisión operativa y se reactivará cuando el negocio lo requiera.
 17. **Filtros y Búsqueda en Turnos**: Admin puede buscar por nombre/teléfono/email/servicio, filtrar por estado temporal (hoy/próximos/pasados), modo de reserva (cuenta/invitado), estado de pago (pagado/sin pago), **método de pago (MP/transferencia)**, **estado de pago de transferencia (pendiente/pagada/vencida)** y rango de fechas. Carga incremental de 20 turnos para mejor rendimiento.
-18. **Ficha de Contacto Expandible en Turnos**: Cada turno tiene acceso a un modal con información de contacto de la paciente (teléfono, email y documento cuando fue proporcionado), sin sobrecargar visualmente la tarjeta principal.
-19. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
-20. **Contacto Público Editable**: La dueña puede editar dirección, WhatsApp, email e Instagram desde Admin (`settings/contact`) y decidir qué datos se muestran en la pantalla de Contacto (por ejemplo ocultar Instagram hasta su lanzamiento).
+18. **Recuperación de Slot en Contingencia**: Existe una acción de recuperación para turnos `paid_transfer`, pero queda oculta por defecto y solo se muestra si se detecta inconsistencia (turno pago sin registro en `occupied_slots`).
+19. **Ficha de Contacto Expandible en Turnos**: Cada turno tiene acceso a un modal con información de contacto de la paciente (teléfono, email y documento cuando fue proporcionado), sin sobrecargar visualmente la tarjeta principal.
+20. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
+21. **Contacto Público Editable**: La dueña puede editar dirección, WhatsApp, email e Instagram desde Admin (`settings/contact`) y decidir qué datos se muestran en la pantalla de Contacto (por ejemplo ocultar Instagram hasta su lanzamiento).
 
 ---
 

@@ -245,6 +245,21 @@ Sugerencia:
 - Revisá la lista de transferencias pendientes al comienzo de tu jornada.
 - Usá el filtro **"Pendiente transferencia"** para verlas todas rápidamente.
 
+### 4.6 Recuperar slot (solo contingencia)
+
+Esta acción se muestra solo en casos excepcionales: cuando un turno ya está en **"Pagado (transferencia)"** pero el sistema detecta que falta el slot ocupado.
+
+Qué hace:
+
+- vuelve a asociar el horario al turno pagado
+- evita que ese horario quede disponible por error
+
+Importante:
+
+- no es una acción de uso diario
+- no aparece normalmente, solo ante inconsistencia detectada
+- úsala únicamente si ves el aviso de inconsistencia en la tarjeta
+
 ### Ver datos de contacto completos (modal)
 
 En cada tarjeta de turno verás un ícono de información junto al nombre de la paciente.
