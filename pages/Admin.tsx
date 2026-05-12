@@ -1486,6 +1486,10 @@ const Admin: React.FC<AdminProps> = ({
   const totalAppointmentsPages = Math.ceil(
     filteredAppointments.length / APPOINTMENTS_PER_PAGE,
   );
+  const occupiedSlotAppointmentIds = useMemo(
+    () => new Set(occupiedSlots.map((slot) => slot.appointmentId)),
+    [occupiedSlots],
+  );
   const paginatedAppointments = filteredAppointments.slice(
     (appointmentsPage - 1) * APPOINTMENTS_PER_PAGE,
     appointmentsPage * APPOINTMENTS_PER_PAGE,
@@ -2037,7 +2041,8 @@ const Admin: React.FC<AdminProps> = ({
 
                     {/* Recover slot for paid transfer */}
                     {app.paymentStatus === "paid_transfer" &&
-                      app.paymentMethod === "transfer" && (
+                      app.paymentMethod === "transfer" &&
+                      !occupiedSlotAppointmentIds.has(app.id) && (
                         <div className="mt-3 space-y-2">
                           {recoverSlotFeedback?.id === app.id && (
                             <p
@@ -2046,6 +2051,10 @@ const Admin: React.FC<AdminProps> = ({
                               {recoverSlotFeedback.msg}
                             </p>
                           )}
+                          <p className="text-[10px] font-bold text-amber-600 text-center">
+                            Inconsistencia detectada: turno pago sin slot
+                            ocupado.
+                          </p>
                           <button
                             disabled={!!isRecoveringSlot}
                             onClick={() => handleRecoverSlot(app.id)}
