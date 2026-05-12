@@ -440,6 +440,20 @@ Consejos para que se vea bien:
 3. Se abre el mismo panel flotante con los datos ya cargados. Cambia lo que necesites.
 4. Pulsa \`Actualizar servicio\`.
 
+### Ordenar servicios (cómo se muestran en la app)
+
+En cada tarjeta de servicio tienes dos botones:
+
+- **↑** para subir el servicio una posición
+- **↓** para bajar el servicio una posición
+
+Ese orden se guarda automáticamente y se usa en toda la app (inicio, listado de servicios y reserva).
+
+Nota:
+
+- si creas un servicio nuevo, se agrega al final de la lista
+- puedes reordenarlo en cualquier momento con los botones
+
 ### Eliminar un servicio
 
 1. Busca el servicio en la lista.

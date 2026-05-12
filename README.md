@@ -62,26 +62,27 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 ## ✨ Características Principales
 
 1.  **Catálogo de Servicios**: Presentación detallada de las prestaciones disponibles.
-2.  **Sistema de Reservas con Pago Dual**: Los clientes pueden elegir entre pagar con **Mercado Pago** (checkout online, con recargo del 8.73%) o por **transferencia bancaria** (sin recargo, con 4 horas para acreditar). El turno queda pendiente hasta que la administradora confirme la transferencia desde el panel.
-3.  **Validación de Disponibilidad**: Sistema en tiempo real que previene doble-booking usando `occupied_slots` (colección pública mínima sin datos personales).
-4.  **Cuentas de Usuario**: Registro e inicio de sesión con Firebase Auth usando nombre, documento, email, teléfono y contraseña.
-5.  **Cuenta del Cliente**: Vista `Cuenta` con acceso a historial de turnos, cierre de sesión, y edición de perfil completo: nombre, documento, teléfono, email y contraseña.
-6.  **Mis Turnos Protegido**: El historial de citas se consulta por `userId` y está disponible para usuarios autenticados; las reservas de invitados quedan visibles solo para admin.
-7.  **Reserva como Invitado**: Los usuarios pueden reservar sin cuenta. En el paso 2 se recopila nombre, teléfono y email. Las citas se guardan con `bookingMode: "guest"` para distinguirlas en el admin.
-8.  **Perfil de Contacto Reutilizable**: El nombre, documento y teléfono del usuario se autocompletan en la reserva desde su perfil, y siguen siendo editables por turno.
-9.  **Distinción Cuenta / Invitado en Admin**: Cada tarjeta de turno en el panel admin muestra un badge: "Cuenta" (verde) para usuarios registrados o "Invitado" (ámbar) para reservas sin cuenta, usando el campo `bookingMode`.
-10. **Bloqueo Manual de Horarios**: La administradora puede bloquear y desbloquear horarios manualmente desde el panel, con validación contra turnos ya agendados.
-11. **Bloqueo y Desbloqueo Masivo por Rango**: En admin, la dueña puede bloquear y también eliminar bloqueos en períodos completos (por ejemplo vacaciones) por rango de fechas y opcionalmente por rango horario, evitando la gestión uno a uno.
-12. **Horario Configurable por la Dueña**: El horario de atención se define en `settings/schedule` con tres bloques independientes (`weekdays` para lunes-viernes, `saturday` y `sunday`), cada uno con su hora de inicio/fin, intervalo de slots y descansos. Booking se adapta en tiempo real.
-13. **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
-14. **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
-15. **Historia Clínica Digital**: Nueva pestaña en Admin para registrar la ficha de ingreso del paciente y la evolución por sesión, vinculable al usuario y opcionalmente al turno. El selector de paciente es un combobox con búsqueda en tiempo real por nombre, documento o email, apto para volúmenes altos de pacientes. La lista de sesiones usa carga incremental (20 por página), botón "Cargar más" y filtros por texto, nivel de dolor y rango de fechas.
-16. **Asistente IA (temporalmente inhabilitado)**: la funcionalidad quedó pausada por decisión operativa y se reactivará cuando el negocio lo requiera.
-17. **Filtros y Búsqueda en Turnos**: Admin puede buscar por nombre/teléfono/email/servicio, filtrar por estado temporal (hoy/próximos/pasados), modo de reserva (cuenta/invitado), estado de pago (pagado/sin pago), **método de pago (MP/transferencia)**, **estado de pago de transferencia (pendiente/pagada/vencida)** y rango de fechas. Carga incremental de 20 turnos para mejor rendimiento.
-18. **Recuperación de Slot en Contingencia**: Existe una acción de recuperación para turnos `paid_transfer`, pero queda oculta por defecto y solo se muestra si se detecta inconsistencia (turno pago sin registro en `occupied_slots`).
-19. **Ficha de Contacto Expandible en Turnos**: Cada turno tiene acceso a un modal con información de contacto de la paciente (teléfono, email y documento cuando fue proporcionado), sin sobrecargar visualmente la tarjeta principal.
-20. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
-21. **Contacto Público Editable**: La dueña puede editar dirección, WhatsApp, email e Instagram desde Admin (`settings/contact`) y decidir qué datos se muestran en la pantalla de Contacto (por ejemplo ocultar Instagram hasta su lanzamiento).
+2.  **Orden Manual de Servicios**: Desde Admin, la dueña puede reordenar el catálogo con controles de subir/bajar. El orden se guarda en Firestore y se respeta en Home, Servicios y Booking.
+3.  **Sistema de Reservas con Pago Dual**: Los clientes pueden elegir entre pagar con **Mercado Pago** (checkout online, con recargo del 8.73%) o por **transferencia bancaria** (sin recargo, con 4 horas para acreditar). El turno queda pendiente hasta que la administradora confirme la transferencia desde el panel.
+4.  **Validación de Disponibilidad**: Sistema en tiempo real que previene doble-booking usando `occupied_slots` (colección pública mínima sin datos personales).
+5.  **Cuentas de Usuario**: Registro e inicio de sesión con Firebase Auth usando nombre, documento, email, teléfono y contraseña.
+6.  **Cuenta del Cliente**: Vista `Cuenta` con acceso a historial de turnos, cierre de sesión, y edición de perfil completo: nombre, documento, teléfono, email y contraseña.
+7.  **Mis Turnos Protegido**: El historial de citas se consulta por `userId` y está disponible para usuarios autenticados; las reservas de invitados quedan visibles solo para admin.
+8.  **Reserva como Invitado**: Los usuarios pueden reservar sin cuenta. En el paso 2 se recopila nombre, teléfono y email. Las citas se guardan con `bookingMode: "guest"` para distinguirlas en el admin.
+9.  **Perfil de Contacto Reutilizable**: El nombre, documento y teléfono del usuario se autocompletan en la reserva desde su perfil, y siguen siendo editables por turno.
+10. **Distinción Cuenta / Invitado en Admin**: Cada tarjeta de turno en el panel admin muestra un badge: "Cuenta" (verde) para usuarios registrados o "Invitado" (ámbar) para reservas sin cuenta, usando el campo `bookingMode`.
+11. **Bloqueo Manual de Horarios**: La administradora puede bloquear y desbloquear horarios manualmente desde el panel, con validación contra turnos ya agendados.
+12. **Bloqueo y Desbloqueo Masivo por Rango**: En admin, la dueña puede bloquear y también eliminar bloqueos en períodos completos (por ejemplo vacaciones) por rango de fechas y opcionalmente por rango horario, evitando la gestión uno a uno.
+13. **Horario Configurable por la Dueña**: El horario de atención se define en `settings/schedule` con tres bloques independientes (`weekdays` para lunes-viernes, `saturday` y `sunday`), cada uno con su hora de inicio/fin, intervalo de slots y descansos. Booking se adapta en tiempo real.
+14. **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
+15. **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
+16. **Historia Clínica Digital**: Nueva pestaña en Admin para registrar la ficha de ingreso del paciente y la evolución por sesión, vinculable al usuario y opcionalmente al turno. El selector de paciente es un combobox con búsqueda en tiempo real por nombre, documento o email, apto para volúmenes altos de pacientes. La lista de sesiones usa carga incremental (20 por página), botón "Cargar más" y filtros por texto, nivel de dolor y rango de fechas.
+17. **Asistente IA (temporalmente inhabilitado)**: la funcionalidad quedó pausada por decisión operativa y se reactivará cuando el negocio lo requiera.
+18. **Filtros y Búsqueda en Turnos**: Admin puede buscar por nombre/teléfono/email/servicio, filtrar por estado temporal (hoy/próximos/pasados), modo de reserva (cuenta/invitado), estado de pago (pagado/sin pago), **método de pago (MP/transferencia)**, **estado de pago de transferencia (pendiente/pagada/vencida)** y rango de fechas. Carga incremental de 20 turnos para mejor rendimiento.
+19. **Recuperación de Slot en Contingencia**: Existe una acción de recuperación para turnos `paid_transfer`, pero queda oculta por defecto y solo se muestra si se detecta inconsistencia (turno pago sin registro en `occupied_slots`).
+20. **Ficha de Contacto Expandible en Turnos**: Cada turno tiene acceso a un modal con información de contacto de la paciente (teléfono, email y documento cuando fue proporcionado), sin sobrecargar visualmente la tarjeta principal.
+21. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
+22. **Contacto Público Editable**: La dueña puede editar dirección, WhatsApp, email e Instagram desde Admin (`settings/contact`) y decidir qué datos se muestran en la pantalla de Contacto (por ejemplo ocultar Instagram hasta su lanzamiento).
 
 ---
 
