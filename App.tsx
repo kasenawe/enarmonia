@@ -199,7 +199,19 @@ const App: React.FC = () => {
         snapshot.forEach((doc) => {
           loaded.push({ id: doc.id, ...doc.data() } as Service);
         });
-        loaded.sort((a, b) => a.name.localeCompare(b.name));
+        loaded.sort((a, b) => {
+          const aOrder =
+            typeof a.sortOrder === "number"
+              ? a.sortOrder
+              : Number.MAX_SAFE_INTEGER;
+          const bOrder =
+            typeof b.sortOrder === "number"
+              ? b.sortOrder
+              : Number.MAX_SAFE_INTEGER;
+
+          if (aOrder !== bOrder) return aOrder - bOrder;
+          return a.name.localeCompare(b.name);
+        });
         setServices(loaded);
         setServicesLoading(false);
         setServiceError(null);

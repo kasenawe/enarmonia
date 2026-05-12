@@ -168,6 +168,7 @@ const Admin: React.FC<AdminProps> = ({
   const [serviceFormError, setServiceFormError] = useState("");
   const [serviceFeedback, setServiceFeedback] = useState<string | null>(null);
   const [isServiceSaving, setIsServiceSaving] = useState(false);
+  const [movingServiceId, setMovingServiceId] = useState<string | null>(null);
   const [selectedPromotionFile, setSelectedPromotionFile] =
     useState<File | null>(null);
   const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(
@@ -614,6 +615,18 @@ const Admin: React.FC<AdminProps> = ({
         serviceId = newServiceDoc.id;
       }
 
+      const maxSortOrder = services.reduce((max, service, index) => {
+        const order =
+          typeof service.sortOrder === "number" ? service.sortOrder : index;
+        return Math.max(max, order);
+      }, -1);
+
+      const currentServiceIndex = services.findIndex((s) => s.id === serviceId);
+      const fallbackExistingOrder = Math.max(0, currentServiceIndex);
+      const nextSortOrder = editingService
+        ? (editingService.sortOrder ?? fallbackExistingOrder)
+        : maxSortOrder + 1;
+
       let imageUrl = serviceForm.imageUrl;
       if (selectedFile && serviceId) {
         imageUrl = await uploadServiceImage(selectedFile, serviceId);
@@ -626,6 +639,7 @@ const Admin: React.FC<AdminProps> = ({
         duration,
         price,
         image: imageUrl,
+        sortOrder: nextSortOrder,
       };
 
       await setDoc(doc(db, "services", serviceId), serviceRecord, {
@@ -664,6 +678,62 @@ const Admin: React.FC<AdminProps> = ({
       setServiceFormError(
         "No se pudo eliminar el servicio. Intenta nuevamente.",
       );
+    }
+  };
+
+  const handleMoveService = async (
+    serviceId: string,
+    direction: "up" | "down",
+  ) => {
+    const currentIndex = services.findIndex(
+      (service) => service.id === serviceId,
+    );
+    if (currentIndex === -1) return;
+
+    const targetIndex =
+      direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= services.length) return;
+
+    const currentService = services[currentIndex];
+    const targetService = services[targetIndex];
+    const currentOrder =
+      typeof currentService.sortOrder === "number"
+        ? currentService.sortOrder
+        : currentIndex;
+    const targetOrder =
+      typeof targetService.sortOrder === "number"
+        ? targetService.sortOrder
+        : targetIndex;
+
+    setMovingServiceId(serviceId);
+    setServiceFeedback(null);
+    setServiceFormError("");
+
+    try {
+      const batch = writeBatch(db);
+      batch.set(
+        doc(db, "services", currentService.id),
+        {
+          sortOrder: targetOrder,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
+      batch.set(
+        doc(db, "services", targetService.id),
+        {
+          sortOrder: currentOrder,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
+      await batch.commit();
+      setServiceFeedback("Orden de servicios actualizado.");
+    } catch (error) {
+      console.error(error);
+      setServiceFormError("No se pudo actualizar el orden de servicios.");
+    } finally {
+      setMovingServiceId(null);
     }
   };
 
@@ -3357,7 +3427,7 @@ const Admin: React.FC<AdminProps> = ({
                   No hay servicios cargados aún.
                 </div>
               ) : (
-                services.map((service) => {
+                services.map((service, index) => {
                   const pricing = getServicePricing(service, promotions);
 
                   return (
@@ -3416,6 +3486,29 @@ const Admin: React.FC<AdminProps> = ({
                           )}
                         </div>
                         <div className="flex gap-2">
+                          <button
+                            onClick={() => handleMoveService(service.id, "up")}
+                            disabled={
+                              index === 0 || movingServiceId === service.id
+                            }
+                            className="px-3 py-2 rounded-2xl bg-gray-100 text-gray-700 text-xs font-bold disabled:opacity-50"
+                            title="Mover arriba"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleMoveService(service.id, "down")
+                            }
+                            disabled={
+                              index === services.length - 1 ||
+                              movingServiceId === service.id
+                            }
+                            className="px-3 py-2 rounded-2xl bg-gray-100 text-gray-700 text-xs font-bold disabled:opacity-50"
+                            title="Mover abajo"
+                          >
+                            ↓
+                          </button>
                           <button
                             onClick={() => handleEditService(service)}
                             className="px-4 py-2 rounded-2xl bg-gray-900 text-white text-xs font-bold"

@@ -5,6 +5,7 @@ export interface Service {
   duration: number; // in minutes
   price: number; // ✨ NUEVO: precio del servicio
   image: string;
+  sortOrder?: number;
 }
 
 export type PromotionDiscountType = "percentage" | "fixed";
