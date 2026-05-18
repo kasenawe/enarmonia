@@ -615,17 +615,10 @@ const Admin: React.FC<AdminProps> = ({
         serviceId = newServiceDoc.id;
       }
 
-      const maxSortOrder = services.reduce((max, service, index) => {
-        const order =
-          typeof service.sortOrder === "number" ? service.sortOrder : index;
-        return Math.max(max, order);
-      }, -1);
-
-      const currentServiceIndex = services.findIndex((s) => s.id === serviceId);
-      const fallbackExistingOrder = Math.max(0, currentServiceIndex);
+      // Nuevo servicio: va al final. Edición: conserva su posición actual.
       const nextSortOrder = editingService
-        ? (editingService.sortOrder ?? fallbackExistingOrder)
-        : maxSortOrder + 1;
+        ? (editingService.sortOrder ?? services.findIndex((s) => s.id === serviceId))
+        : services.length;
 
       let imageUrl = serviceForm.imageUrl;
       if (selectedFile && serviceId) {
@@ -694,39 +687,28 @@ const Admin: React.FC<AdminProps> = ({
       direction === "up" ? currentIndex - 1 : currentIndex + 1;
     if (targetIndex < 0 || targetIndex >= services.length) return;
 
-    const currentService = services[currentIndex];
-    const targetService = services[targetIndex];
-    const currentOrder =
-      typeof currentService.sortOrder === "number"
-        ? currentService.sortOrder
-        : currentIndex;
-    const targetOrder =
-      typeof targetService.sortOrder === "number"
-        ? targetService.sortOrder
-        : targetIndex;
-
     setMovingServiceId(serviceId);
     setServiceFeedback(null);
     setServiceFormError("");
 
     try {
+      // Intercambiar posiciones en el array y luego escribir sortOrder = índice
+      // para cada servicio. Esto elimina cualquier duplicado existente.
+      const reordered = [...services];
+      [reordered[currentIndex], reordered[targetIndex]] = [
+        reordered[targetIndex],
+        reordered[currentIndex],
+      ];
+
+      const now = new Date().toISOString();
       const batch = writeBatch(db);
-      batch.set(
-        doc(db, "services", currentService.id),
-        {
-          sortOrder: targetOrder,
-          updatedAt: new Date().toISOString(),
-        },
-        { merge: true },
-      );
-      batch.set(
-        doc(db, "services", targetService.id),
-        {
-          sortOrder: currentOrder,
-          updatedAt: new Date().toISOString(),
-        },
-        { merge: true },
-      );
+      reordered.forEach((service, index) => {
+        batch.set(
+          doc(db, "services", service.id),
+          { sortOrder: index, updatedAt: now },
+          { merge: true },
+        );
+      });
       await batch.commit();
       setServiceFeedback("Orden de servicios actualizado.");
     } catch (error) {
