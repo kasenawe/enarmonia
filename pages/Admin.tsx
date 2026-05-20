@@ -47,6 +47,8 @@ const DEFAULT_CONTACT_SETTINGS: ContactSettings = {
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+const CLOUDINARY_FOLDER_PREFIX =
+  import.meta.env.VITE_CLOUDINARY_FOLDER_PREFIX || "enarmonia";
 
 interface AdminProps {
   appointments: Appointment[];
@@ -484,7 +486,10 @@ const Admin: React.FC<AdminProps> = ({
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-    formData.append("folder", `enarmonia/services/${serviceId}`);
+    formData.append(
+      "folder",
+      `${CLOUDINARY_FOLDER_PREFIX}/services/${serviceId}`,
+    );
 
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
@@ -515,7 +520,10 @@ const Admin: React.FC<AdminProps> = ({
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-    formData.append("folder", `enarmonia/promotions/${promotionId}`);
+    formData.append(
+      "folder",
+      `${CLOUDINARY_FOLDER_PREFIX}/promotions/${promotionId}`,
+    );
 
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
@@ -617,7 +625,8 @@ const Admin: React.FC<AdminProps> = ({
 
       // Nuevo servicio: va al final. Edición: conserva su posición actual.
       const nextSortOrder = editingService
-        ? (editingService.sortOrder ?? services.findIndex((s) => s.id === serviceId))
+        ? (editingService.sortOrder ??
+          services.findIndex((s) => s.id === serviceId))
         : services.length;
 
       let imageUrl = serviceForm.imageUrl;

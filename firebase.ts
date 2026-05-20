@@ -26,17 +26,24 @@ import {
   getDownloadURL,
 } from "@firebase/storage";
 
-// Configuración de Soledad Cedres Quiropráctica
 const firebaseConfig = {
-  apiKey: "AIzaSyAzwH2u0MKkt3RK3UujCZR_HD1p41NPmh8",
-  authDomain: "enarmonia-289df.firebaseapp.com",
-  projectId: "enarmonia-289df",
+  // Fallbacks temporales para no romper produccion mientras se migran entornos.
+  apiKey:
+    import.meta.env.VITE_FIREBASE_API_KEY ||
+    "AIzaSyAzwH2u0MKkt3RK3UujCZR_HD1p41NPmh8",
+  authDomain:
+    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
+    "enarmonia-289df.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "enarmonia-289df",
   storageBucket:
     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
     "enarmonia-289df.appspot.com",
-  messagingSenderId: "681147149519",
-  appId: "1:681147149519:web:6b5f2aac462a61a9ac9bba",
-  measurementId: "G-WL1CGJ9YJH",
+  messagingSenderId:
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "681147149519",
+  appId:
+    import.meta.env.VITE_FIREBASE_APP_ID ||
+    "1:681147149519:web:6b5f2aac462a61a9ac9bba",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-WL1CGJ9YJH",
 };
 
 // Inicialización modular (v9/v10+)

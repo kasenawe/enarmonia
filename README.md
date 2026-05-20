@@ -105,15 +105,31 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 
 ### Variables de Entorno
 
-Crea un archivo `.env.local` en la raíz del proyecto:
+Crea un archivo `.env.local` en la raíz del proyecto (desarrollo local):
 
 ```env
+VITE_BACKEND_URL=https://tu-backend.vercel.app
+VITE_FIREBASE_API_KEY=tu_api_key
+VITE_FIREBASE_AUTH_DOMAIN=tu-proyecto.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=tu-proyecto
+VITE_FIREBASE_STORAGE_BUCKET=tu-proyecto.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=tu_sender_id
+VITE_FIREBASE_APP_ID=tu_app_id
+VITE_FIREBASE_MEASUREMENT_ID=tu_measurement_id
 VITE_CLOUDINARY_CLOUD_NAME=tu_cloud_name
 VITE_CLOUDINARY_UPLOAD_PRESET=tu_unsigned_upload_preset
-VITE_BACKEND_URL=https://tu-backend.vercel.app
 ```
 
-Nota: la API key de Gemini (si se usa) se configura en el backend, no en el frontend.
+Para entorno de pruebas (staging), crea `.env.staging` con los valores del proyecto Firebase de staging y ejecuta:
+
+```bash
+npm run dev -- --mode staging
+```
+
+Notas:
+
+- la API key de Gemini (si se usa) se configura en el backend, no en el frontend.
+- en `firebase.ts` hay fallbacks temporales a producción para evitar cortes durante la migración; una vez completado staging, conviene eliminarlos.
 
 ### Emails de autenticacion
 
@@ -131,6 +147,7 @@ El panel admin usa Cloudinary para subir imágenes de servicios sin depender de 
 2. Ve a **Settings > Upload**.
 3. Crea un **Upload Preset** con modo **Unsigned**.
 4. Configura `VITE_CLOUDINARY_CLOUD_NAME` y `VITE_CLOUDINARY_UPLOAD_PRESET` en `.env.local`.
+5. (Opcional recomendado) Configura `VITE_CLOUDINARY_FOLDER_PREFIX` para separar entornos, por ejemplo `enarmonia` en producción y `enarmonia-stg` en staging.
 
 ### Configuración de Pagos
 
