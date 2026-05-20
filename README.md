@@ -118,6 +118,7 @@ VITE_FIREBASE_APP_ID=tu_app_id
 VITE_FIREBASE_MEASUREMENT_ID=tu_measurement_id
 VITE_CLOUDINARY_CLOUD_NAME=tu_cloud_name
 VITE_CLOUDINARY_UPLOAD_PRESET=tu_unsigned_upload_preset
+VITE_CLOUDINARY_FOLDER_PREFIX=enarmonia
 ```
 
 Para entorno de pruebas (staging), crea `.env.staging` con los valores del proyecto Firebase de staging y ejecuta:
@@ -130,6 +131,7 @@ Notas:
 
 - la API key de Gemini (si se usa) se configura en el backend, no en el frontend.
 - en `firebase.ts` hay fallbacks temporales a producción para evitar cortes durante la migración; una vez completado staging, conviene eliminarlos.
+- en Vercel, cada proyecto (prod/stg) debe tener sus propias variables para evitar cruces entre entornos.
 
 ### Emails de autenticacion
 
