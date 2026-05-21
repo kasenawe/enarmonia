@@ -83,6 +83,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 20. **Ficha de Contacto Expandible en Turnos**: Cada turno tiene acceso a un modal con información de contacto de la paciente (teléfono, email y documento cuando fue proporcionado), sin sobrecargar visualmente la tarjeta principal.
 21. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
 22. **Contacto Público Editable**: La dueña puede editar dirección, WhatsApp, email e Instagram desde Admin (`settings/contact`) y decidir qué datos se muestran en la pantalla de Contacto (por ejemplo ocultar Instagram hasta su lanzamiento).
+23. **Cupones Personales de Un Uso**: La administradora puede asignar cupones de descuento personalizados a clientas específicas desde la pestaña Usuarios del panel admin. El cupón se aplica automáticamente en el paso de pago de la próxima reserva de esa clienta, sin que ella necesite ingresar ningún código. Una vez completado el pago queda marcado como usado y no puede reutilizarse. Soporta descuento por monto fijo o porcentaje, fecha de vencimiento y restricción a servicios específicos.
 
 ---
 

@@ -572,6 +572,31 @@ Ten en cuenta:
 - no podrás quitarte el permiso a ti misma desde tu propia sesión
 - conviene dar acceso solo a personas de absoluta confianza
 
+### Asignar cupón personal a una clienta
+
+Puedes darle a una clienta un cupón de descuento de un solo uso. El cupón se aplica automáticamente la próxima vez que esa clienta reserva, sin que ella tenga que hacer nada especial.
+
+1. Entra en `Usuarios`.
+2. Buscá a la clienta en la lista.
+3. Pulsá el botón **Asignar cupón** que aparece en su fila.
+4. Completá el formulario:
+   - **Título** (opcional): un nombre interno, por ejemplo “Cupón bienvenida”.
+   - **Tipo de descuento**: porcentaje (%) o monto fijo ($).
+   - **Valor del descuento**: el número correspondiente.
+   - **Aplica a**: todos los servicios, o solo a algunos que elijas.
+   - **Vencimiento** (opcional): fecha hasta la cual es válido. Si no ponés fecha, no vence.
+   - **Nota interna** (opcional): un recordatorio tuyo sobre por qué lo asignaste.
+5. Pulsá **Asignar cupón**.
+
+Lo que pasa después:
+
+- La clienta verá el descuento aplicado automáticamente en el paso de pago de su próxima reserva (siempre que el servicio que elige esté incluido y el cupón no haya vencido).
+- Ella no necesita ingresar ningún código.
+- Una vez que el pago se completa, el cupón queda marcado como **usado** y no se puede volver a usar.
+- Si el cupón y una promoción activa aplican al mismo servicio, el sistema elige automáticamente el descuento mayor (no se acumulan).
+
+En la lista de usuarios puedes ver cuántos cupones activos tiene cada clienta, indicado con un número pequeño junto a su nombre.
+
 ## 9. Sección Historia clínica
 
 Esta sección está pensada para el seguimiento profesional de cada paciente.
@@ -729,7 +754,9 @@ Primero esa persona debe crearse una cuenta y confirmar su correo. Después, des
 ### Para dar acceso admin a otra persona
 
 \`Panel de gestión > Usuarios > Buscar email > Hacer admin\`
+### Para asignar un cupón de descuento a una clienta
 
+`Panel de gestión > Usuarios > Buscar clienta > Asignar cupón > Completar datos > Asignar cupón`
 ### Para cargar la ficha de un paciente
 
 \`Panel de gestión > Historia clínica > Seleccionar paciente > Completar ficha > Guardar\`
