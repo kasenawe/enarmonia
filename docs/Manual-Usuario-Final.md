@@ -121,6 +121,8 @@ Qué vas a ver en cada turno:
 - badge **"Cuenta"** o **"Invitado"** según cómo se hizo la reserva
 - badge del estado de pago (ver más abajo)
 
+En pagos con **Mercado Pago**, la tarjeta muestra el **total abonado real** y, cuando aplica, el **recargo MP** desglosado para que el importe quede claro.
+
 ### Buscar un turno específico
 
 En la barra **"Buscar por nombre, teléfono, email o servicio"** puedes escribir:
@@ -754,9 +756,11 @@ Primero esa persona debe crearse una cuenta y confirmar su correo. Después, des
 ### Para dar acceso admin a otra persona
 
 \`Panel de gestión > Usuarios > Buscar email > Hacer admin\`
+
 ### Para asignar un cupón de descuento a una clienta
 
 `Panel de gestión > Usuarios > Buscar clienta > Asignar cupón > Completar datos > Asignar cupón`
+
 ### Para cargar la ficha de un paciente
 
 \`Panel de gestión > Historia clínica > Seleccionar paciente > Completar ficha > Guardar\`

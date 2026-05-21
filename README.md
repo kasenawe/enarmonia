@@ -84,6 +84,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 21. **Diseño Mobile-First**: Optimizado para ser utilizado como una Web App en dispositivos móviles.
 22. **Contacto Público Editable**: La dueña puede editar dirección, WhatsApp, email e Instagram desde Admin (`settings/contact`) y decidir qué datos se muestran en la pantalla de Contacto (por ejemplo ocultar Instagram hasta su lanzamiento).
 23. **Cupones Personales de Un Uso**: La administradora puede asignar cupones de descuento personalizados a clientas específicas desde la pestaña Usuarios del panel admin. El cupón se aplica automáticamente en el paso de pago de la próxima reserva de esa clienta, sin que ella necesite ingresar ningún código. Una vez completado el pago queda marcado como usado y no puede reutilizarse. Soporta descuento por monto fijo o porcentaje, fecha de vencimiento y restricción a servicios específicos.
+24. **Transparencia de Importes en MP**: En tarjetas de turnos (admin y clienta), los pagos con Mercado Pago muestran el total abonado real y el recargo MP desglosado cuando corresponde.
 
 ---
 
@@ -198,6 +199,7 @@ La aplicación estará disponible en `http://localhost:3000`.
 - **Base de Datos**: La app usa colecciones principales en Firestore:
   - `users`: `uid`, `fullName`, `documentId` (formato CI uruguaya `XXXXXXX-X`), `email`, `role`, `userPhone` (formato E.164, ej: `+59899123456`), `createdAt`.
   - `appointments`: `userId` (opcional), `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `userEmail`, `userDocumentId` (opcional, formato `XXXXXXX-X`), `bookingMode` (`"account"` | `"guest"`), `createdAt`, `price`, `paid`, `basePrice`, `discountAmount`, `appliedPromotion`, `paymentMethod` (`"mp"` | `"transfer"`), `paymentStatus` (`"paid_mp"` | `"pending_transfer"` | `"paid_transfer"` | `"expired_transfer"` | `"cancelled"`), `subtotalAmount`, `mpSurchargeAmount`, `totalAmount`, `mpFeePercent`, `paymentDueAt` (solo transferencia), `paymentValidatedAt`, `paymentValidatedBy`.
+  - Nota de importes: `price` representa el subtotal final del servicio (tras promociones/cupones, sin recargo MP). El total efectivamente cobrado al cliente se guarda en `totalAmount` y el recargo en `mpSurchargeAmount`.
   - `occupied_slots`: `appointmentId`, `serviceId`, `date`, `time`, `duration` (minutos), `createdAt`, `expiresAt` (solo en slots de transferencia; el frontend lo usa para ignorar slots vencidos sin esperar al cron).
   - `blocked_slots`: `date`, `time`, `createdAt`.
   - `settings/schedule`: `weekdays`, `saturday` y `sunday` (cada bloque con `enabled`, `startTime`, `endTime`, `slotIntervalMinutes`, `breaks`) para configurar agenda dinámica separada entre semana, sábado y domingo.
