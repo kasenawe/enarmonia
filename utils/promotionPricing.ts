@@ -90,7 +90,10 @@ const calculateCouponDiscountAmount = (basePrice: number, coupon: Coupon) => {
 };
 
 const isCouponActive = (coupon: Coupon, now: Date = new Date()) => {
-  if (coupon.status !== "active") return false;
+  const isRecoverableMpReservation =
+    coupon.status === "reserved" && coupon.reservedPaymentMethod === "mp";
+
+  if (coupon.status !== "active" && !isRecoverableMpReservation) return false;
   if (!coupon.expiresAt) return true;
   return coupon.expiresAt > now.toISOString();
 };

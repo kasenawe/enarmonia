@@ -209,7 +209,10 @@ const App: React.FC = () => {
 
         snapshot.forEach((entry) => {
           const coupon = { id: entry.id, ...entry.data() } as Coupon;
-          const isActive = coupon.status === "active";
+          const isActive =
+            coupon.status === "active" ||
+            (coupon.status === "reserved" &&
+              coupon.reservedPaymentMethod === "mp");
           const notExpired = !coupon.expiresAt || coupon.expiresAt > nowIso;
           if (isActive && notExpired) {
             loaded.push(coupon);
