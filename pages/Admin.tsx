@@ -4,6 +4,7 @@ import {
   Appointment,
   AppUser,
   BlockedSlot,
+  Coupon,
   OccupiedSlot,
   PaymentMethod,
   PaymentStatus,
@@ -197,9 +198,24 @@ const Admin: React.FC<AdminProps> = ({
   );
   const [isPromotionSaving, setIsPromotionSaving] = useState(false);
   const [users, setUsers] = useState<AppUser[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [usersError, setUsersError] = useState<string | null>(null);
   const [usersLoading, setUsersLoading] = useState(false);
   const [userFeedback, setUserFeedback] = useState<string | null>(null);
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  const [couponTargetUser, setCouponTargetUser] = useState<AppUser | null>(
+    null,
+  );
+  const [isCouponSaving, setIsCouponSaving] = useState(false);
+  const [couponForm, setCouponForm] = useState({
+    title: "",
+    note: "",
+    discountType: "percentage" as PromotionDiscountType,
+    discountValue: "20",
+    expiresAt: "",
+    appliesToAllServices: true,
+    serviceIds: [] as string[],
+  });
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
   const [demotingUserId, setDemotingUserId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
@@ -268,6 +284,7 @@ const Admin: React.FC<AdminProps> = ({
   useEffect(() => {
     if (!currentUser) {
       setUsers([]);
+      setCoupons([]);
       setUsersError(null);
       setUsersLoading(false);
       return;
@@ -295,6 +312,26 @@ const Admin: React.FC<AdminProps> = ({
           "No se pudo cargar la lista de usuarios. Verifica que tu cuenta tenga rol admin.",
         );
         setUsersLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const unsubscribe = onSnapshot(
+      collection(db, "coupons"),
+      (snapshot) => {
+        const loadedCoupons: Coupon[] = [];
+        snapshot.forEach((entry) => {
+          loadedCoupons.push({ id: entry.id, ...entry.data() } as Coupon);
+        });
+        setCoupons(loadedCoupons);
+      },
+      (error) => {
+        console.error("Error al cargar cupones:", error);
       },
     );
 
@@ -998,6 +1035,114 @@ const Admin: React.FC<AdminProps> = ({
     }
   };
 
+  const resetCouponForm = () => {
+    setCouponForm({
+      title: "",
+      note: "",
+      discountType: "percentage",
+      discountValue: "20",
+      expiresAt: "",
+      appliesToAllServices: true,
+      serviceIds: [],
+    });
+  };
+
+  const closeCouponModal = () => {
+    setShowCouponModal(false);
+    setCouponTargetUser(null);
+    resetCouponForm();
+  };
+
+  const toggleCouponService = (serviceId: string) => {
+    setCouponForm((current) => {
+      const isSelected = current.serviceIds.includes(serviceId);
+      return {
+        ...current,
+        serviceIds: isSelected
+          ? current.serviceIds.filter((id) => id !== serviceId)
+          : [...current.serviceIds, serviceId],
+      };
+    });
+  };
+
+  const handleOpenCouponModal = (user: AppUser) => {
+    setUsersError(null);
+    setUserFeedback(null);
+    setCouponTargetUser(user);
+    resetCouponForm();
+    setShowCouponModal(true);
+  };
+
+  const handleAssignCoupon = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!currentUser || !couponTargetUser) {
+      setUsersError("No se pudo identificar el usuario para asignar cupón.");
+      return;
+    }
+
+    const discountValue = Number(couponForm.discountValue);
+    if (!Number.isFinite(discountValue) || discountValue <= 0) {
+      setUsersError("Ingresa un descuento válido mayor a 0.");
+      return;
+    }
+
+    if (couponForm.discountType === "percentage" && discountValue > 100) {
+      setUsersError("El descuento porcentual no puede ser mayor a 100.");
+      return;
+    }
+
+    if (
+      !couponForm.appliesToAllServices &&
+      couponForm.serviceIds.length === 0
+    ) {
+      setUsersError(
+        "Selecciona al menos un servicio o marca el cupón para todo el catálogo.",
+      );
+      return;
+    }
+
+    const now = new Date().toISOString();
+    setIsCouponSaving(true);
+    setUsersError(null);
+    setUserFeedback(null);
+
+    try {
+      const couponDoc = doc(collection(db, "coupons"));
+      await setDoc(couponDoc, {
+        id: couponDoc.id,
+        assignedUserId: couponTargetUser.uid,
+        title: couponForm.title.trim() || "Cupón personal",
+        note: couponForm.note.trim(),
+        discountType: couponForm.discountType,
+        discountValue,
+        appliesToAllServices: couponForm.appliesToAllServices,
+        serviceIds: couponForm.appliesToAllServices
+          ? []
+          : couponForm.serviceIds,
+        status: "active",
+        expiresAt: couponForm.expiresAt
+          ? new Date(`${couponForm.expiresAt}T23:59:59`).toISOString()
+          : null,
+        reservedAt: null,
+        reservedAppointmentId: null,
+        reservedPaymentMethod: null,
+        usedAt: null,
+        usedAppointmentId: null,
+        createdAt: now,
+        createdBy: currentUser.uid,
+        updatedAt: now,
+      });
+
+      setUserFeedback("Cupón asignado correctamente al cliente.");
+      closeCouponModal();
+    } catch (error: any) {
+      console.error(error);
+      setUsersError(error?.message || "No se pudo asignar el cupón.");
+    } finally {
+      setIsCouponSaving(false);
+    }
+  };
+
   const filteredBlockedSlots = useMemo(() => {
     let filtered = [...blockedSlots];
 
@@ -1082,6 +1227,18 @@ const Admin: React.FC<AdminProps> = ({
 
     return filtered;
   }, [users, usersSearch, usersRoleFilter, usersSortBy]);
+
+  const activeCouponsByUserId = useMemo(() => {
+    const nowIso = new Date().toISOString();
+    return coupons.reduce<Record<string, number>>((acc, coupon) => {
+      if (coupon.status !== "active") return acc;
+      if (coupon.expiresAt && coupon.expiresAt <= nowIso) return acc;
+      const userId = coupon.assignedUserId;
+      if (!userId) return acc;
+      acc[userId] = (acc[userId] || 0) + 1;
+      return acc;
+    }, {});
+  }, [coupons]);
 
   const totalUsersPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
   const paginatedUsers = filteredUsers.slice(
@@ -3291,6 +3448,12 @@ const Admin: React.FC<AdminProps> = ({
                                   >
                                     {user.role}
                                   </span>
+                                  {!isUserAdmin && (
+                                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest text-emerald-700">
+                                      {activeCouponsByUserId[user.uid] || 0}{" "}
+                                      cupones
+                                    </span>
+                                  )}
                                   <span className="truncate text-[10px] font-medium text-gray-400">
                                     {user.uid}
                                   </span>
@@ -3298,6 +3461,14 @@ const Admin: React.FC<AdminProps> = ({
                               </div>
 
                               <div className="flex flex-wrap gap-2 justify-end">
+                                {!isUserAdmin && (
+                                  <button
+                                    onClick={() => handleOpenCouponModal(user)}
+                                    className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition-all active:scale-95"
+                                  >
+                                    Asignar cupón
+                                  </button>
+                                )}
                                 {isUserAdmin ? (
                                   <button
                                     onClick={() => handleDemoteUser(user.uid)}
@@ -3656,6 +3827,180 @@ const Admin: React.FC<AdminProps> = ({
           </div>
         )}
       </section>
+
+      {showCouponModal &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={closeCouponModal}
+          >
+            <div
+              className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[2.5rem] bg-white"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <form onSubmit={handleAssignCoupon} className="space-y-5 p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-lg font-bold text-gray-800">
+                      Asignar cupón personal
+                    </h4>
+                    <p className="text-[11px] text-gray-400">
+                      Cliente:{" "}
+                      {couponTargetUser?.fullName ||
+                        couponTargetUser?.email ||
+                        "Sin nombre"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeCouponModal}
+                    className="text-xl font-bold leading-none text-gray-400 hover:text-gray-700"
+                    aria-label="Cerrar"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Título (opcional)
+                    <input
+                      value={couponForm.title}
+                      onChange={(e) =>
+                        setCouponForm((prev) => ({
+                          ...prev,
+                          title: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-3xl border border-gray-200 bg-gray-50 p-4 text-sm outline-none focus:border-gray-900"
+                      placeholder="Ej: Premio cliente fiel"
+                    />
+                  </label>
+
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Vencimiento (opcional)
+                    <input
+                      type="date"
+                      value={couponForm.expiresAt}
+                      onChange={(e) =>
+                        setCouponForm((prev) => ({
+                          ...prev,
+                          expiresAt: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-3xl border border-gray-200 bg-gray-50 p-4 text-sm outline-none focus:border-gray-900"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Tipo de descuento
+                    <select
+                      value={couponForm.discountType}
+                      onChange={(e) =>
+                        setCouponForm((prev) => ({
+                          ...prev,
+                          discountType: e.target.value as PromotionDiscountType,
+                        }))
+                      }
+                      className="w-full rounded-3xl border border-gray-200 bg-gray-50 p-4 text-sm outline-none focus:border-gray-900"
+                    >
+                      <option value="percentage">Porcentaje</option>
+                      <option value="fixed">Monto fijo</option>
+                    </select>
+                  </label>
+
+                  <label className="space-y-2 text-sm font-medium text-gray-600">
+                    Valor
+                    <input
+                      type="number"
+                      min="1"
+                      max={
+                        couponForm.discountType === "percentage"
+                          ? "100"
+                          : undefined
+                      }
+                      value={couponForm.discountValue}
+                      onChange={(e) =>
+                        setCouponForm((prev) => ({
+                          ...prev,
+                          discountValue: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-3xl border border-gray-200 bg-gray-50 p-4 text-sm outline-none focus:border-gray-900"
+                      placeholder={
+                        couponForm.discountType === "percentage" ? "20" : "500"
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="rounded-3xl border border-gray-100 bg-gray-50 p-4">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={couponForm.appliesToAllServices}
+                      onChange={(e) =>
+                        setCouponForm((prev) => ({
+                          ...prev,
+                          appliesToAllServices: e.target.checked,
+                          serviceIds: e.target.checked ? [] : prev.serviceIds,
+                        }))
+                      }
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    Aplicar a todo el catálogo
+                  </label>
+
+                  {!couponForm.appliesToAllServices && (
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {services.map((service) => (
+                        <label
+                          key={service.id}
+                          className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={couponForm.serviceIds.includes(service.id)}
+                            onChange={() => toggleCouponService(service.id)}
+                            className="h-4 w-4 rounded border-gray-300"
+                          />
+                          {service.name}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <label className="block space-y-2 text-sm font-medium text-gray-600">
+                  Nota interna (opcional)
+                  <textarea
+                    value={couponForm.note}
+                    onChange={(e) =>
+                      setCouponForm((prev) => ({
+                        ...prev,
+                        note: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                    className="w-full rounded-3xl border border-gray-200 bg-gray-50 p-4 text-sm outline-none focus:border-gray-900"
+                    placeholder="Ej: premio por recomendación"
+                  />
+                </label>
+
+                <button
+                  type="submit"
+                  disabled={isCouponSaving}
+                  className="w-full rounded-2xl bg-emerald-600 py-4 text-sm font-bold text-white shadow-xl transition-all disabled:opacity-40"
+                >
+                  {isCouponSaving ? "ASIGNANDO..." : "ASIGNAR CUPÓN"}
+                </button>
+              </form>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {/* ── Service modal ──────────────────────────────────────────────── */}
       {showServiceModal &&

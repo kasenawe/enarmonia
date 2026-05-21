@@ -3,6 +3,7 @@ import {
   AppRoute,
   Service,
   Appointment,
+  Coupon,
   Promotion,
   BlockedSlot,
   OccupiedSlot,
@@ -55,6 +56,7 @@ const App: React.FC = () => {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [promotionsLoading, setPromotionsLoading] = useState(true);
   const [promotionError, setPromotionError] = useState<string | null>(null);
+  const [myCoupons, setMyCoupons] = useState<Coupon[]>([]);
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
   const [occupiedSlots, setOccupiedSlots] = useState<OccupiedSlot[]>([]);
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
@@ -189,6 +191,41 @@ const App: React.FC = () => {
 
     return () => unsubscribe();
   }, [authLoading, currentUser]);
+
+  useEffect(() => {
+    if (!currentUser?.uid) {
+      setMyCoupons([]);
+      return;
+    }
+
+    const couponsRef = collection(db, "coupons");
+    const q = query(couponsRef, where("assignedUserId", "==", currentUser.uid));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const nowIso = new Date().toISOString();
+        const loaded: Coupon[] = [];
+
+        snapshot.forEach((entry) => {
+          const coupon = { id: entry.id, ...entry.data() } as Coupon;
+          const isActive = coupon.status === "active";
+          const notExpired = !coupon.expiresAt || coupon.expiresAt > nowIso;
+          if (isActive && notExpired) {
+            loaded.push(coupon);
+          }
+        });
+
+        setMyCoupons(loaded);
+      },
+      (error) => {
+        console.error("Error al cargar cupones de usuario:", error);
+        setMyCoupons([]);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [currentUser]);
 
   useEffect(() => {
     const servicesRef = collection(db, "services");
@@ -441,6 +478,7 @@ const App: React.FC = () => {
             service={selectedServiceOrDefault}
             schedule={schedule}
             promotions={promotions}
+            coupons={myCoupons}
             promotionsLoading={promotionsLoading}
             occupiedSlots={occupiedSlots}
             blockedSlots={blockedSlots}

@@ -141,6 +141,11 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                         app.appliedPromotion.title}
                     </div>
                   )}
+                  {app.appliedCoupon && (
+                    <div className="mt-2 ml-2 inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-700">
+                      {app.appliedCoupon.title}
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="text-base font-black text-action">

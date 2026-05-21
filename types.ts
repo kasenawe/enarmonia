@@ -10,6 +10,8 @@ export interface Service {
 
 export type PromotionDiscountType = "percentage" | "fixed";
 
+export type CouponStatus = "active" | "reserved" | "used" | "cancelled";
+
 export type UserRole = "admin" | "client";
 
 export type PaymentMethod = "mp" | "transfer";
@@ -174,6 +176,34 @@ export interface AppliedPromotion {
   discountValue: number;
 }
 
+export interface Coupon {
+  id: string;
+  assignedUserId: string;
+  title?: string;
+  note?: string;
+  discountType: PromotionDiscountType;
+  discountValue: number;
+  appliesToAllServices: boolean;
+  serviceIds: string[];
+  status: CouponStatus;
+  expiresAt?: string | null;
+  reservedAt?: string | null;
+  reservedAppointmentId?: string | null;
+  reservedPaymentMethod?: PaymentMethod | null;
+  usedAt?: string | null;
+  usedAppointmentId?: string | null;
+  createdAt?: string;
+  createdBy?: string;
+  updatedAt?: string;
+}
+
+export interface AppliedCoupon {
+  id: string;
+  title: string;
+  discountType: PromotionDiscountType;
+  discountValue: number;
+}
+
 export interface Appointment {
   id: string;
   userId?: string;
@@ -200,6 +230,7 @@ export interface Appointment {
   paymentValidatedAt?: string;
   paymentValidatedBy?: string;
   appliedPromotion?: AppliedPromotion | null;
+  appliedCoupon?: AppliedCoupon | null;
   createdAt: string;
   bookingMode?: "account" | "guest";
 }

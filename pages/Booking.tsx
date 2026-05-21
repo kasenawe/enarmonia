@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Service,
   Appointment,
+  Coupon,
   Promotion,
   BlockedSlot,
   OccupiedSlot,
@@ -15,7 +16,7 @@ import {
   TRANSFER_DUE_HOURS,
   DEFAULT_SCHEDULE,
 } from "../constants";
-import { getServicePricing } from "../utils/promotionPricing";
+import { getServicePricingWithUserCoupons } from "../utils/promotionPricing";
 import {
   generateTimeSlots,
   slotOverlapsOccupied,
@@ -29,6 +30,7 @@ interface BookingProps {
   service: Service;
   schedule?: Schedule;
   promotions: Promotion[];
+  coupons: Coupon[];
   promotionsLoading: boolean;
   occupiedSlots: OccupiedSlot[];
   blockedSlots: BlockedSlot[];
@@ -43,6 +45,7 @@ const Booking: React.FC<BookingProps> = ({
   service,
   schedule: scheduleProp,
   promotions,
+  coupons,
   promotionsLoading,
   occupiedSlots,
   blockedSlots,
@@ -77,7 +80,11 @@ const Booking: React.FC<BookingProps> = ({
     totalAmount: number;
   } | null>(null);
   const timeSectionRef = useRef<HTMLDivElement | null>(null);
-  const pricing = getServicePricing(service, promotions);
+  const pricing = getServicePricingWithUserCoupons(
+    service,
+    promotions,
+    coupons,
+  );
 
   // Surcharge calculation (always computed in frontend for display, backend recalculates authoritatively)
   const mpSurcharge = Math.round(
@@ -779,6 +786,19 @@ const Booking: React.FC<BookingProps> = ({
                     ${pricing.finalPrice.toLocaleString("es-UY")}
                   </span>
                 </div>
+                {pricing.appliedCoupon && (
+                  <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-[10px]">
+                    <p className="font-black uppercase tracking-widest text-emerald-700">
+                      Cupón personal aplicado
+                    </p>
+                    <p className="mt-0.5 text-emerald-700">
+                      {pricing.appliedCoupon.title} ·{" "}
+                      {pricing.appliedCoupon.discountType === "percentage"
+                        ? `${pricing.appliedCoupon.discountValue}% OFF`
+                        : `$${pricing.appliedCoupon.discountValue.toLocaleString("es-UY")} OFF`}
+                    </p>
+                  </div>
+                )}
                 {paymentMethod === "mp" && (
                   <div className="flex justify-between items-center">
                     <span className="text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
