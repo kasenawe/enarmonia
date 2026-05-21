@@ -2114,42 +2114,73 @@ const Admin: React.FC<AdminProps> = ({
                           )}
                           {app.price && (
                             <span className="text-[9px] font-bold text-gray-500">
-                              ${app.price.toLocaleString("es-UY")}
+                              $
+                              {(app.paymentMethod === "mp" &&
+                              typeof app.totalAmount === "number"
+                                ? app.totalAmount
+                                : app.price
+                              ).toLocaleString("es-UY")}
                             </span>
                           )}
                         </div>
-                        {(app.basePrice || app.discountAmount) && (
-                          <div className="mt-3 rounded-2xl bg-gray-50 border border-gray-100 p-3 grid grid-cols-3 gap-2 text-xs">
-                            <div>
-                              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                                Base
-                              </p>
-                              <p className="font-bold text-gray-700">
-                                $
-                                {(app.basePrice || app.price)?.toLocaleString(
-                                  "es-UY",
-                                )}
-                              </p>
+                        {(app.basePrice ||
+                          app.discountAmount ||
+                          app.mpSurchargeAmount) && (
+                          <div className="mt-3 rounded-2xl bg-gray-50 border border-gray-100 p-3 text-xs">
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                  Base
+                                </p>
+                                <p className="font-bold text-gray-700">
+                                  $
+                                  {(app.basePrice || app.price)?.toLocaleString(
+                                    "es-UY",
+                                  )}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                  Desc.
+                                </p>
+                                <p className="font-bold text-rose-600">
+                                  -$
+                                  {(app.discountAmount || 0).toLocaleString(
+                                    "es-UY",
+                                  )}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                  {app.paymentMethod === "mp"
+                                    ? "Total abonado"
+                                    : "Total"}
+                                </p>
+                                <p className="font-black text-gray-900">
+                                  $
+                                  {(app.paymentMethod === "mp" &&
+                                  typeof app.totalAmount === "number"
+                                    ? app.totalAmount
+                                    : app.price
+                                  )?.toLocaleString("es-UY")}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                                Desc.
-                              </p>
-                              <p className="font-bold text-rose-600">
-                                -$
-                                {(app.discountAmount || 0).toLocaleString(
-                                  "es-UY",
-                                )}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                                Total
-                              </p>
-                              <p className="font-black text-gray-900">
-                                ${app.price?.toLocaleString("es-UY")}
-                              </p>
-                            </div>
+                            {app.paymentMethod === "mp" &&
+                              typeof app.mpSurchargeAmount === "number" &&
+                              app.mpSurchargeAmount > 0 && (
+                                <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[10px] text-amber-800">
+                                  <div className="flex items-center justify-between font-bold uppercase tracking-widest">
+                                    <span>Recargo MP</span>
+                                    <span>
+                                      +$
+                                      {app.mpSurchargeAmount.toLocaleString(
+                                        "es-UY",
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
                           </div>
                         )}
                       </div>
