@@ -22,6 +22,19 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
   const hasAccountSession = Boolean(authEmail);
   const sessionLabel = authEmail || "Usuario autenticado";
 
+  const getAppointmentTotal = (app: Appointment) => {
+    if (app.paymentMethod === "mp" && typeof app.totalAmount === "number") {
+      return app.totalAmount;
+    }
+
+    return app.price;
+  };
+
+  const getAppointmentSummaryBase = (app: Appointment) => {
+    if (typeof app.basePrice === "number") return app.basePrice;
+    return app.price;
+  };
+
   const handleDelete = async (id: string) => {
     setDeletingId(id);
     try {
@@ -186,15 +199,15 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                   {app.discountAmount ? (
                     <div>
                       <p className="text-[10px] font-bold text-ink-faint line-through">
-                        ${(app.basePrice || app.price)?.toLocaleString("es-UY")}
+                        ${getAppointmentSummaryBase(app)?.toLocaleString("es-UY")}
                       </p>
                       <p className="text-sm font-black text-rose-600">
-                        ${app.price?.toLocaleString("es-UY")}
+                        ${getAppointmentTotal(app)?.toLocaleString("es-UY")}
                       </p>
                     </div>
                   ) : (
                     <p className="text-sm font-black text-brand">
-                      ${app.price?.toLocaleString("es-UY")}
+                      ${getAppointmentTotal(app)?.toLocaleString("es-UY")}
                     </p>
                   )}
                 </div>
@@ -245,7 +258,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                         Base
                       </p>
                       <p className="font-bold text-ink">
-                        ${(app.basePrice || app.price)?.toLocaleString("es-UY")}
+                        ${getAppointmentSummaryBase(app)?.toLocaleString("es-UY")}
                       </p>
                     </div>
                     <div>
@@ -258,13 +271,21 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                     </div>
                     <div>
                       <p className="mb-1 text-[9px] font-bold uppercase tracking-widest text-ink-subtle">
-                        Total
+                        {app.paymentMethod === "mp" ? "Total abonado" : "Total"}
                       </p>
                       <p className="font-black text-action">
-                        ${app.price?.toLocaleString("es-UY")}
+                        ${getAppointmentTotal(app)?.toLocaleString("es-UY")}
                       </p>
                     </div>
                   </div>
+                  {app.paymentMethod === "mp" && typeof app.mpSurchargeAmount === "number" && app.mpSurchargeAmount > 0 && (
+                    <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[10px] text-amber-800">
+                      <div className="flex items-center justify-between font-bold uppercase tracking-widest">
+                        <span>Recargo MP</span>
+                        <span>+${app.mpSurchargeAmount.toLocaleString("es-UY")}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
