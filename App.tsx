@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   AppRoute,
   Service,
@@ -67,6 +67,10 @@ const App: React.FC = () => {
   );
   const [loginPrefillEmail, setLoginPrefillEmail] = useState("");
   const [loginNotice, setLoginNotice] = useState<string | null>(null);
+  const publicServices = useMemo(
+    () => services.filter((service) => service.isActive !== false),
+    [services],
+  );
 
   const mapRouteToPath = (route: AppRoute) => {
     switch (route) {
@@ -293,10 +297,10 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!selectedService && services.length > 0) {
-      setSelectedService(services[0]);
+    if (!selectedService && publicServices.length > 0) {
+      setSelectedService(publicServices[0]);
     }
-  }, [services, selectedService]);
+  }, [publicServices, selectedService]);
 
   // Appointments completos: solo necesarios para administración.
   useEffect(() => {
@@ -433,7 +437,14 @@ const App: React.FC = () => {
     }
   };
 
-  const selectedServiceOrDefault = selectedService || services[0] || null;
+  const selectedServiceFromList = selectedService
+    ? services.find((service) => service.id === selectedService.id) || null
+    : null;
+
+  const selectedServiceOrDefault =
+    selectedServiceFromList && selectedServiceFromList.isActive !== false
+      ? selectedServiceFromList
+      : publicServices[0] || null;
 
   const renderPage = () => {
     if (
@@ -454,7 +465,7 @@ const App: React.FC = () => {
       case AppRoute.HOME:
         return (
           <Home
-            services={services}
+            services={publicServices}
             promotions={promotions}
             onSelectService={(s) => {
               setSelectedService(s);
@@ -467,7 +478,7 @@ const App: React.FC = () => {
       case AppRoute.SERVICES:
         return (
           <Services
-            services={services}
+            services={publicServices}
             promotions={promotions}
             onSelectService={(s) => {
               setSelectedService(s);
@@ -498,10 +509,10 @@ const App: React.FC = () => {
         ) : (
           <div className="p-6 text-center">
             <h2 className="text-lg font-bold text-ink-strong">
-              Cargando servicios...
+              No hay servicios disponibles
             </h2>
             <p className="mt-2 text-sm text-ink-muted">
-              Espera mientras cargamos los servicios disponibles.
+              La agenda está temporalmente cerrada. Intenta más tarde.
             </p>
           </div>
         );

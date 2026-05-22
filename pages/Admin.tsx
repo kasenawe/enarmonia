@@ -171,6 +171,9 @@ const Admin: React.FC<AdminProps> = ({
   const [serviceFormError, setServiceFormError] = useState("");
   const [serviceFeedback, setServiceFeedback] = useState<string | null>(null);
   const [isServiceSaving, setIsServiceSaving] = useState(false);
+  const [togglingServiceId, setTogglingServiceId] = useState<string | null>(
+    null,
+  );
   const [movingServiceId, setMovingServiceId] = useState<string | null>(null);
   const [selectedPromotionFile, setSelectedPromotionFile] =
     useState<File | null>(null);
@@ -477,6 +480,8 @@ const Admin: React.FC<AdminProps> = ({
       : `$${promotion.discountValue.toLocaleString("es-UY")} OFF`;
   };
 
+  const isServiceActive = (service: Service) => service.isActive !== false;
+
   const resetServiceForm = () => {
     setEditingService(null);
     setSelectedFile(null);
@@ -678,6 +683,7 @@ const Admin: React.FC<AdminProps> = ({
         duration,
         price,
         image: imageUrl,
+        isActive: editingService ? isServiceActive(editingService) : true,
         sortOrder: nextSortOrder,
       };
 
@@ -717,6 +723,51 @@ const Admin: React.FC<AdminProps> = ({
       setServiceFormError(
         "No se pudo eliminar el servicio. Intenta nuevamente.",
       );
+    }
+  };
+
+  const handleToggleServiceStatus = async (service: Service) => {
+    const nextIsActive = !isServiceActive(service);
+    const actionLabel = nextIsActive ? "habilitar" : "deshabilitar";
+
+    if (
+      !window.confirm(
+        `¿Seguro que deseas ${actionLabel} este servicio? ${
+          nextIsActive
+            ? "Volverá a mostrarse en la reserva pública."
+            : "Quedará oculto para nuevas reservas, pero no se pierde el historial."
+        }`,
+      )
+    ) {
+      return;
+    }
+
+    setTogglingServiceId(service.id);
+    setServiceFeedback(null);
+    setServiceFormError("");
+
+    try {
+      await setDoc(
+        doc(db, "services", service.id),
+        {
+          isActive: nextIsActive,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
+
+      setServiceFeedback(
+        nextIsActive
+          ? `Servicio \"${service.name}\" habilitado.`
+          : `Servicio \"${service.name}\" deshabilitado.`,
+      );
+    } catch (error) {
+      console.error(error);
+      setServiceFormError(
+        "No se pudo actualizar el estado del servicio. Intenta nuevamente.",
+      );
+    } finally {
+      setTogglingServiceId(null);
     }
   };
 
@@ -3622,11 +3673,16 @@ const Admin: React.FC<AdminProps> = ({
               ) : (
                 services.map((service, index) => {
                   const pricing = getServicePricing(service, promotions);
+                  const serviceActive = isServiceActive(service);
 
                   return (
                     <div
                       key={service.id}
-                      className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 flex flex-col gap-4"
+                      className={`rounded-[2.5rem] border shadow-sm p-6 flex flex-col gap-4 ${
+                        serviceActive
+                          ? "bg-white border-gray-100"
+                          : "bg-gray-50 border-gray-200"
+                      }`}
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div>
@@ -3634,6 +3690,15 @@ const Admin: React.FC<AdminProps> = ({
                             <h4 className="font-bold text-gray-800">
                               {service.name}
                             </h4>
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
+                                serviceActive
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-gray-200 text-gray-600"
+                              }`}
+                            >
+                              {serviceActive ? "Activo" : "Deshabilitado"}
+                            </span>
                             {pricing.appliedPromotion && (
                               <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-rose-600">
                                 {pricing.appliedPromotion.badgeText ||
@@ -3707,6 +3772,21 @@ const Admin: React.FC<AdminProps> = ({
                             className="px-4 py-2 rounded-2xl bg-gray-900 text-white text-xs font-bold"
                           >
                             Editar
+                          </button>
+                          <button
+                            onClick={() => handleToggleServiceStatus(service)}
+                            disabled={togglingServiceId === service.id}
+                            className={`px-4 py-2 rounded-2xl text-xs font-bold border disabled:opacity-50 ${
+                              serviceActive
+                                ? "bg-amber-50 text-amber-700 border-amber-100"
+                                : "bg-emerald-50 text-emerald-700 border-emerald-100"
+                            }`}
+                          >
+                            {togglingServiceId === service.id
+                              ? "Guardando..."
+                              : serviceActive
+                                ? "Deshabilitar"
+                                : "Habilitar"}
                           </button>
                           <button
                             onClick={() => handleDeleteService(service.id)}

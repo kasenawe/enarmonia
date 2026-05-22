@@ -456,6 +456,19 @@ Nota:
 - si creas un servicio nuevo, se agrega al final de la lista
 - puedes reordenarlo en cualquier momento con los botones
 
+### Deshabilitar un servicio (recomendado para pausas temporales)
+
+Si un servicio se ofrece solo por un período corto (por ejemplo un día), lo más recomendable es **deshabilitarlo** en lugar de eliminarlo.
+
+1. Busca el servicio en la lista.
+2. Pulsa `Deshabilitar`.
+
+Resultado:
+
+- el servicio deja de verse en la reserva pública (Inicio, listado de servicios y Booking)
+- no se pierde la ficha del servicio
+- puedes volver a activarlo más adelante con el botón `Habilitar`
+
 ### Eliminar un servicio
 
 1. Busca el servicio en la lista.
@@ -463,7 +476,7 @@ Nota:
 
 Recomendación:
 
-Antes de eliminar un servicio, asegúrate de que realmente no lo vas a ofrecer más. Si solo quieres cambiarlo, conviene editarlo.
+Antes de eliminar un servicio, asegúrate de que realmente no lo vas a ofrecer más. Si es algo temporal, conviene usar `Deshabilitar`.
 
 ## 8. Sección Promociones
 
@@ -748,6 +761,10 @@ Primero esa persona debe crearse una cuenta y confirmar su correo. Después, des
 ### Para agregar un servicio
 
 \`Panel de gestión > Servicios > Nuevo servicio > Completar datos > Crear servicio\`
+
+### Para pausar temporalmente un servicio
+
+`Panel de gestión > Servicios > Buscar servicio > Deshabilitar`
 
 ### Para lanzar una promoción
 

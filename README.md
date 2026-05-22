@@ -85,6 +85,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 22. **Contacto Público Editable**: La dueña puede editar dirección, WhatsApp, email e Instagram desde Admin (`settings/contact`) y decidir qué datos se muestran en la pantalla de Contacto (por ejemplo ocultar Instagram hasta su lanzamiento).
 23. **Cupones Personales de Un Uso**: La administradora puede asignar cupones de descuento personalizados a clientas específicas desde la pestaña Usuarios del panel admin. El cupón se aplica automáticamente en el paso de pago de la próxima reserva de esa clienta, sin que ella necesite ingresar ningún código. Una vez completado el pago queda marcado como usado y no puede reutilizarse. Soporta descuento por monto fijo o porcentaje, fecha de vencimiento y restricción a servicios específicos.
 24. **Transparencia de Importes en MP**: En tarjetas de turnos (admin y clienta), los pagos con Mercado Pago muestran el total abonado real y el recargo MP desglosado cuando corresponde.
+25. **Servicios Deshabilitables sin Borrado**: Desde Admin se puede deshabilitar temporalmente un servicio para ocultarlo en Home, Servicios y Booking sin eliminar su ficha ni afectar historial. También se puede volver a habilitar cuando sea necesario.
 
 ---
 
@@ -204,7 +205,7 @@ La aplicación estará disponible en `http://localhost:3000`.
   - `blocked_slots`: `date`, `time`, `createdAt`.
   - `settings/schedule`: `weekdays`, `saturday` y `sunday` (cada bloque con `enabled`, `startTime`, `endTime`, `slotIntervalMinutes`, `breaks`) para configurar agenda dinámica separada entre semana, sábado y domingo.
   - `settings/contact`: `address`, `whatsapp`, `instagram`, `email` y flags de visibilidad (`showAddress`, `showWhatsapp`, `showInstagram`, `showEmail`) para controlar qué se publica en la sección Contacto.
-  - `services`: `name`, `description`, `duration`, `price`, `image`.
+  - `services`: `name`, `description`, `duration`, `price`, `image`, `isActive` (opcional, `true` por defecto; si es `false`, no se muestra en reservas públicas).
   - `promotions`: `title`, `description`, `badgeText`, `discountType`, `discountValue`, `featured`, `isActive`, `appliesToAllServices`, `serviceIds`, `startDate`, `endDate`, `priority`, `image`.
   - `clinical_profiles`: `patientId`, `intakeDate`, datos de identificación y contacto, motivo de consulta, zonas de dolor, antecedentes de salud, `initialDiagnosis`, `treatmentStartDate`, `createdAt/updatedAt`, `createdBy/updatedBy`.
   - `clinical_sessions`: `patientId`, `appointmentId` (opcional), `sessionDate`, `painLevel`, `clinicalObservations`, `techniquesApplied`, `recommendations`, `sessionNumber`, `createdAt/updatedAt`, `createdBy/updatedBy`.

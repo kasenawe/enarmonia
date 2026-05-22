@@ -5,6 +5,7 @@ export interface Service {
   duration: number; // in minutes
   price: number; // ✨ NUEVO: precio del servicio
   image: string;
+  isActive?: boolean;
   sortOrder?: number;
 }
 
