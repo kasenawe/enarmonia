@@ -369,7 +369,7 @@ Puedes configurar:
 - un bloque para sábado
 - un bloque para domingo
 - para cada bloque: hora de inicio y fin
-- para cada bloque: intervalo de horarios (por ejemplo cada 60 minutos)
+- para cada bloque: intervalo de horarios (por ejemplo cada 60 o 30 minutos)
 - para cada bloque: descansos (por ejemplo 12:00 a 14:00)
 
 ### Cómo configurar el horario
@@ -385,6 +385,7 @@ Resultado:
 
 - La agenda se actualiza automáticamente.
 - En reservas solo se mostrarán días y horas compatibles con esa configuración.
+- Si configuras intervalo de 30 minutos, verás horarios como 09:00, 09:30, 10:00, etc.
 
 ### Sección Contacto (datos públicos)
 
