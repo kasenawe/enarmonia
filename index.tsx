@@ -47,7 +47,7 @@ if (isNonProductionEnv) {
     "--color-brand": hexToRgbChannels("#D97706"),
     "--color-brand-dark": hexToRgbChannels("#B45309"),
     "--color-brand-accent": hexToRgbChannels("#F59E0B"),
-    "--color-brand-muted": hexToRgbChannels("#FDE68A"),
+    "--color-brand-muted": hexToRgbChannels("#9A3412"),
     "--color-action": hexToRgbChannels("#D97706"),
     "--color-action-hover": hexToRgbChannels("#B45309"),
     "--color-app-background": hexToRgbChannels("#FFF7ED"),
