@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   AppRoute,
   Service,
@@ -37,6 +37,7 @@ import {
 } from "./firebase";
 
 const App: React.FC = () => {
+  const initialTitleRef = useRef<string>(document.title);
   const {
     currentUser,
     appUser,
@@ -71,6 +72,24 @@ const App: React.FC = () => {
     () => services.filter((service) => service.isActive !== false),
     [services],
   );
+
+  const configuredAppEnv = (import.meta.env.VITE_APP_ENV || "")
+    .trim()
+    .toLowerCase();
+  const firebaseProjectId = (import.meta.env.VITE_FIREBASE_PROJECT_ID || "")
+    .trim()
+    .toLowerCase();
+  const inferredStaging = firebaseProjectId.includes("staging");
+  const isNonProductionEnv =
+    (configuredAppEnv && configuredAppEnv !== "production") || inferredStaging;
+  const environmentLabel = (
+    import.meta.env.VITE_ENV_LABEL ||
+    (configuredAppEnv
+      ? configuredAppEnv.toUpperCase()
+      : inferredStaging
+        ? "STAGING"
+        : "")
+  ).trim();
 
   const mapRouteToPath = (route: AppRoute) => {
     switch (route) {
@@ -156,6 +175,20 @@ const App: React.FC = () => {
     window.addEventListener("popstate", initializeRoute);
     return () => window.removeEventListener("popstate", initializeRoute);
   }, []);
+
+  useEffect(() => {
+    const baseTitle = initialTitleRef.current;
+
+    if (!isNonProductionEnv || !environmentLabel) {
+      document.title = baseTitle;
+      return;
+    }
+
+    const prefix = `[${environmentLabel}] `;
+    document.title = baseTitle.startsWith(prefix)
+      ? baseTitle
+      : `${prefix}${baseTitle}`;
+  }, [isNonProductionEnv, environmentLabel]);
 
   useEffect(() => {
     if (authLoading) {
@@ -669,6 +702,22 @@ const App: React.FC = () => {
 
   return (
     <div className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden border-x border-line-subtle bg-shell shadow-2xl">
+      {isNonProductionEnv && environmentLabel && (
+        <div className="pointer-events-none absolute right-3 top-3 z-[70] rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-amber-800 shadow-md">
+          {environmentLabel}
+        </div>
+      )}
+
+      {isNonProductionEnv &&
+        environmentLabel &&
+        currentRoute === AppRoute.ADMIN && (
+          <div className="pointer-events-none absolute inset-0 z-[15] flex items-center justify-center overflow-hidden">
+            <span className="select-none text-[68px] font-black uppercase tracking-[0.35em] text-amber-300/20 -rotate-[28deg]">
+              {environmentLabel}
+            </span>
+          </div>
+        )}
+
       <div className="flex-1 overflow-y-auto pb-24 relative z-10">
         {renderPage()}
       </div>

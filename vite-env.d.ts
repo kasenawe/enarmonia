@@ -13,6 +13,8 @@ interface ImportMetaEnv {
   readonly VITE_CLOUDINARY_CLOUD_NAME?: string;
   readonly VITE_CLOUDINARY_UPLOAD_PRESET?: string;
   readonly VITE_CLOUDINARY_FOLDER_PREFIX?: string;
+  readonly VITE_APP_ENV?: string;
+  readonly VITE_ENV_LABEL?: string;
 }
 
 interface ImportMeta {
