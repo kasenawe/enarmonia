@@ -266,7 +266,10 @@ const Admin: React.FC<AdminProps> = ({
     normalizedSchedule,
     blockDateDay,
   );
-  const blockTimeOptions = generateTimeSlots(blockDateSegment, 60);
+  const blockTimeOptions = generateTimeSlots(
+    blockDateSegment,
+    blockDateSegment.slotIntervalMinutes,
+  );
 
   // Keep selected manual block time valid for the selected date segment.
   useEffect(() => {
@@ -1390,7 +1393,10 @@ const Admin: React.FC<AdminProps> = ({
         );
         if (segment.enabled) {
           const iso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
-          const dateSlots = generateTimeSlots(segment, 60);
+          const dateSlots = generateTimeSlots(
+            segment,
+            segment.slotIntervalMinutes,
+          );
           const timeRange = bulkAllDay
             ? dateSlots
             : dateSlots.filter((t) => t >= bulkTimeFrom && t <= bulkTimeTo);
@@ -1477,7 +1483,10 @@ const Admin: React.FC<AdminProps> = ({
         );
         if (segment.enabled) {
           const iso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
-          const dateSlots = generateTimeSlots(segment, 60);
+          const dateSlots = generateTimeSlots(
+            segment,
+            segment.slotIntervalMinutes,
+          );
           const timeRange = bulkUnblockAllDay
             ? dateSlots
             : dateSlots.filter(
