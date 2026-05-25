@@ -138,6 +138,7 @@ Notas:
 - en `firebase.ts` hay fallbacks temporales a producción para evitar cortes durante la migración; una vez completado staging, conviene eliminarlos.
 - en Vercel, cada proyecto (prod/stg) debe tener sus propias variables para evitar cruces entre entornos.
 - para diferenciar entornos visualmente, configura en staging `VITE_APP_ENV=staging` y opcionalmente `VITE_ENV_LABEL=STG`.
+- además, en entornos no productivos se aplica automáticamente una paleta visual cálida para distinguir staging/qa de producción.
 
 ### Emails de autenticacion
 
