@@ -1306,9 +1306,58 @@ const Admin: React.FC<AdminProps> = ({
     );
   };
 
+  const timeToMinutes = (time: string) => {
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const rangesOverlap = (
+    startA: number,
+    durationA: number,
+    startB: number,
+    durationB: number,
+  ) => {
+    const endA = startA + durationA;
+    const endB = startB + durationB;
+    return startA < endB && endA > startB;
+  };
+
+  const hasOccupiedRangeAtSlot = (
+    date: string,
+    time: string,
+    slotDurationMinutes: number,
+  ) => {
+    const slotStart = timeToMinutes(time);
+    return occupiedSlots.some((occupied) => {
+      if (occupied.date !== date) return false;
+      const occupiedStart = timeToMinutes(occupied.time);
+      const occupiedDuration = occupied.duration ?? 60;
+      return rangesOverlap(
+        slotStart,
+        slotDurationMinutes,
+        occupiedStart,
+        occupiedDuration,
+      );
+    });
+  };
+
+  const isAppointmentBlockingSlot = (appointment: Appointment) => {
+    if (appointment.paymentStatus === "expired_transfer") return false;
+    if (appointment.paymentStatus === "cancelled") return false;
+    if (appointment.paymentStatus === "failed_mp") return false;
+    if (appointment.paymentStatus === "pending_mp") return false;
+    if (appointment.paymentStatus === "pending_transfer") return true;
+    if (appointment.paymentStatus === "paid_transfer") return true;
+    if (appointment.paymentStatus === "paid_mp") return true;
+    return appointment.paid === true;
+  };
+
   const hasAppointmentAtSlot = (date: string, time: string) => {
     return appointments.some(
-      (appointment) => appointment.date === date && appointment.time === time,
+      (appointment) =>
+        appointment.date === date &&
+        appointment.time === time &&
+        isAppointmentBlockingSlot(appointment),
     );
   };
 
@@ -1327,7 +1376,17 @@ const Admin: React.FC<AdminProps> = ({
       return;
     }
 
-    if (hasAppointmentAtSlot(blockDate, blockTime)) {
+    const hasOccupied = hasOccupiedRangeAtSlot(
+      blockDate,
+      blockTime,
+      blockDateSegment.slotIntervalMinutes,
+    );
+    const hasActiveAppointmentAtExactSlot = hasAppointmentAtSlot(
+      blockDate,
+      blockTime,
+    );
+
+    if (hasOccupied || hasActiveAppointmentAtExactSlot) {
       setBlockError(
         "No se puede bloquear ese horario porque ya existe un turno agendado.",
       );
@@ -1405,11 +1464,11 @@ const Admin: React.FC<AdminProps> = ({
             const alreadyBlocked = blockedSlots.some(
               (b) => b.date === iso && b.time === time,
             );
-            const hasAppointment = appointments.some(
-              (a) => a.date === iso && a.time === time,
-            );
-            const isOccupied = occupiedSlots.some(
-              (o) => o.date === iso && o.time === time,
+            const hasAppointment = hasAppointmentAtSlot(iso, time);
+            const isOccupied = hasOccupiedRangeAtSlot(
+              iso,
+              time,
+              segment.slotIntervalMinutes,
             );
             if (!alreadyBlocked && !hasAppointment && !isOccupied) {
               slotsToAdd.push({ date: iso, time });
