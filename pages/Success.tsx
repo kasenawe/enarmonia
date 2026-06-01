@@ -1,5 +1,5 @@
 import React from "react";
-import { CONTACT_INFO } from "../constants";
+import { CONTACT_INFO, BOOKING_POLICY_MESSAGES } from "../constants";
 
 const Success: React.FC = () => {
   const params = new URLSearchParams(window.location.search);
@@ -68,6 +68,17 @@ const Success: React.FC = () => {
             Recibirás un mensaje de confirmación por WhatsApp.
           </span>
         </p>
+
+        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-amber-800">
+            Recordatorio importante
+          </p>
+          <ul className="space-y-1 text-[10px] leading-relaxed text-amber-800">
+            <li>- {BOOKING_POLICY_MESSAGES.reschedule}</li>
+            <li>- {BOOKING_POLICY_MESSAGES.lateArrival}</li>
+            <li>- {BOOKING_POLICY_MESSAGES.cancellations}</li>
+          </ul>
+        </div>
 
         <div className="space-y-4">
           <a

@@ -138,3 +138,12 @@ export const TRANSFER_BANK_INFO = {
   accountNumber: "1749453",
   holder: "Soledad Cedrés",
 };
+
+export const BOOKING_POLICY_MESSAGES = {
+  reschedule:
+    "Cada reserva permite 1 unico cambio de fecha/hora. A partir del segundo cambio, el turno se pierde.",
+  lateArrival:
+    "Tolerancia maxima de llegada: 15 minutos. Pasado ese tiempo, el turno se considera perdido.",
+  cancellations:
+    "Las cancelaciones/reprogramaciones se solicitan por WhatsApp.",
+};
