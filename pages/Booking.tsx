@@ -15,7 +15,6 @@ import {
   TRANSFER_BANK_INFO,
   TRANSFER_DUE_HOURS,
   DEFAULT_SCHEDULE,
-  BOOKING_POLICY_MESSAGES,
 } from "../constants";
 import { getServicePricingWithUserCoupons } from "../utils/promotionPricing";
 import {
@@ -851,17 +850,6 @@ const Booking: React.FC<BookingProps> = ({
                 </p>
               </div>
             )}
-
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-amber-800 mb-2">
-                Politicas de reserva
-              </p>
-              <ul className="space-y-1 text-[10px] leading-relaxed text-amber-800">
-                <li>- {BOOKING_POLICY_MESSAGES.reschedule}</li>
-                <li>- {BOOKING_POLICY_MESSAGES.lateArrival}</li>
-                <li>- {BOOKING_POLICY_MESSAGES.cancellations}</li>
-              </ul>
-            </div>
           </div>
         )}
       </div>

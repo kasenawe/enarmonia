@@ -1,6 +1,5 @@
 import React from "react";
 import { Appointment } from "../types";
-import { BOOKING_POLICY_MESSAGES, CONTACT_INFO } from "../constants";
 
 interface MyAppointmentsProps {
   appointments: Appointment[];
@@ -100,25 +99,6 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
         >
           Cerrar Sesión
         </button>
-      </div>
-
-      <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-        <p className="text-[10px] font-black uppercase tracking-widest text-amber-800 mb-2">
-          Politicas de turnos
-        </p>
-        <ul className="space-y-1 text-[10px] leading-relaxed text-amber-800">
-          <li>- {BOOKING_POLICY_MESSAGES.reschedule}</li>
-          <li>- {BOOKING_POLICY_MESSAGES.lateArrival}</li>
-          <li>- {BOOKING_POLICY_MESSAGES.cancellations}</li>
-        </ul>
-        <a
-          href={`https://wa.me/${CONTACT_INFO.whatsapp}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center rounded-xl border border-amber-300 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-amber-800"
-        >
-          Solicitar por WhatsApp
-        </a>
       </div>
 
       {isSyncing ? (
