@@ -67,7 +67,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 4.  **Validación de Disponibilidad**: Sistema en tiempo real que previene doble-booking usando `occupied_slots` (colección pública mínima sin datos personales).
 5.  **Cuentas de Usuario**: Registro e inicio de sesión con Firebase Auth usando nombre, documento, email, teléfono y contraseña.
 6.  **Cuenta del Cliente**: Vista `Cuenta` con acceso a historial de turnos, cierre de sesión, y edición de perfil completo: nombre, documento, teléfono, email y contraseña.
-7.  **Mis Turnos Protegido**: El historial de citas se consulta por `userId` y está disponible para usuarios autenticados; las reservas de invitados quedan visibles solo para admin.
+7.  **Mis Turnos Protegido**: El historial de citas se consulta por `userId` y está disponible para usuarios autenticados; las reservas de invitados quedan visibles solo para admin. Las cancelaciones de clientas se gestionan por WhatsApp/administración (no autogestionadas desde la app).
 8.  **Reserva como Invitado**: Los usuarios pueden reservar sin cuenta. En el paso 2 se recopila nombre, teléfono y email. Las citas se guardan con `bookingMode: "guest"` para distinguirlas en el admin.
 9.  **Perfil de Contacto Reutilizable**: El nombre, documento y teléfono del usuario se autocompletan en la reserva desde su perfil, y siguen siendo editables por turno.
 10. **Distinción Cuenta / Invitado en Admin**: Cada tarjeta de turno en el panel admin muestra un badge: "Cuenta" (verde) para usuarios registrados o "Invitado" (ámbar) para reservas sin cuenta, usando el campo `bookingMode`.

@@ -84,6 +84,7 @@ Importante:
 - en transferencia el horario se bloquea de inmediato, incluso antes de que pagues; si luego la persona no paga, vos lo eliminanás manualmente
 - los horarios ocupados o bloqueados dejan de mostrarse como disponibles
 - la clienta puede ver sus propios turnos desde \`Mis turnos\`
+- si una clienta quiere cancelar o reprogramar, debe solicitarlo por WhatsApp; la gestión final la haces vos desde el panel
 
 Nota interna:
 

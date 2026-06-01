@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Appointment } from "../types";
 
 interface MyAppointmentsProps {
@@ -7,7 +7,6 @@ interface MyAppointmentsProps {
   authEmail: string | null;
   onGoToLogin: () => void;
   onLogout: () => void;
-  onDelete: (id: string) => Promise<void>;
 }
 
 const MyAppointments: React.FC<MyAppointmentsProps> = ({
@@ -16,9 +15,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
   authEmail,
   onGoToLogin,
   onLogout,
-  onDelete,
 }) => {
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const hasAccountSession = Boolean(authEmail);
   const sessionLabel = authEmail || "Usuario autenticado";
 
@@ -33,15 +30,6 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
   const getAppointmentSummaryBase = (app: Appointment) => {
     if (typeof app.basePrice === "number") return app.basePrice;
     return app.price;
-  };
-
-  const handleDelete = async (id: string) => {
-    setDeletingId(id);
-    try {
-      await onDelete(id);
-    } finally {
-      setDeletingId(null);
-    }
   };
 
   if (!hasAccountSession) {
@@ -212,34 +200,6 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                   )}
                 </div>
 
-                <button
-                  disabled={deletingId === app.id}
-                  onClick={() => handleDelete(app.id)}
-                  className={`p-2 rounded-xl transition-all ${deletingId === app.id ? "opacity-30" : "text-ink-faint hover:text-red-500 hover:bg-red-50"}`}
-                  title="Cancelar turno"
-                >
-                  {deletingId === app.id ? (
-                    <div className="w-4 h-4 border-2 border-ink-faint border-t-red-500 rounded-full animate-spin"></div>
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M3 6h18" />
-                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                      <line x1="10" x2="10" y1="11" y2="17" />
-                      <line x1="14" x2="14" y1="11" y2="17" />
-                    </svg>
-                  )}
-                </button>
               </div>
 
               {(app.discountAmount || app.basePrice) && (

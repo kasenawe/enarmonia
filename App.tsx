@@ -601,7 +601,6 @@ const App: React.FC = () => {
             authEmail={currentUser?.email || null}
             onGoToLogin={() => navigate(AppRoute.LOGIN)}
             onLogout={handleLogout}
-            onDelete={handleDeleteAppointment}
           />
         );
       case AppRoute.CONTACT:
