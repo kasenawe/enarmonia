@@ -145,5 +145,5 @@ export const BOOKING_POLICY_MESSAGES = {
   lateArrival:
     "Tolerancia maxima de llegada: 15 minutos. Pasado ese tiempo, el turno se considera perdido.",
   cancellations:
-    "Las cancelaciones/reprogramaciones se solicitan por WhatsApp.",
+    "Las cancelaciones/reprogramaciones se solicitan por WhatsApp y requieren 24 horas o mas de anticipacion.",
 };
