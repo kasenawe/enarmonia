@@ -12,7 +12,9 @@ const Success: React.FC = () => {
       <div className="p-6 pt-12 text-center animate-in">
         <div className="relative overflow-hidden rounded-[3rem] border border-amber-200 bg-shell p-10 shadow-xl">
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-300 to-yellow-400"></div>
-          <h2 className="mb-4 text-2xl font-black text-ink-strong">Reserva pendiente</h2>
+          <h2 className="mb-4 text-2xl font-black text-ink-strong">
+            Reserva pendiente
+          </h2>
           <p className="mb-8 text-sm text-ink-muted">
             Tu reserva está pendiente de confirmación de pago por transferencia.
             Revisá tu WhatsApp para los datos bancarios.
@@ -69,11 +71,11 @@ const Success: React.FC = () => {
           </span>
         </p>
 
-        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left">
-          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-amber-800">
+        <div className="mb-6 rounded-2xl border border-outline-soft bg-gradient-to-r from-surface-highlight to-surface-deep p-4 text-left">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-brand-ink">
             Recordatorio importante
           </p>
-          <ul className="space-y-1 text-[10px] leading-relaxed text-amber-800">
+          <ul className="space-y-1 text-[10px] leading-relaxed text-brand-muted/90">
             <li>- {BOOKING_POLICY_MESSAGES.reschedule}</li>
             <li>- {BOOKING_POLICY_MESSAGES.lateArrival}</li>
             <li>- {BOOKING_POLICY_MESSAGES.cancellations}</li>
@@ -87,7 +89,17 @@ const Success: React.FC = () => {
             rel="noopener noreferrer"
             className="flex w-full items-center justify-center gap-3 rounded-[1.5rem] bg-[#25D366] py-4 text-sm font-black text-white shadow-xl transition-all active:scale-95"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7l.8.1" />
               <path d="m22 2-7.5 7.5" />
               <path d="M10 14.7 9 22l11-11-4.7-1" />
@@ -129,4 +141,3 @@ const Success: React.FC = () => {
 };
 
 export default Success;
-

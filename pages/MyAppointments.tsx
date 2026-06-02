@@ -102,11 +102,11 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
         </button>
       </div>
 
-      <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-        <p className="text-[10px] font-black uppercase tracking-widest text-amber-800 mb-2">
-          Politicas de turnos
+      <div className="mb-6 rounded-2xl border border-outline-soft bg-gradient-to-r from-surface-highlight to-surface-deep p-4">
+        <p className="text-[10px] font-black uppercase tracking-widest text-brand-ink mb-2">
+          Política de reservas y asistencia:
         </p>
-        <ul className="space-y-1 text-[10px] leading-relaxed text-amber-800">
+        <ul className="space-y-1 text-[10px] leading-relaxed text-brand-muted/90">
           <li>- {BOOKING_POLICY_MESSAGES.reschedule}</li>
           <li>- {BOOKING_POLICY_MESSAGES.lateArrival}</li>
           <li>- {BOOKING_POLICY_MESSAGES.cancellations}</li>
@@ -115,7 +115,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
           href={`https://wa.me/${CONTACT_INFO.whatsapp}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center rounded-xl border border-amber-300 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-amber-800"
+          className="mt-3 inline-flex items-center rounded-xl border border-outline-soft bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-brand-ink"
         >
           Solicitar por WhatsApp
         </a>
@@ -207,7 +207,10 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                   {app.discountAmount ? (
                     <div>
                       <p className="text-[10px] font-bold text-ink-faint line-through">
-                        ${getAppointmentSummaryBase(app)?.toLocaleString("es-UY")}
+                        $
+                        {getAppointmentSummaryBase(app)?.toLocaleString(
+                          "es-UY",
+                        )}
                       </p>
                       <p className="text-sm font-black text-rose-600">
                         ${getAppointmentTotal(app)?.toLocaleString("es-UY")}
@@ -219,7 +222,6 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                     </p>
                   )}
                 </div>
-
               </div>
 
               {(app.discountAmount || app.basePrice) && (
@@ -238,7 +240,10 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                         Base
                       </p>
                       <p className="font-bold text-ink">
-                        ${getAppointmentSummaryBase(app)?.toLocaleString("es-UY")}
+                        $
+                        {getAppointmentSummaryBase(app)?.toLocaleString(
+                          "es-UY",
+                        )}
                       </p>
                     </div>
                     <div>
@@ -258,14 +263,18 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
                       </p>
                     </div>
                   </div>
-                  {app.paymentMethod === "mp" && typeof app.mpSurchargeAmount === "number" && app.mpSurchargeAmount > 0 && (
-                    <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[10px] text-amber-800">
-                      <div className="flex items-center justify-between font-bold uppercase tracking-widest">
-                        <span>Recargo MP</span>
-                        <span>+${app.mpSurchargeAmount.toLocaleString("es-UY")}</span>
+                  {app.paymentMethod === "mp" &&
+                    typeof app.mpSurchargeAmount === "number" &&
+                    app.mpSurchargeAmount > 0 && (
+                      <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[10px] text-amber-800">
+                        <div className="flex items-center justify-between font-bold uppercase tracking-widest">
+                          <span>Recargo MP</span>
+                          <span>
+                            +${app.mpSurchargeAmount.toLocaleString("es-UY")}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               )}
             </div>

@@ -141,9 +141,9 @@ export const TRANSFER_BANK_INFO = {
 
 export const BOOKING_POLICY_MESSAGES = {
   reschedule:
-    "Cada reserva permite 1 unico cambio de fecha/hora. Si no puede asistir al turno reprogramado, la sesión será considerada como utilizada y no podrá recuperarse.",
+    "Cada reserva admite un único cambio de fecha y horario. Si no puedes asistir al turno reprogramado, la sesión será considerada como utilizada y no podrá recuperarse.",
   lateArrival:
-    "El tiempo de retraso se descuenta de la sesión para no afectar a los turnos siguientes. Tolerancia maxima de llegada: 15 minutos. Pasado ese tiempo, el turno se considera perdido.",
+    "Se otorga una tolerancia máxima de 15 minutos de atraso. En caso de llegar dentro de ese plazo, el tiempo perdido será descontado de la duración de la sesión para no afectar los turnos siguientes. Transcurridos más de 15 minutos de atraso, el turno se considerará como realizado y la sesión se dará por utilizada. Agradecemos tu comprensión y colaboración para poder ofrecer un servicio de calidad a todos nuestros pacientes.",
   cancellations:
-    "Las cancelaciones/reprogramaciones se solicitan por WhatsApp y requieren 24 horas o mas de anticipacion.",
+    "Las cancelaciones y o reprogramaciones se solicitan por Whatsapp y requieren 24 horas o más de anticipación.",
 };
