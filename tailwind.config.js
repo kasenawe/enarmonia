@@ -14,6 +14,19 @@ export default {
           DEFAULT: "rgb(var(--color-action) / <alpha-value>)",
           hover: "rgb(var(--color-action-hover) / <alpha-value>)",
         },
+        available: {
+          DEFAULT: "rgb(var(--color-available) / <alpha-value>)",
+          dark: "rgb(var(--color-available-dark) / <alpha-value>)",
+          surface: "rgb(var(--color-available-surface) / <alpha-value>)",
+          hover: "rgb(var(--color-available-hover) / <alpha-value>)",
+          outline: "rgb(var(--color-available-outline) / <alpha-value>)",
+        },
+        unavailable: {
+          DEFAULT: "rgb(var(--color-unavailable) / <alpha-value>)",
+          dark: "rgb(var(--color-unavailable-dark) / <alpha-value>)",
+          surface: "rgb(var(--color-unavailable-surface) / <alpha-value>)",
+          outline: "rgb(var(--color-unavailable-outline) / <alpha-value>)",
+        },
         brand: {
           DEFAULT: "rgb(var(--color-brand) / <alpha-value>)",
           dark: "rgb(var(--color-brand-dark) / <alpha-value>)",

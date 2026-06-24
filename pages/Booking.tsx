@@ -587,10 +587,10 @@ const Booking: React.FC<BookingProps> = ({
                         onClick={() => setSelectedTime(t)}
                         className={`py-3 rounded-xl border-2 text-xs font-bold transition-all ${
                           unavailable
-                            ? "bg-shell-soft border-shell-soft text-ink-subtle/70 cursor-not-allowed"
+                            ? "cursor-not-allowed border-unavailable-outline bg-unavailable-surface/70 text-unavailable-dark/80"
                             : selectedTime === t
-                              ? "border-action bg-action text-white shadow-md"
-                              : "border-transparent bg-shell-subtle text-ink-muted hover:border-line"
+                              ? "border-available-dark bg-available-dark text-white shadow-md"
+                              : "border-available-outline bg-available-surface/70 text-available-dark hover:border-available hover:bg-available-hover"
                         }`}
                       >
                         <span className="block">{t}</span>
