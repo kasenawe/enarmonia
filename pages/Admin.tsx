@@ -128,7 +128,8 @@ const Admin: React.FC<AdminProps> = ({
 
   // Blocked slots filtering and pagination
   const [blockedSlotsPage, setBlockedSlotsPage] = useState(1);
-  const [blockedSlotsFilterFrom, setBlockedSlotsFilterFrom] = useState("");
+  const [blockedSlotsFilterFrom, setBlockedSlotsFilterFrom] =
+    useState(getLocalDateString());
   const [blockedSlotsFilterTo, setBlockedSlotsFilterTo] = useState("");
   const [blockedSlotsSearchDate, setBlockedSlotsSearchDate] = useState("");
   const BLOCKED_SLOTS_PER_PAGE = 20;
