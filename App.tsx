@@ -54,6 +54,7 @@ const App: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [servicesLoading, setServicesLoading] = useState(true);
   const [serviceError, setServiceError] = useState<string | null>(null);
+  const [servicesListenerVersion, setServicesListenerVersion] = useState(0);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [promotionsLoading, setPromotionsLoading] = useState(true);
   const [promotionError, setPromotionError] = useState<string | null>(null);
@@ -268,6 +269,9 @@ const App: React.FC = () => {
   }, [currentUser]);
 
   useEffect(() => {
+    setServicesLoading(true);
+    setServiceError(null);
+
     const servicesRef = collection(db, "services");
     const unsubscribe = onSnapshot(
       servicesRef,
@@ -300,7 +304,7 @@ const App: React.FC = () => {
       },
     );
     return () => unsubscribe();
-  }, []);
+  }, [servicesListenerVersion]);
 
   useEffect(() => {
     const promotionsRef = collection(db, "promotions");
@@ -470,6 +474,12 @@ const App: React.FC = () => {
     }
   };
 
+  const handleRetryServices = () => {
+    setServicesLoading(true);
+    setServiceError(null);
+    setServicesListenerVersion((version) => version + 1);
+  };
+
   const selectedServiceFromList = selectedService
     ? services.find((service) => service.id === selectedService.id) || null
     : null;
@@ -505,7 +515,9 @@ const App: React.FC = () => {
               navigate(AppRoute.BOOKING);
             }}
             onSeeAll={() => navigate(AppRoute.SERVICES)}
-            isSyncing={servicesLoading || isSyncing}
+            servicesLoading={servicesLoading}
+            serviceError={serviceError}
+            onRetryServices={handleRetryServices}
           />
         );
       case AppRoute.SERVICES:
@@ -517,10 +529,67 @@ const App: React.FC = () => {
               setSelectedService(s);
               navigate(AppRoute.BOOKING);
             }}
+            servicesLoading={servicesLoading}
+            serviceError={serviceError}
+            onRetryServices={handleRetryServices}
           />
         );
       case AppRoute.BOOKING:
-        return selectedServiceOrDefault ? (
+        return servicesLoading ? (
+          <div
+            className="p-6 pt-10 animate-in"
+            role="status"
+            aria-live="polite"
+            aria-label="Cargando servicios"
+          >
+            <div className="animate-pulse">
+              <div className="mb-8 flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-shell-soft" />
+                <div className="h-6 w-40 rounded-xl bg-shell-soft" />
+              </div>
+              <div className="mb-8 flex gap-2 px-2">
+                {[0, 1, 2].map((item) => (
+                  <div
+                    key={item}
+                    className="h-1 flex-1 rounded-full bg-shell-soft"
+                  />
+                ))}
+              </div>
+              <div className="mb-8 min-h-[380px] rounded-[2rem] border border-line-subtle bg-shell p-7 shadow-sm">
+                <div className="mb-6 h-3 w-32 rounded-full bg-shell-soft" />
+                <div className="mb-6 h-24 rounded-2xl bg-shell-subtle" />
+                <div className="grid grid-cols-3 gap-2">
+                  {[0, 1, 2, 3, 4, 5].map((item) => (
+                    <div
+                      key={item}
+                      className="h-11 rounded-xl bg-shell-soft"
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="h-14 rounded-2xl bg-shell-soft" />
+            </div>
+            <span className="sr-only">Cargando servicios...</span>
+          </div>
+        ) : serviceError ? (
+          <div className="p-6 pt-16 text-center animate-in" role="alert">
+            <div className="rounded-[2rem] border border-rose-100 bg-rose-50 p-8 shadow-sm">
+              <h2 className="text-lg font-bold text-ink-strong">
+                No pudimos cargar los servicios
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+                Revisa tu conexión e inténtalo nuevamente.
+              </p>
+              <button
+                type="button"
+                onClick={handleRetryServices}
+                className="mt-6 rounded-2xl bg-action px-6 py-3 text-xs font-bold uppercase tracking-widest text-white shadow-lg transition-colors hover:bg-action-hover"
+              >
+                Reintentar
+              </button>
+            </div>
+          </div>
+        ) : selectedServiceOrDefault ? (
           <Booking
             service={selectedServiceOrDefault}
             schedule={schedule}
@@ -693,7 +762,9 @@ const App: React.FC = () => {
               navigate(AppRoute.BOOKING);
             }}
             onSeeAll={() => navigate(AppRoute.SERVICES)}
-            isSyncing={isSyncing}
+            servicesLoading={servicesLoading}
+            serviceError={serviceError}
+            onRetryServices={handleRetryServices}
           />
         );
     }

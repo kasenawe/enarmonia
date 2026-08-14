@@ -6,12 +6,18 @@ interface ServicesProps {
   services: Service[];
   promotions: Promotion[];
   onSelectService: (service: Service) => void;
+  servicesLoading: boolean;
+  serviceError: string | null;
+  onRetryServices: () => void;
 }
 
 const Services: React.FC<ServicesProps> = ({
   services,
   promotions,
   onSelectService,
+  servicesLoading,
+  serviceError,
+  onRetryServices,
 }) => {
   return (
     <div className="p-6 pb-20 animate-in">
@@ -25,7 +31,55 @@ const Services: React.FC<ServicesProps> = ({
       </header>
 
       <div className="space-y-8">
-        {services.length === 0 ? (
+        {servicesLoading ? (
+          <div
+            className="space-y-8"
+            role="status"
+            aria-live="polite"
+            aria-label="Cargando servicios"
+          >
+            {[0, 1, 2].map((item) => (
+              <div
+                key={item}
+                className="animate-pulse overflow-hidden rounded-[2rem] border border-line-subtle bg-shell shadow-sm"
+              >
+                <div className="aspect-[16/9] bg-shell-soft" />
+                <div className="space-y-4 p-6">
+                  <div className="h-5 w-2/3 rounded-full bg-shell-soft" />
+                  <div className="h-3 w-full rounded-full bg-shell-soft" />
+                  <div className="h-3 w-4/5 rounded-full bg-shell-soft" />
+                  <div className="flex items-end justify-between gap-4 pt-2">
+                    <div className="space-y-2">
+                      <div className="h-3 w-20 rounded-full bg-shell-soft" />
+                      <div className="h-5 w-16 rounded-full bg-shell-soft" />
+                    </div>
+                    <div className="h-10 w-28 rounded-xl bg-shell-soft" />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <span className="sr-only">Cargando servicios...</span>
+          </div>
+        ) : serviceError ? (
+          <div
+            className="rounded-[2rem] border border-rose-100 bg-rose-50 p-8 text-center shadow-sm"
+            role="alert"
+          >
+            <h3 className="text-base font-bold text-ink-strong">
+              No pudimos cargar los servicios
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+              Revisa tu conexión e inténtalo nuevamente.
+            </p>
+            <button
+              type="button"
+              onClick={onRetryServices}
+              className="mt-6 rounded-2xl bg-action px-6 py-3 text-xs font-bold uppercase tracking-widest text-white shadow-lg transition-colors hover:bg-action-hover"
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : services.length === 0 ? (
           <div className="rounded-[2rem] border border-line-subtle bg-shell p-10 text-center text-ink-subtle shadow-sm">
             No hay servicios disponibles en este momento.
           </div>

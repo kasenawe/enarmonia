@@ -8,7 +8,9 @@ interface HomeProps {
   promotions: Promotion[];
   onSelectService: (service: Service) => void;
   onSeeAll: () => void;
-  isSyncing: boolean;
+  servicesLoading: boolean;
+  serviceError: string | null;
+  onRetryServices: () => void;
 }
 
 const Home: React.FC<HomeProps> = ({
@@ -16,7 +18,9 @@ const Home: React.FC<HomeProps> = ({
   promotions,
   onSelectService,
   onSeeAll,
-  isSyncing,
+  servicesLoading,
+  serviceError,
+  onRetryServices,
 }) => {
   const today = new Date();
   const featuredPromotion = promotions
@@ -75,16 +79,6 @@ const Home: React.FC<HomeProps> = ({
 
   return (
     <div className="p-6">
-      {/* Sync Status Overlay Indicator */}
-      {isSyncing && (
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-full border border-line-subtle bg-shell/80 px-3 py-1.5 shadow-sm backdrop-blur-md">
-          <div className="w-2 h-2 bg-brand rounded-full animate-pulse"></div>
-          <span className="text-[10px] font-bold uppercase tracking-tighter text-ink-subtle">
-            Sincronizando...
-          </span>
-        </div>
-      )}
-
       {/* Hero Section */}
       <header className="text-center mb-10 pt-4 animate-in">
         <div className="w-44 max-w-full mx-auto mb-6 rounded-[2rem] border border-outline-strong bg-shell shadow-xl p-4">
@@ -222,7 +216,52 @@ const Home: React.FC<HomeProps> = ({
           </button>
         </div>
 
-        {services.length === 0 ? (
+        {servicesLoading ? (
+          <div
+            className="space-y-6"
+            role="status"
+            aria-live="polite"
+            aria-label="Cargando servicios"
+          >
+            {[0, 1].map((item) => (
+              <div
+                key={item}
+                className="animate-pulse overflow-hidden rounded-[2.5rem] border border-line-subtle bg-shell shadow-sm"
+              >
+                <div className="h-44 bg-shell-soft" />
+                <div className="space-y-4 p-6">
+                  <div className="h-3 w-5/6 rounded-full bg-shell-soft" />
+                  <div className="h-3 w-2/3 rounded-full bg-shell-soft" />
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="h-3 w-16 rounded-full bg-shell-soft" />
+                    <div className="h-5 w-20 rounded-full bg-shell-soft" />
+                  </div>
+                  <div className="h-11 rounded-2xl bg-shell-soft" />
+                </div>
+              </div>
+            ))}
+            <span className="sr-only">Cargando servicios...</span>
+          </div>
+        ) : serviceError ? (
+          <div
+            className="rounded-[2.5rem] border border-rose-100 bg-rose-50 p-8 text-center shadow-sm"
+            role="alert"
+          >
+            <h3 className="text-base font-bold text-ink-strong">
+              No pudimos cargar los servicios
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+              Revisa tu conexión e inténtalo nuevamente.
+            </p>
+            <button
+              type="button"
+              onClick={onRetryServices}
+              className="mt-6 rounded-2xl bg-action px-6 py-3 text-xs font-bold uppercase tracking-widest text-white shadow-lg transition-colors hover:bg-action-hover"
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : services.length === 0 ? (
           <div className="rounded-[2.5rem] border border-line-subtle bg-shell p-10 text-center text-ink-subtle shadow-sm">
             No hay servicios disponibles para mostrar.
           </div>
@@ -311,7 +350,7 @@ const Home: React.FC<HomeProps> = ({
           })
         )}
 
-        {services.length > 2 && (
+        {!servicesLoading && !serviceError && services.length > 2 && (
           <button
             onClick={onSeeAll}
             className="w-full rounded-3xl border-2 border-dashed border-line bg-shell-subtle py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-ink-subtle transition-colors hover:bg-shell-soft"

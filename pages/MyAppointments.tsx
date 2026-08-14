@@ -57,7 +57,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({
             Mis Reservas
           </h2>
           <p className="mb-8 text-sm leading-relaxed text-ink-subtle">
-            Please login to see your appointments
+            Inicia sesión para ver tus citas.
           </p>
 
           <div className="mb-8 rounded-[2rem] border border-outline bg-surface p-5 text-left">
