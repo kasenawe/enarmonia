@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "enarmonia-289df"
+    "default": "enarmonia-289df",
+    "production": "enarmonia-289df",
+    "staging": "enarmonia-staging"
   }
 }
