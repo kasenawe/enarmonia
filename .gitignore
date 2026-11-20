@@ -24,3 +24,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Development prompt archives (not part of the product)
+/migrated_prompt_history/

@@ -70,7 +70,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 1.  **Catálogo de Servicios**: Presentación detallada de las prestaciones disponibles.
 2.  **Orden Manual de Servicios**: Desde Admin, la dueña puede reordenar el catálogo con controles de subir/bajar. El orden se guarda en Firestore y se respeta en Home, Servicios y Booking.
 3.  **Sistema de Reservas con Pago Dual**: Los clientes pueden elegir entre pagar con **Mercado Pago** (checkout online, con recargo del 8.73%) o por **transferencia bancaria** (sin recargo, con 4 horas para acreditar). El turno queda pendiente hasta que la administradora confirme la transferencia desde el panel.
-4.  **Validación de Disponibilidad**: Booking consulta en tiempo real `occupied_slots` (colección pública mínima sin datos personales) y `blocked_slots`. El backend vuelve a validar solapamientos antes de crear reservas o preferencias de pago; las limitaciones de concurrencia se detallan en [Bloqueos semanales](#bloqueos-semanales).
+4.  **Validación de Disponibilidad**: Booking consulta en tiempo real `occupied_slots` (colección pública mínima sin datos personales) y `blocked_slots`. El backend vuelve a validar solapamientos antes de crear reservas o preferencias de pago; ver [Bloqueos semanales](#bloqueos-semanales) para el modelo y su validación.
 5.  **Cuentas de Usuario**: Registro e inicio de sesión con Firebase Auth usando nombre, documento, email, teléfono y contraseña.
 6.  **Cuenta del Cliente**: Vista `Cuenta` con acceso a historial de turnos, cierre de sesión, y edición de perfil completo: nombre, documento, teléfono, email y contraseña.
 7.  **Mis Turnos Protegido**: El historial de citas se consulta por `userId` y está disponible para usuarios autenticados; las reservas de invitados quedan visibles solo para admin. Las cancelaciones de clientas se gestionan por WhatsApp/administración (no autogestionadas desde la app).
@@ -141,7 +141,7 @@ npm run dev -- --mode staging
 Notas:
 
 - la API key de Gemini (si se usa) se configura en el backend, no en el frontend.
-- en `firebase.ts` hay fallbacks temporales a producción para evitar cortes durante la migración; una vez completado staging, conviene eliminarlos.
+- comprobar la configuración efectiva de Firebase y del backend antes de iniciar pruebas; el modo de desarrollo no garantiza aislamiento de servicios.
 - en Vercel, cada proyecto (prod/stg) debe tener sus propias variables para evitar cruces entre entornos.
 - para diferenciar entornos visualmente, configura en staging `VITE_APP_ENV=staging` y opcionalmente `VITE_ENV_LABEL=STG`.
 - además, en entornos no productivos se aplica automáticamente una paleta visual cálida para distinguir staging/qa de producción.
@@ -240,7 +240,7 @@ Las instrucciones para crear, editar y quitar bloqueos están en la [sección Bl
 - El cálculo del día semanal y el recorrido de fechas usan medianoche UTC y getters/setters UTC únicamente como aritmética de calendario; no convierten las reservas a instantes UTC ni cambian la zona horaria global. Las pantallas mantienen el calendario local existente. No mezclar los días ISO de las reglas con `Date.getDay()` (domingo=0) al mantener esta lógica.
 - `scheduleUtils.ts` y `blockRules.ts` comprueban fecha dentro del rango, día seleccionado, excepciones y solapamiento horario. Booking deshabilita los horarios afectados y vuelve a comprobar antes de enviar la reserva. El backend verifica las mismas reglas y devuelve 409 ante conflictos, incluso si el cliente tiene información desactualizada.
 
-La colección es pública y solo admite escrituras de administradores según las reglas existentes: no agregar datos personales a reglas o excepciones. El backend usa Firebase Admin para la validación efectiva. No se necesitan migraciones, índices, variables de entorno ni dependencias nuevas; los registros antiguos sin selección semanal se interpretan como todos los días de su rango (una fecha si no tienen `endDate`). El [README del backend](https://github.com/kasenawe/enarmonia_backend#-disponibilidad-y-solapamientos) detalla el modelo, la lectura de registros antiguos y las limitaciones de concurrencia y Mercado Pago.
+La colección es pública y solo admite escrituras de administradores según las reglas existentes: no agregar datos personales a reglas o excepciones. El backend usa Firebase Admin para la validación efectiva. No se necesitan migraciones, índices, variables de entorno ni dependencias nuevas; los registros antiguos sin selección semanal se interpretan como todos los días de su rango (una fecha si no tienen `endDate`). La documentación técnica del backend privado detalla los contratos y las consideraciones de integración; su acceso requiere permisos del proyecto.
 
 ### Pruebas y verificación de agenda
 
@@ -259,7 +259,7 @@ Antes de desplegar, verificar en un entorno de prueba autorizado:
 1. Crear un rango futuro que incluya varias semanas, 14:00–18:00, solo lunes y jueves. Confirmar un único documento, listado con días correctos y persistencia al recargar. Con intervalo de 60 minutos, esos días deben bloquear también las 18:00; martes y viernes, fechas fuera del rango y horarios posteriores al último intervalo deben quedar libres si no hay otras restricciones.
 2. Editar a martes/viernes y comprobar el mismo ID y la disponibilidad actualizada. Probar Todos los días, selección vacía, fines de semana habilitados/deshabilitados, descansos y servicios de distinta duración que se solapen desde antes del bloqueo.
 3. Desbloquear una sola fecha y comprobar que la semana siguiente sigue bloqueada. Eliminar la regla completa. Verificar además un bloqueo antiguo y que las reservas previas del rango conservan sus datos y estados.
-4. Llegar al paso de pago y agregar un bloqueo antes de enviar `/api/create-payment`: la UI o el backend deben rechazar la nueva reserva. Repetir como invitado y usuario, con transferencia y MP en sandbox de pagos. Una preferencia MP ya iniciada tiene las limitaciones de concurrencia documentadas en el backend.
+4. Llegar al paso de pago y agregar un bloqueo antes de enviar `/api/create-payment`: la UI o el backend deben rechazar la nueva reserva. Repetir como invitado y usuario, con transferencia y MP en sandbox de pagos. Completar los escenarios de checkout y concurrencia definidos en la documentación técnica privada antes de integrar cambios relacionados.
 5. Revisar en móvil/escritorio y con zonas UTC y America/Montevideo. Los días semanales y las fechas del bloqueo deben coincidir.
 
 ### Compatibilidad de despliegue
