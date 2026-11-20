@@ -6,6 +6,7 @@ import {
   BlockedSlot,
 } from "../types";
 import { DEFAULT_SCHEDULE } from "../constants";
+import { blockOverlaps } from "./blockRules";
 
 export function timeToMinutes(time: string): number {
   const [h, m] = time.split(":").map(Number);
@@ -139,14 +140,5 @@ export function slotOverlapsBlocked(
   blockedSlots: BlockedSlot[],
   intervalMinutes: number,
 ): boolean {
-  const slotStart = timeToMinutes(slotTime);
-  const slotEnd = slotStart + serviceDurationMinutes;
-
-  return blockedSlots.some((b) => {
-    if (b.date !== date) return false;
-    // A blocked time occupies [blockStart, blockStart+interval)
-    const bStart = timeToMinutes(b.time);
-    const bEnd = bStart + intervalMinutes;
-    return slotStart < bEnd && slotEnd > bStart;
-  });
+  return blockedSlots.some(b => blockOverlaps(b, date, slotTime, serviceDurationMinutes, intervalMinutes));
 }

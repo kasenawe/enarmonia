@@ -30,7 +30,10 @@ import {
   generateTimeSlots,
   getScheduleSegmentForDay,
   normalizeSchedule,
+  slotOverlapsBlocked,
 } from "../utils/scheduleUtils";
+import { ALL_WEEKDAYS, WEEKDAYS, blockAppliesOnDate, blockKeysInRange, weekdayLabel } from "../utils/blockRules";
+import { blockFormFromRecord, buildBlockRule, validateBlockForm } from "../utils/blockForm";
 import { getServicePricing } from "../utils/promotionPricing";
 import { useAuth } from "../contexts/AuthContext";
 import ClinicalRecordsPanel from "../components/ClinicalRecordsPanel";
@@ -110,6 +113,9 @@ const Admin: React.FC<AdminProps> = ({
   const [bulkAllDay, setBulkAllDay] = useState(true);
   const [bulkTimeFrom, setBulkTimeFrom] = useState("09:00");
   const [bulkTimeTo, setBulkTimeTo] = useState("18:00");
+  const [bulkWeekdays, setBulkWeekdays] = useState<number[]>([...ALL_WEEKDAYS]);
+  const [editingBlock, setEditingBlock] = useState<BlockedSlot | null>(null);
+  const bulkFormRef = React.useRef<HTMLFormElement>(null);
   const [isBulkBlocking, setIsBulkBlocking] = useState(false);
   const [bulkBlockError, setBulkBlockError] = useState<string | null>(null);
   const [bulkBlockFeedback, setBulkBlockFeedback] = useState<string | null>(
@@ -1204,13 +1210,13 @@ const Admin: React.FC<AdminProps> = ({
     // Apply search by exact date
     if (blockedSlotsSearchDate) {
       filtered = filtered.filter(
-        (slot) => slot.date === blockedSlotsSearchDate,
+        (slot) => blockAppliesOnDate(slot, blockedSlotsSearchDate),
       );
     }
 
     // Apply date range filter
     if (blockedSlotsFilterFrom) {
-      filtered = filtered.filter((slot) => slot.date >= blockedSlotsFilterFrom);
+      filtered = filtered.filter((slot) => (slot.endDate ?? slot.date) >= blockedSlotsFilterFrom);
     }
     if (blockedSlotsFilterTo) {
       filtered = filtered.filter((slot) => slot.date <= blockedSlotsFilterTo);
@@ -1302,9 +1308,9 @@ const Admin: React.FC<AdminProps> = ({
   );
 
   const isBlockedSlot = (date: string, time: string) => {
-    return blockedSlots.some(
-      (slot) => slot.date === date && slot.time === time,
-    );
+    const day = new Date(`${date}T12:00:00`).getDay();
+    const interval = getScheduleSegmentForDay(normalizedSchedule, day).slotIntervalMinutes;
+    return slotOverlapsBlocked(date, time, interval, blockedSlots, interval);
   };
 
   const timeToMinutes = (time: string) => {
@@ -1417,6 +1423,7 @@ const Admin: React.FC<AdminProps> = ({
     setBlockFeedback(null);
     try {
       await deleteDoc(doc(db, "blocked_slots", id));
+      setEditingBlock(current => current?.id === id ? null : current);
       setBlockFeedback("Bloqueo eliminado correctamente.");
     } catch (blockError) {
       console.error(blockError);
@@ -1440,72 +1447,36 @@ const Admin: React.FC<AdminProps> = ({
       return;
     }
 
+    const form = { date: bulkFrom, endDate: bulkTo, time: bulkTimeFrom,
+      endTime: bulkTimeTo, allDay: bulkAllDay, weekdays: bulkWeekdays };
+    const validationError = validateBlockForm(form);
+    if (validationError) {
+      setBulkBlockError(validationError);
+      return;
+    }
+    let rule: Omit<BlockedSlot, "id">;
+    try {
+      rule = buildBlockRule(form,
+        normalizedSchedule, (date, time, duration) =>
+          slotOverlapsBlocked(date, time, duration, blockedSlots.filter(slot => slot.id !== editingBlock?.id), duration) ||
+          hasOccupiedRangeAtSlot(date, time, duration) || appointments.some(appointment =>
+            appointment.date === date && isAppointmentBlockingSlot(appointment) &&
+            rangesOverlap(timeToMinutes(time), duration, timeToMinutes(appointment.time),
+              services.find(service => service.id === appointment.serviceId)?.duration ?? 60)));
+    } catch (error) {
+      setBulkBlockError(error instanceof Error ? error.message : "No se pudo preparar el bloqueo.");
+      return;
+    }
     setIsBulkBlocking(true);
     try {
-      const slotsToAdd: { date: string; time: string }[] = [];
-      const cursor = new Date(bulkFrom + "T12:00:00");
-      const end = new Date(bulkTo + "T12:00:00");
-
-      while (cursor <= end) {
-        const segment = getScheduleSegmentForDay(
-          normalizedSchedule,
-          cursor.getDay(),
-        );
-        if (segment.enabled) {
-          const iso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
-          const dateSlots = generateTimeSlots(
-            segment,
-            segment.slotIntervalMinutes,
-          );
-          const timeRange = bulkAllDay
-            ? dateSlots
-            : dateSlots.filter((t) => t >= bulkTimeFrom && t <= bulkTimeTo);
-
-          for (const time of timeRange) {
-            const alreadyBlocked = blockedSlots.some(
-              (b) => b.date === iso && b.time === time,
-            );
-            const hasAppointment = hasAppointmentAtSlot(iso, time);
-            const isOccupied = hasOccupiedRangeAtSlot(
-              iso,
-              time,
-              segment.slotIntervalMinutes,
-            );
-            if (!alreadyBlocked && !hasAppointment && !isOccupied) {
-              slotsToAdd.push({ date: iso, time });
-            }
-          }
-        }
-        cursor.setDate(cursor.getDate() + 1);
+      if (editingBlock) {
+        rule.excludedSlots = [...new Set([...(editingBlock.excludedSlots ?? []), ...(rule.excludedSlots ?? [])])];
+        await setDoc(doc(db, "blocked_slots", editingBlock.id), rule, { merge: true });
+      } else {
+        await addDoc(collection(db, "blocked_slots"), { ...rule, createdAt: new Date().toISOString() });
       }
-
-      if (slotsToAdd.length === 0) {
-        setBulkBlockFeedback(
-          "No hay horarios disponibles para bloquear en ese rango (ya bloqueados o con turnos).",
-        );
-        setIsBulkBlocking(false);
-        return;
-      }
-
-      // Firestore batch max 500 writes
-      const batchSize = 499;
-      for (let i = 0; i < slotsToAdd.length; i += batchSize) {
-        const batch = writeBatch(db);
-        const chunk = slotsToAdd.slice(i, i + batchSize);
-        for (const slot of chunk) {
-          const ref = doc(collection(db, "blocked_slots"));
-          batch.set(ref, {
-            date: slot.date,
-            time: slot.time,
-            createdAt: new Date().toISOString(),
-          });
-        }
-        await batch.commit();
-      }
-
-      setBulkBlockFeedback(
-        `${slotsToAdd.length} horario${slotsToAdd.length !== 1 ? "s" : ""} bloqueado${slotsToAdd.length !== 1 ? "s" : ""} correctamente.`,
-      );
+      setEditingBlock(null);
+      setBulkBlockFeedback("Bloqueo guardado correctamente. Los turnos existentes se conservaron.");
     } catch (err) {
       console.error(err);
       setBulkBlockError("Error al bloquear los horarios. Intentá nuevamente.");
@@ -1560,17 +1531,13 @@ const Admin: React.FC<AdminProps> = ({
         cursor.setDate(cursor.getDate() + 1);
       }
 
-      if (selectedKeys.size === 0) {
-        setBulkUnblockError(
-          "El rango seleccionado no contiene horarios válidos.",
-        );
-        setIsBulkUnblocking(false);
-        return;
-      }
-
-      const slotsToDelete = blockedSlots.filter((slot) =>
-        selectedKeys.has(`${slot.date}__${slot.time}`),
-      );
+      const changes = blockedSlots.map(slot => {
+        if (!slot.weeklySlots) return { slot, keys: selectedKeys.has(`${slot.date}__${slot.time}`) ? [`${slot.date}__${slot.time}`] : [] };
+        const keys = blockKeysInRange(slot, bulkUnblockFrom, bulkUnblockTo,
+          bulkUnblockAllDay, bulkUnblockTimeFrom, bulkUnblockTimeTo);
+        return { slot, keys };
+      }).filter(change => change.keys.length > 0);
+      const slotsToDelete = changes.map(change => change.slot);
 
       if (slotsToDelete.length === 0) {
         setBulkUnblockFeedback("No hay bloqueos en ese rango para eliminar.");
@@ -1592,7 +1559,14 @@ const Admin: React.FC<AdminProps> = ({
         const batch = writeBatch(db);
         const chunk = slotsToDelete.slice(i, i + batchSize);
         for (const slot of chunk) {
-          batch.delete(doc(db, "blocked_slots", slot.id));
+          if (slot.weeklySlots) {
+            const keys = changes.find(change => change.slot.id === slot.id)!.keys;
+            batch.update(doc(db, "blocked_slots", slot.id), {
+              excludedSlots: [...new Set([...(slot.excludedSlots ?? []), ...keys])],
+            });
+          } else {
+            batch.delete(doc(db, "blocked_slots", slot.id));
+          }
         }
         await batch.commit();
       }
@@ -2682,16 +2656,17 @@ const Admin: React.FC<AdminProps> = ({
             )}
 
             <form
+              ref={bulkFormRef}
               onSubmit={handleBulkBlock}
               className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 space-y-5"
             >
               <div>
                 <h4 className="text-lg font-bold text-gray-800">
-                  Bloqueo por rango (vacaciones, eventos, etc.)
+                  {editingBlock ? "Editar bloqueo" : "Bloqueo por rango (vacaciones, eventos, etc.)"}
                 </h4>
                 <p className="text-gray-400 text-[11px]">
                   Bloquea automáticamente múltiples horarios en un período. Sólo
-                  se bloquean días de trabajo.
+                  se bloquean días de trabajo. La hora final incluye el turno que comienza a esa hora, como en los bloqueos actuales.
                 </p>
               </div>
 
@@ -2700,7 +2675,7 @@ const Admin: React.FC<AdminProps> = ({
                   Desde
                   <input
                     type="date"
-                    min={today}
+                    min={editingBlock ? undefined : today}
                     value={bulkFrom}
                     onChange={(e) => setBulkFrom(e.target.value)}
                     className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
@@ -2710,13 +2685,33 @@ const Admin: React.FC<AdminProps> = ({
                   Hasta
                   <input
                     type="date"
-                    min={today}
+                    min={editingBlock ? undefined : today}
                     value={bulkTo}
                     onChange={(e) => setBulkTo(e.target.value)}
                     className="w-full p-4 rounded-3xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-gray-900"
                   />
                 </label>
               </div>
+
+              <fieldset className="space-y-3">
+                <legend className="text-sm font-bold text-gray-700">Días de la semana</legend>
+                <label className="flex items-center gap-2 text-sm text-gray-600">
+                  <input type="checkbox" className="w-4 h-4 rounded border-gray-200" checked={bulkWeekdays.length === 7}
+                    onChange={e => setBulkWeekdays(e.target.checked ? [...ALL_WEEKDAYS] : [])} />
+                  Todos los días
+                </label>
+                <div className="flex flex-wrap gap-3">
+                  {WEEKDAYS.map((label, index) => (
+                    <label key={label} className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+                      <input type="checkbox" className="w-4 h-4 rounded border-gray-200" checked={bulkWeekdays.includes(index + 1)}
+                        onChange={e => setBulkWeekdays(current => e.target.checked
+                          ? [...current, index + 1].sort((a, b) => a - b)
+                          : current.filter(day => day !== index + 1))} />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
 
               <label className="flex items-center gap-3 text-sm font-medium text-gray-600">
                 <input
@@ -2756,8 +2751,10 @@ const Admin: React.FC<AdminProps> = ({
                 disabled={isBulkBlocking}
                 className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all disabled:opacity-40"
               >
-                {isBulkBlocking ? "BLOQUEANDO..." : "BLOQUEAR RANGO"}
+                {isBulkBlocking ? "GUARDANDO..." : editingBlock ? "GUARDAR CAMBIOS" : "BLOQUEAR RANGO"}
               </button>
+              {editingBlock && <button type="button" onClick={() => setEditingBlock(null)}
+                className="text-sm font-bold text-gray-600">Cancelar edición</button>}
             </form>
 
             <form
@@ -2966,17 +2963,33 @@ const Admin: React.FC<AdminProps> = ({
                     {paginatedBlockedSlots.map((slot) => (
                       <div
                         key={slot.id}
-                        className="flex items-center justify-between gap-4 rounded-3xl border border-gray-100 bg-gray-50 px-5 py-4"
+                        className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-gray-100 bg-gray-50 px-5 py-4"
                       >
                         <div>
                           <p className="text-sm font-bold text-gray-800">
-                            {slot.date}
+                            {slot.date}{slot.endDate && slot.endDate !== slot.date ? ` al ${slot.endDate}` : ""}
                           </p>
                           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                            {slot.time} hs
+                            {slot.allDay ? "Todo el horario" : `${slot.time}${slot.endTime ? ` a ${slot.endTime}` : ""} hs`}
                           </p>
+                          <p className="text-xs text-gray-600">{weekdayLabel(slot)}</p>
+                          {!!slot.excludedSlots?.length && <p className="text-xs text-gray-500">
+                            {slot.excludedSlots.length} horarios exceptuados
+                          </p>}
                         </div>
+                        <button type="button" disabled={isBulkBlocking} onClick={() => {
+                          const form = blockFormFromRecord(slot);
+                          setEditingBlock(slot);
+                          setBulkFrom(form.date); setBulkTo(form.endDate);
+                          setBulkTimeFrom(form.time); setBulkTimeTo(form.endTime);
+                          setBulkAllDay(form.allDay); setBulkWeekdays(form.weekdays);
+                          setBulkBlockError(null); setBulkBlockFeedback(null);
+                          bulkFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }} className="px-4 py-2 rounded-2xl bg-gray-100 text-gray-700 text-xs font-bold">
+                          Editar
+                        </button>
                         <button
+                          disabled={isBulkBlocking}
                           onClick={() => handleUnblockSlot(slot.id)}
                           className="px-4 py-2 rounded-2xl bg-red-50 text-red-600 text-xs font-bold border border-red-100 hover:bg-red-100 transition"
                         >

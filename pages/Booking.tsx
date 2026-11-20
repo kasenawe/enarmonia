@@ -244,6 +244,13 @@ const Booking: React.FC<BookingProps> = ({
 
     if (!paymentMethod) return;
 
+    if (isSlotUnavailable(selectedDate, selectedTime)) {
+      alert("El horario ya no está disponible. Seleccioná otro horario.");
+      setStep(1);
+      setSelectedTime("");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await fetch(BACKEND_URL + "/api/create-payment", {
@@ -265,7 +272,8 @@ const Booking: React.FC<BookingProps> = ({
       });
 
       if (!response.ok) {
-        throw new Error("Error al procesar la reserva");
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || "Error al procesar la reserva");
       }
 
       const data = await response.json();
@@ -282,7 +290,7 @@ const Booking: React.FC<BookingProps> = ({
       }
     } catch (error: any) {
       setIsSubmitting(false);
-      alert("Hubo un problema al procesar la reserva. Inténtalo de nuevo.");
+      alert(error.message || "Hubo un problema al procesar la reserva. Inténtalo de nuevo.");
       console.error("Error:", error);
     }
   };

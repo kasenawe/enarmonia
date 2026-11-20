@@ -48,6 +48,12 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 │   ├── Contact.tsx      # Información de contacto y acceso admin
 │   └── Admin.tsx        # Panel de gestión para administradora
 ├── firestore-seeds/     # Ejemplos de documentos para colección users
+├── utils/
+│   ├── scheduleUtils.ts # Generación de horarios y solapamientos de disponibilidad
+│   ├── blockRules.ts    # Fechas, días ISO, intervalos y excepciones de bloqueos
+│   └── blockForm.ts     # Validación, carga para edición y creación de reglas semanales
+├── tests/              # Pruebas de disponibilidad y handlers de Admin/Booking
+├── docs/Manual-Usuario-Final.md # Instrucciones de uso diario para la dueña
 ├── firestore.rules      # Reglas de seguridad de Firestore
 ├── constants.ts         # Valores por defecto (servicios, contacto fallback, colores)
 ├── types.ts             # Definiciones de interfaces y enums de TypeScript
@@ -64,7 +70,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 1.  **Catálogo de Servicios**: Presentación detallada de las prestaciones disponibles.
 2.  **Orden Manual de Servicios**: Desde Admin, la dueña puede reordenar el catálogo con controles de subir/bajar. El orden se guarda en Firestore y se respeta en Home, Servicios y Booking.
 3.  **Sistema de Reservas con Pago Dual**: Los clientes pueden elegir entre pagar con **Mercado Pago** (checkout online, con recargo del 8.73%) o por **transferencia bancaria** (sin recargo, con 4 horas para acreditar). El turno queda pendiente hasta que la administradora confirme la transferencia desde el panel.
-4.  **Validación de Disponibilidad**: Sistema en tiempo real que previene doble-booking usando `occupied_slots` (colección pública mínima sin datos personales).
+4.  **Validación de Disponibilidad**: Booking consulta en tiempo real `occupied_slots` (colección pública mínima sin datos personales) y `blocked_slots`. El backend vuelve a validar solapamientos antes de crear reservas o preferencias de pago; las limitaciones de concurrencia se detallan en [Bloqueos semanales](#bloqueos-semanales).
 5.  **Cuentas de Usuario**: Registro e inicio de sesión con Firebase Auth usando nombre, documento, email, teléfono y contraseña.
 6.  **Cuenta del Cliente**: Vista `Cuenta` con acceso a historial de turnos, cierre de sesión, y edición de perfil completo: nombre, documento, teléfono, email y contraseña.
 7.  **Mis Turnos Protegido**: El historial de citas se consulta por `userId` y está disponible para usuarios autenticados; las reservas de invitados quedan visibles solo para admin. Las cancelaciones de clientas se gestionan por WhatsApp/administración (no autogestionadas desde la app).
@@ -72,7 +78,7 @@ Esta es una aplicación web para la gestión de turnos y servicios de Soledad Ce
 9.  **Perfil de Contacto Reutilizable**: El nombre, documento y teléfono del usuario se autocompletan en la reserva desde su perfil, y siguen siendo editables por turno.
 10. **Distinción Cuenta / Invitado en Admin**: Cada tarjeta de turno en el panel admin muestra un badge: "Cuenta" (verde) para usuarios registrados o "Invitado" (ámbar) para reservas sin cuenta, usando el campo `bookingMode`.
 11. **Bloqueo Manual de Horarios**: La administradora puede bloquear y desbloquear horarios manualmente desde el panel, con validación contra turnos ya agendados.
-12. **Bloqueo y Desbloqueo Masivo por Rango**: En admin, la dueña puede bloquear y también eliminar bloqueos en períodos completos (por ejemplo vacaciones) por rango de fechas y opcionalmente por rango horario, evitando la gestión uno a uno.
+12. **Bloqueos Semanales por Rango**: En admin, la dueña puede elegir fechas, horario y varios días de la semana, o marcar Todos los días. Puede editar una regla, desbloquear parte del rango o eliminarla completa, manteniendo los bloqueos anteriores y los turnos existentes.
 13. **Horario Configurable por la Dueña**: El horario de atención se define en `settings/schedule` con tres bloques independientes (`weekdays` para lunes-viernes, `saturday` y `sunday`), cada uno con su hora de inicio/fin, intervalo de slots y descansos. El intervalo es configurable (por ejemplo 60 o 30 minutos) y Booking se adapta en tiempo real.
 14. **Promociones Autogestionables**: La dueña puede crear, editar, pausar y destacar promociones desde el panel admin, con vigencia y servicios asociados.
 15. **Panel Admin por Rol**: El acceso administrativo depende del rol `admin` en Firestore; además, incluye gestión de usuarios y promoción segura de cuentas a admin mediante backend protegido.
@@ -206,7 +212,7 @@ La aplicación estará disponible en `http://localhost:3000`.
   - `appointments`: `userId` (opcional), `serviceId`, `serviceName`, `date`, `time`, `userName`, `userPhone`, `userEmail`, `userDocumentId` (opcional, formato `XXXXXXX-X`), `bookingMode` (`"account"` | `"guest"`), `createdAt`, `price`, `paid`, `basePrice`, `discountAmount`, `appliedPromotion`, `paymentMethod` (`"mp"` | `"transfer"`), `paymentStatus` (`"paid_mp"` | `"pending_transfer"` | `"paid_transfer"` | `"expired_transfer"` | `"cancelled"`), `subtotalAmount`, `mpSurchargeAmount`, `totalAmount`, `mpFeePercent`, `paymentDueAt` (solo transferencia), `paymentValidatedAt`, `paymentValidatedBy`.
   - Nota de importes: `price` representa el subtotal final del servicio (tras promociones/cupones, sin recargo MP). El total efectivamente cobrado al cliente se guarda en `totalAmount` y el recargo en `mpSurchargeAmount`.
   - `occupied_slots`: `appointmentId`, `serviceId`, `date`, `time`, `duration` (minutos), `createdAt`, `expiresAt` (solo en slots de transferencia; el frontend lo usa para ignorar slots vencidos sin esperar al cron).
-  - `blocked_slots`: `date`, `time`, `createdAt`.
+  - `blocked_slots`: registros individuales con `date`, `time`, `createdAt`, o reglas con `endDate`, `endTime`, `allDay`, `weekdays`, `weeklySlots` y `excludedSlots`. Ver el [modelo y compatibilidad de Firestore](https://github.com/kasenawe/enarmonia_backend#modelo-de-bloqueos-en-firestore).
   - `settings/schedule`: `weekdays`, `saturday` y `sunday` (cada bloque con `enabled`, `startTime`, `endTime`, `slotIntervalMinutes`, `breaks`) para configurar agenda dinámica separada entre semana, sábado y domingo.
   - `settings/contact`: `address`, `whatsapp`, `instagram`, `email` y flags de visibilidad (`showAddress`, `showWhatsapp`, `showInstagram`, `showEmail`) para controlar qué se publica en la sección Contacto.
   - `services`: `name`, `description`, `duration`, `price`, `image`, `isActive` (opcional, `true` por defecto; si es `false`, no se muestra en reservas públicas).
@@ -220,6 +226,45 @@ La aplicación estará disponible en `http://localhost:3000`.
 - **Migración inicial de disponibilidad**: tras desplegar backend/rules por primera vez, ejecutar una vez `/api/backfill-occupied-slots` (admin) para sincronizar turnos históricos en `occupied_slots`.
 - **Estilos**: Se utiliza una configuración de Tailwind personalizada en `index.html` y `index.css`. El color primario ya se gestiona desde tokens semánticos definidos en `constants.ts`.
 - **IA**: El componente `components/AIAssistant.tsx` existe pero la funcionalidad esta deshabilitada en `App.tsx` por el momento.
+
+### Bloqueos semanales
+
+Las instrucciones para crear, editar y quitar bloqueos están en la [sección Bloqueos del manual de uso](docs/Manual-Usuario-Final.md#5-sección-bloqueos).
+
+- `App.tsx` escucha `blocked_slots`, `occupied_slots` y `settings/schedule`, y entrega la disponibilidad a Admin y Booking. Invitados y usuarios con cuenta usan la misma pantalla de reserva y el endpoint `/api/create-payment`; el callback `onConfirm` recibido por Booking no es el flujo efectivo de persistencia.
+- Admin guarda cada rango en **un documento**, con selección múltiple de lunes a domingo y opción Todos los días. Al editar conserva el ID, `createdAt` y las excepciones, y recalcula los horarios y conflictos para los parámetros elegidos.
+- `blockForm.ts` valida fechas reales, orden del rango, horas `HH:MM` y días ISO únicos entre 1 (lunes) y 7 (domingo). Rechaza selección vacía y rangos sin horarios efectivos. Todos los días conserva el comportamiento del bloqueo tradicional.
+- Al guardar, `weeklySlots` conserva los horarios laborales habilitados, descansos e intervalos vigentes. La selección semanal filtra esos horarios: no habilita días de atención cerrados. Los cambios posteriores de agenda no reescriben el bloqueo; editarlo recalcula esa configuración.
+- `excludedSlots` conserva los horarios omitidos por turnos, ocupaciones u otros bloqueos existentes. Las reservas no se cancelan ni modifican. Desbloquear parte de una regla agrega excepciones usando sus horarios guardados; Desbloquear en la tarjeta elimina la regla completa. Los documentos antiguos siguen admitiendo eliminación individual o por rango.
+- Las fechas `YYYY-MM-DD` son inclusivas y las horas representan horas locales de agenda. **Hasta hora incluye el turno que comienza a esa hora**: 14:00–18:00 también bloquea el turno de las 18:00. Cada intervalo individual usa `[inicio, inicio + duración)`, por lo que un servicio que empieza antes también puede solaparse.
+- El cálculo del día semanal y el recorrido de fechas usan medianoche UTC y getters/setters UTC únicamente como aritmética de calendario; no convierten las reservas a instantes UTC ni cambian la zona horaria global. Las pantallas mantienen el calendario local existente. No mezclar los días ISO de las reglas con `Date.getDay()` (domingo=0) al mantener esta lógica.
+- `scheduleUtils.ts` y `blockRules.ts` comprueban fecha dentro del rango, día seleccionado, excepciones y solapamiento horario. Booking deshabilita los horarios afectados y vuelve a comprobar antes de enviar la reserva. El backend verifica las mismas reglas y devuelve 409 ante conflictos, incluso si el cliente tiene información desactualizada.
+
+La colección es pública y solo admite escrituras de administradores según las reglas existentes: no agregar datos personales a reglas o excepciones. El backend usa Firebase Admin para la validación efectiva. No se necesitan migraciones, índices, variables de entorno ni dependencias nuevas; los registros antiguos sin selección semanal se interpretan como todos los días de su rango (una fecha si no tienen `endDate`). El [README del backend](https://github.com/kasenawe/enarmonia_backend#-disponibilidad-y-solapamientos) detalla el modelo, la lectura de registros antiguos y las limitaciones de concurrencia y Mercado Pago.
+
+### Pruebas y verificación de agenda
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+`npm run lint` ejecuta `tsc --noEmit`. Las pruebas usan el runner de Node y el TypeScript instalado, sin dependencias adicionales ni credenciales. Cubren lunes/jueves, martes/viernes, todos los días, compatibilidad antigua, límites de fechas y horas, cambios de semana/año, año bisiesto, fechas de DST, excepciones, serialización y validaciones. También ejecutan los handlers reales de Admin y Booking con hooks y persistencia simulados para verificar creación, edición, desbloqueo parcial, eliminación y disponibilidad pública antes de confirmar. No sustituyen pruebas visuales en navegador ni integración con un emulador Firestore.
+
+Para mantenimiento, mantener alineadas `utils/blockRules.ts` y `lib/blockRules.js` del backend y ejecutar las suites de ambos repositorios. Repetirlas con `TZ=UTC` y `TZ=America/Montevideo` para detectar desplazamientos de calendario; configurar `TZ` en el entorno del proceso de Node según el shell utilizado.
+
+Antes de desplegar, verificar en un entorno de prueba autorizado:
+
+1. Crear un rango futuro que incluya varias semanas, 14:00–18:00, solo lunes y jueves. Confirmar un único documento, listado con días correctos y persistencia al recargar. Con intervalo de 60 minutos, esos días deben bloquear también las 18:00; martes y viernes, fechas fuera del rango y horarios posteriores al último intervalo deben quedar libres si no hay otras restricciones.
+2. Editar a martes/viernes y comprobar el mismo ID y la disponibilidad actualizada. Probar Todos los días, selección vacía, fines de semana habilitados/deshabilitados, descansos y servicios de distinta duración que se solapen desde antes del bloqueo.
+3. Desbloquear una sola fecha y comprobar que la semana siguiente sigue bloqueada. Eliminar la regla completa. Verificar además un bloqueo antiguo y que las reservas previas del rango conservan sus datos y estados.
+4. Llegar al paso de pago y agregar un bloqueo antes de enviar `/api/create-payment`: la UI o el backend deben rechazar la nueva reserva. Repetir como invitado y usuario, con transferencia y MP en sandbox de pagos. Una preferencia MP ya iniciada tiene las limitaciones de concurrencia documentadas en el backend.
+5. Revisar en móvil/escritorio y con zonas UTC y America/Montevideo. Los días semanales y las fechas del bloqueo deben coincidir.
+
+### Compatibilidad de despliegue
+
+Actualizar primero el backend que interpreta reglas recurrentes y después el frontend que permite crearlas. Los clientes deben recargar la versión compatible: el frontend antiguo no muestra las recurrencias, aunque el backend actualizado rechaza esas reservas. No volver a lectores antiguos mientras existan reglas nuevas sin un plan de compatibilidad. Ver el [orden seguro de despliegue y mantenimiento](https://github.com/kasenawe/enarmonia_backend#compatibilidad-de-despliegue-y-mantenimiento).
 
 ---
 

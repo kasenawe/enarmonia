@@ -308,21 +308,39 @@ Resultado:
 
 Ese horario dejará de mostrarse como disponible cuando alguien quiera reservar.
 
-### Bloqueo masivo por rango (ideal para vacaciones)
+### Bloqueo por rango y días de la semana
 
-Si necesitas bloquear muchos días seguidos, no hace falta hacerlo uno por uno.
+Si necesitas bloquear muchos días seguidos o repetir un bloqueo ciertos días, no hace falta hacerlo uno por uno.
 
 1. Entra en \`Bloqueos\`.
 2. Ve a \`Bloqueo por rango\`.
 3. Marca la fecha \`Desde\` y \`Hasta\`.
-4. Elige si quieres bloquear \`Todo el horario\` o solo una franja de horas.
-5. Pulsa \`Bloquear rango\`.
+4. En `Días de la semana`, marca los días que correspondan. Puedes elegir varios o usar `Todos los días`. Debes dejar al menos un día seleccionado.
+5. Elige si quieres bloquear \`Todo el horario\` o solo una franja de horas.
+6. Pulsa \`Bloquear rango\`.
 
 Resultado:
 
-- Se bloquean de forma automática todos los horarios válidos del período.
-- El sistema evita crear bloqueos duplicados.
-- Si un horario ya tiene turno, ese horario se salta y no se bloquea.
+- Se bloquean solo los días elegidos entre ambas fechas, incluyendo la fecha inicial y final cuando correspondan.
+- Solo se incluyen horarios laborales habilitados; elegir un sábado o domingo no abre un día que esté cerrado en la agenda.
+- Si un horario ya tiene turno, está ocupado o ya está bloqueado, se omite. Las reservas existentes no se cancelan ni cambian.
+- Si no queda ningún horario válido para bloquear, la app lo informa y no guarda el rango.
+- Los bloqueos anteriores siguen funcionando como antes.
+
+Ejemplo: para cerrar los lunes y jueves de un mes de 14:00 a 18:00, selecciona las fechas de ese mes, marca solo `Lunes` y `Jueves` y completa la franja horaria. Los demás días no quedan afectados por esta regla.
+
+Importante: **Hasta hora incluye el turno que empieza a esa hora**. Si eliges 14:00 a 18:00, también se bloquea el turno de las 18:00. Una reserva de mayor duración que empiece antes puede quedar indisponible si se superpone con el bloqueo.
+
+### Editar un bloqueo
+
+1. Busca el bloqueo en `Horarios bloqueados`. La tarjeta muestra el rango, el horario y los días elegidos.
+2. Pulsa `Editar`.
+3. Revisa las fechas, el horario y los días que aparecen cargados, y cambia lo que necesites.
+4. Pulsa `Guardar cambios`, o `Cancelar edición` para salir sin guardar.
+
+Los horarios exceptuados se conservan al editar. La tarjeta muestra cuántos hay: pueden corresponder a turnos previos, otros bloqueos o fechas desbloqueadas parcialmente.
+
+Si cambias la configuración de `Horario`, un rango guardado mantiene los horarios que tenía al crearlo. Al editarlo y guardar se vuelve a calcular con la configuración vigente. Revisa sus excepciones y la disponibilidad después de hacer cambios.
 
 ### Cómo desbloquear un horario
 
@@ -332,21 +350,23 @@ Resultado:
 
 Resultado:
 
-Ese horario volverá a quedar disponible, siempre que no esté ya ocupado por un turno.
+Si es un bloqueo individual, se libera ese horario. Si es un bloqueo por rango, el botón elimina **toda la regla**, con sus días y fechas. Para liberar solo una parte, usa `Desbloqueo por rango`.
+
+El horario solo vuelve a estar disponible si la agenda permite atender y no hay otro turno o bloqueo que lo ocupe.
 
 ### Buscar y filtrar bloqueos
 
 La lista de `Horarios bloqueados` incluye filtros para cuando haya muchos bloqueos acumulados:
 
-- **Desde fecha / Hasta fecha**: muestra solo los bloqueos dentro de un período.
-- **Buscar fecha exacta**: muestra los bloqueos de un día específico.
+- **Desde fecha / Hasta fecha**: muestra los bloqueos cuyo rango se superpone con el período buscado.
+- **Buscar fecha exacta**: muestra los bloqueos cuya fecha o recurrencia semanal corresponde a ese día. Revisa las excepciones: que una regla aparezca no implica que todos sus horarios estén bloqueados en esa fecha.
 - **Limpiar filtros**: vuelve a mostrar todos.
 - Los bloqueos más recientes aparecen primero.
 - Si hay más de 20 bloqueos visibles, se pagina automáticamente.
 
 ### Desbloqueo masivo por rango
 
-Si bloqueaste muchos días por error, puedes eliminarlos todos juntos.
+Si necesitas liberar parte de un rango, puedes hacerlo sin quitar la regla completa.
 
 1. Entra en \`Bloqueos\`.
 2. Ve a \`Desbloqueo por rango\`.
@@ -356,9 +376,11 @@ Si bloqueaste muchos días por error, puedes eliminarlos todos juntos.
 
 Resultado:
 
-- Se eliminan en lote los bloqueos existentes dentro de ese rango.
+- Los bloqueos individuales de ese rango se eliminan. En reglas semanales solo se liberan los horarios y fechas indicados; el resto de la regla se conserva.
 - Si en una fecha/hora no había bloqueo, se omite sin error.
-- Verás cuántos bloqueos fueron eliminados.
+- Revisa la disponibilidad al terminar: liberar un bloqueo no elimina reservas ni otros bloqueos.
+
+Si una clienta ya está pagando en Mercado Pago cuando agregas un bloqueo, ese pago todavía puede confirmar un turno. Los bloqueos no cancelan pagos ni reservas automáticamente. Ante un caso así, revisa `Turnos` y consulta con el equipo técnico antes de hacer cambios.
 
 ## 6. Sección Horario
 

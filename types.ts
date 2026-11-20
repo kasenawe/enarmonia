@@ -102,6 +102,13 @@ export interface BlockedSlot {
   date: string;
   time: string;
   createdAt?: string;
+  // ISO weekdays: Monday=1 ... Sunday=7. Missing means every day.
+  weekdays?: number[];
+  endDate?: string;
+  endTime?: string;
+  allDay?: boolean;
+  weeklySlots?: Record<string, { time: string; duration: number }[]>;
+  excludedSlots?: string[]; // YYYY-MM-DD__HH:MM; occupied or explicitly unblocked
 }
 
 export interface ScheduleBreak {
